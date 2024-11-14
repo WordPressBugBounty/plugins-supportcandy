@@ -240,7 +240,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			}
 
 			// Set view profile as 'customer' if the user is either a valid logged-in customer or a guest with a valid auth code.
-			if ( ( self::is_customer() && ! $current_user->is_guest ) || ( $current_user->is_guest && self::$url_auth ) ) {
+			if ( self::is_customer() || ( $current_user->is_guest && ! $current_user->is_customer && self::$url_auth ) ) {
 				self::$view_profile = 'customer';
 			}
 
@@ -251,7 +251,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			if ( ! self::$view_profile ) :
 				?>
-				<div style="align-item:center;" ><h6><?php esc_attr_e( 'Unathorized access!' ); ?></h6></div>
+				<div style="align-item:center;" ><h6><?php esc_attr_e( 'Unauthorized access!', 'supportcandy' ); ?></h6></div>
 				<?php
 				wp_die();
 			endif;
@@ -3385,6 +3385,9 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			<script>
 				wpsc_get_live_agents(<?php echo intval( $current_user->agent->id ); ?>, <?php echo intval( self::$ticket->id ); ?>);
 				function wpsc_get_live_agents( agent_id, ticket_id ){
+					
+					jQuery('.wpsc-live-agents').html('');
+					jQuery('.wpsc-agent-collision').hide();
 					var current_tid = jQuery('#wpsc-current-ticket').val();
 					if( current_tid != ticket_id ){
 						return;

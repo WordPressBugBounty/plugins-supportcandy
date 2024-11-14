@@ -206,8 +206,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 							<tr>
 								<td class="insert-tag lable" data-label="<?php echo esc_attr( $macro['title'] ); ?>" data-tag="<?php echo esc_attr( $macro['tag'] ); ?>"><?php echo esc_attr( $macro['title'] ); ?></td>
 								<td>
-									<a class="copy-tag wpsc-link" title="<?php echo esc_attr_e( 'Copy Tag' ); ?>"><?php esc_attr_e( 'Copy', 'supportcandy' ); ?></a> |
-									<a class="insert-tag wpsc-link" title="<?php echo esc_attr_e( 'Insert Tag' ); ?>"><?php esc_attr_e( 'Insert', 'supportcandy' ); ?></a>
+									<a class="copy-tag wpsc-link" title="<?php echo esc_attr_e( 'Copy Tag', 'supportcandy' ); ?>"><?php esc_attr_e( 'Copy', 'supportcandy' ); ?></a> |
+									<a class="insert-tag wpsc-link" title="<?php echo esc_attr_e( 'Insert Tag', 'supportcandy' ); ?>"><?php esc_attr_e( 'Insert', 'supportcandy' ); ?></a>
 								</td>
 							</tr>
 							<?php

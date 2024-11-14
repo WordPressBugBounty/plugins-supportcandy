@@ -106,6 +106,13 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		private static $bulk_actions = array();
 
 		/**
+		 * Flag for current view
+		 *
+		 * @var integer
+		 */
+		private static $is_frontend = 0;
+
+		/**
 		 * Initialize this class
 		 *
 		 * @return void
@@ -199,6 +206,8 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				wp_send_json_error( 'Unauthorised request!', 401 );
 			}
 
+			self::$is_frontend = isset( $_POST['is_frontend'] ) ? sanitize_text_field( wp_unslash( $_POST['is_frontend'] ) ) : '0';
+
 			self::load_tickets();
 			self::set_bulk_actions();
 			$filters = self::$cookie_filters;
@@ -235,6 +244,8 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 			if ( ! $current_user->is_customer ) {
 				wp_send_json_error( new WP_Error( '001', 'Unauthorized!' ), 400 );
 			}
+
+			self::$is_frontend = isset( $_POST['is_frontend'] ) ? sanitize_text_field( wp_unslash( $_POST['is_frontend'] ) ) : '0';
 
 			$filters = null;
 
@@ -785,8 +796,9 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 
 							foreach ( self::$tickets as $ticket ) :
 								$class = apply_filters( 'wpsc_ticket_list_tr_classes', array( 'wpsc_tl_tr' ), $ticket );
+								$url = WPSC_Functions::get_ticket_url( $ticket->id, self::$is_frontend );
 								?>
-								<tr class="<?php echo esc_attr( implode( ' ', $class ) ); ?>" onclick="if(link)wpsc_get_individual_ticket(<?php echo esc_attr( $ticket->id ); ?>)">
+								<tr class="<?php echo esc_attr( implode( ' ', $class ) ); ?>" onclick="if(link)wpsc_tl_handle_click(event, <?php echo esc_attr( $ticket->id ); ?>, '<?php echo esc_url( $url ); ?>')">
 									<?php
 									if ( $current_user->is_agent && self::$bulk_actions ) :
 										?>
@@ -841,6 +853,15 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 
 				</table>
 			</div>
+			<script>
+				function wpsc_tl_handle_click(event, id, url) {
+					if ( ( event.ctrlKey || event.metaKey ) && url ) {
+						window.open(url, '_blank');
+					} else {
+						wpsc_get_individual_ticket(id);
+					}
+				}
+			</script>
 			<?php
 
 			return ob_get_clean();

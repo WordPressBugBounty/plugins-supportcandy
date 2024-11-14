@@ -3,9 +3,9 @@ Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
 Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
-Tested up to: 6.6
+Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 3.2.9
+Stable tag: 3.3.0
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -221,6 +221,13 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.3.0 (November 14, 2024) =
+* New: Option to open tickets in a new tab (use Ctrl+Click to open tickets in a separate tab)
+* New: Additional date range filters added to dashboard widgets for enhanced filtering
+* Fix: Values of conditional custom fields not clearing properly in the new ticket form
+* Fix: Guest users unable to reply to tickets issue resolved
+* Fix: Deletion issues with ticket statuses, priorities, and categories fixed
 
 = 3.2.9 (August 12, 2024) =
 * Fix: Enhanced attachment security to prevent potential vulnerabilities

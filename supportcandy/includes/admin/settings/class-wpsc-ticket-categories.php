@@ -541,7 +541,7 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 
 			// replace in logs.
 			$results = $wpdb->get_results(
-				"SELECT * FROM wp_psmsc_threads WHERE 
+				"SELECT * FROM {$wpdb->prefix}psmsc_threads WHERE 
 					(type = 'log') AND 
 					JSON_VALID(body) AND 
 					JSON_EXTRACT(body, '$.slug') = 'category' AND

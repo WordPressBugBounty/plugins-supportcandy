@@ -215,7 +215,7 @@ if ( ! class_exists( 'WPSC_Current_Agent_Profile' ) ) :
 					<div class="wpsc-tff-label">
 						<span class="name"><?php esc_attr_e( 'Default tab', 'supportcandy' ); ?></span>
 					</div>
-					<span class="extra-info"><?php esc_attr_e( 'Select dafault section', 'supportcandy' ); ?></span>
+					<span class="extra-info"><?php esc_attr_e( 'Select default section', 'supportcandy' ); ?></span>
 					<select id="wpsc-dt" name="default-tab">
 						<option <?php selected( $tab, 'dashboard' ); ?> value="dashboard"><?php esc_attr_e( 'Dashboard', 'supportcandy' ); ?></option>
 						<option <?php selected( $tab, 'ticket-list' ); ?> value="ticket-list"><?php esc_attr_e( 'Ticket list', 'supportcandy' ); ?></option>
@@ -491,7 +491,7 @@ if ( ! class_exists( 'WPSC_Current_Agent_Profile' ) ) :
 									?>
 								</td>
 								<td>
-									<a class="wpsc-link"><span class="edit <?php echo esc_attr( $unique_id ); ?>"><?php esc_attr_e( 'Edit', 'wpsc-cr' ); ?></span></a> | 
+									<a class="wpsc-link"><span class="edit <?php echo esc_attr( $unique_id ); ?>"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span></a> | 
 									<a class="wpsc-link"><span class="delete <?php echo esc_attr( $unique_id ); ?>"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span></a>
 								</td>
 							</tr>

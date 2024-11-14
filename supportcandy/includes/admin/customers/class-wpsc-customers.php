@@ -745,27 +745,27 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 			global $wpdb;
 
 			// Delete threads if records is exists.
-			$td_sql = "DELETE thrd FROM wp_psmsc_threads AS thrd LEFT JOIN wp_psmsc_tickets AS t ON thrd.ticket = t.id WHERE t.customer = $customer_id";
+			$td_sql = "DELETE thrd FROM {$wpdb->prefix}psmsc_threads AS thrd LEFT JOIN {$wpdb->prefix}psmsc_tickets AS t ON thrd.ticket = t.id WHERE t.customer = $customer_id";
 			$wpdb->query( $td_sql );
 
 			// is active 0 attachment if records is exists.
-			$td_sql = "UPDATE wp_psmsc_attachments AS att LEFT JOIN wp_psmsc_tickets AS t ON att.ticket_id = t.id SET att.is_active = 0 WHERE t.customer = $customer_id";
+			$td_sql = "UPDATE {$wpdb->prefix}psmsc_attachments AS att LEFT JOIN {$wpdb->prefix}psmsc_tickets AS t ON att.ticket_id = t.id SET att.is_active = 0 WHERE t.customer = $customer_id";
 			$wpdb->query( $td_sql );
 
 			// Delete sla log records if log records is exists.
-			if ( $wpdb->get_var( "SHOW TABLES LIKE 'wp_psmsc_sla_logs'" ) ) {
-				$sl_sql = "DELETE sl FROM wp_psmsc_sla_logs AS sl LEFT JOIN wp_psmsc_tickets AS t ON sl.ticket = t.id WHERE t.customer = $customer_id";
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}psmsc_sla_logs'" ) ) {
+				$sl_sql = "DELETE sl FROM {$wpdb->prefix}psmsc_sla_logs AS sl LEFT JOIN {$wpdb->prefix}psmsc_tickets AS t ON sl.ticket = t.id WHERE t.customer = $customer_id";
 				$wpdb->query( $sl_sql );
 			}
 
 			// Delete timer log records if log records is exists.
-			if ( $wpdb->get_var( "SHOW TABLES LIKE 'wp_psmsc_timer_logs'" ) ) {
-				$tl_sql = "DELETE tl FROM wp_psmsc_timer_logs AS tl LEFT JOIN wp_psmsc_tickets AS t ON tl.ticket = t.id WHERE t.customer = $customer_id";
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}psmsc_timer_logs'" ) ) {
+				$tl_sql = "DELETE tl FROM {$wpdb->prefix}psmsc_timer_logs AS tl LEFT JOIN {$wpdb->prefix}psmsc_tickets AS t ON tl.ticket = t.id WHERE t.customer = $customer_id";
 				$wpdb->query( $tl_sql );
 			}
 
 			// Delete tickets if ticket records is exists.
-			$td_sql = "DELETE FROM wp_psmsc_tickets WHERE customer = $customer_id";
+			$td_sql = "DELETE FROM {$wpdb->prefix}psmsc_tickets WHERE customer = $customer_id";
 			$wpdb->query( $td_sql );
 		}
 
@@ -818,9 +818,9 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 					<!-- Tabs -->
 					<div class="wpsc-up-tab">
 						<?php do_action( 'wpsc_add_before_up_tab' ); ?>
-						<label class="wpsc-profile-tab active" data-toggle-target="wpsc-up-tickets"><?php esc_attr_e( 'Tickets', 'suuportcandy' ); ?></label>
-						<label class="wpsc-profile-tab" data-toggle-target="wpsc-up-cf"><?php esc_attr_e( 'Custom fields', 'suuportcandy' ); ?></label>
-						<label class="wpsc-profile-tab" data-toggle-target="wpsc-up-other"><?php esc_attr_e( 'Other', 'suuportcandy' ); ?></label>
+						<label class="wpsc-profile-tab active" data-toggle-target="wpsc-up-tickets"><?php esc_attr_e( 'Tickets', 'supportcandy' ); ?></label>
+						<label class="wpsc-profile-tab" data-toggle-target="wpsc-up-cf"><?php esc_attr_e( 'Custom fields', 'supportcandy' ); ?></label>
+						<label class="wpsc-profile-tab" data-toggle-target="wpsc-up-other"><?php esc_attr_e( 'Other', 'supportcandy' ); ?></label>
 						<?php do_action( 'wpsc_add_after_up_tab' ); ?>
 					</div>
 

@@ -1,16 +1,18 @@
 <?php // phpcs:ignore
 /**
  * Plugin Name: SupportCandy
- * Plugin URI: https://wordpress.org/plugins/supportcandy/
+ * Plugin URI: https://supportcandy.net/
  * Description: Easy & Powerful support ticket system for WordPress
- * Version: 3.2.9
+ * Version: 3.3.0
  * Author: SupportCandy
- * Author URI: https://supportcandy.net/
+ * Author URI: https://wordpress.org/plugins/supportcandy/
  * Requires at least: 5.6
  * Requires PHP: 7.4
- * Tested up to: 6.6
+ * Tested up to: 6.7
  * Text Domain: supportcandy
  * Domain Path: /i18n
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
 
 if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
@@ -30,7 +32,7 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 		 *
 		 * @var string
 		 */
-		public static $version = '3.2.9';
+		public static $version = '3.3.0';
 
 		/**
 		 * Database version

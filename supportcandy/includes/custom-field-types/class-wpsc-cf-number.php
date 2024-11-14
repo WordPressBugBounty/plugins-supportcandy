@@ -173,6 +173,7 @@ if ( ! class_exists( 'WPSC_CF_Number' ) ) :
 			// ticket form.
 			add_action( 'wpsc_js_validate_ticket_form', array( __CLASS__, 'js_validate_ticket_form' ) );
 			add_filter( 'wpsc_create_ticket_data', array( __CLASS__, 'set_create_ticket_data' ), 10, 3 );
+			add_action( 'wpsc_js_clear_value_hidden_fields', array( __CLASS__, 'js_clear_value_hidden_fields' ) );
 
 			// create ticket data for rest api.
 			add_filter( 'wpsc_rest_create_ticket', array( __CLASS__, 'set_rest_ticket_data' ), 10, 3 );
@@ -1645,6 +1646,20 @@ if ( ! class_exists( 'WPSC_CF_Number' ) ) :
 			} else {
 				return is_numeric( $val ) ? intval( $val ) : esc_attr__( 'None', 'supportcandy' );
 			}
+		}
+
+		/**
+		 * Clear value of hidden fields
+		 *
+		 * @return void
+		 */
+		public static function js_clear_value_hidden_fields() {
+			?>
+			case '<?php echo esc_attr( self::$slug ); ?>':
+				customField.find('input').first().val('');
+				break;
+			<?php
+			echo PHP_EOL;
 		}
 	}
 endif;

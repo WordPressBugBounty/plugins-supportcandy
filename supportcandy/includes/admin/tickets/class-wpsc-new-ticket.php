@@ -91,7 +91,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 				( ! $current_user->is_agent && $current_user->user->ID && in_array( 'registered-user', $gs['allow-create-ticket'] ) )
 			) ) {
 				?>
-				<div style="align-item:center;" ><h6><?php esc_attr_e( 'Unathorized access!' ); ?></h6></div>
+				<div style="align-item:center;" ><h6><?php esc_attr_e( 'Unauthorized access!', 'supportcandy' ); ?></h6></div>
 				<?php
 				wp_die();
 			}
@@ -233,6 +233,8 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 
 					if (!wpsc_validate_ticket_form()) return;
 
+					wpsc_clear_hidden_fields();
+
 					var is_editor = (typeof isWPSCEditor !== 'undefined')  ? isWPSCEditor : 0;
 
 					var dataform = new FormData(jQuery('form.wpsc-create-ticket')[0]);
@@ -324,6 +326,17 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 						}
 					});
 					return flag;
+				}
+
+				function wpsc_clear_hidden_fields() {
+					var customFields = jQuery('.wpsc-tff.wpsc-hidden');
+					jQuery.each(customFields, function(index, customField){
+						customField = jQuery(customField);
+						var customFieldType = customField.data('cft');
+						switch (customFieldType) {
+							<?php do_action( 'wpsc_js_clear_value_hidden_fields' ); ?>
+						}
+					});
 				}
 
 				function wpsc_get_create_as_customer_fields(nonce) {
@@ -687,7 +700,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function check_tff_visibility() {
 
 			$response = array();
-			$tff      = get_option( 'wpsc-tff', array() );
+			$tff = get_option( 'wpsc-tff', array() );
 			foreach ( $tff as $slug => $settings ) {
 
 				$visibility = WPSC_TFF::get_visibility( $settings, true );
@@ -737,6 +750,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 
 				$response[ $slug ] = $flag ? 1 : 0;
 			}
+
 			wp_send_json( $response );
 		}
 

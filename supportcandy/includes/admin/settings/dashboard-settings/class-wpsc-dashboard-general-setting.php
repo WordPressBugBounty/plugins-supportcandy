@@ -127,11 +127,16 @@ if ( ! class_exists( 'WPSC_Dashboard_General_Setting' ) ) :
 					<select name="default-date-range" id="wpsc-ddr">
 						<option <?php selected( $db_gs['default-date-range'], 'today' ); ?> value="today"><?php esc_attr_e( 'Today', 'supportcandy' ); ?></option>
 						<option <?php selected( $db_gs['default-date-range'], 'yesterday' ); ?> value="yesterday"><?php esc_attr_e( 'Yesterday', 'supportcandy' ); ?></option>
+						<option <?php selected( $db_gs['default-date-range'], 'last-7' ); ?> value="last-7"><?php esc_attr_e( 'Last 7 days', 'supportcandy' ); ?></option>
 						<option <?php selected( $db_gs['default-date-range'], 'this-week' ); ?> value="this-week"><?php esc_attr_e( 'This week', 'supportcandy' ); ?></option>
 						<option <?php selected( $db_gs['default-date-range'], 'last-week' ); ?> value="last-week"><?php esc_attr_e( 'Last week', 'supportcandy' ); ?></option>
 						<option <?php selected( $db_gs['default-date-range'], 'last-30-days' ); ?> value="last-30-days"><?php esc_attr_e( 'Last 30 days', 'supportcandy' ); ?></option>
 						<option <?php selected( $db_gs['default-date-range'], 'this-month' ); ?> value="this-month"><?php esc_attr_e( 'This month', 'supportcandy' ); ?></option>
 						<option <?php selected( $db_gs['default-date-range'], 'last-month' ); ?> value="last-month"><?php esc_attr_e( 'Last month', 'supportcandy' ); ?></option>
+						<option <?php selected( $db_gs['default-date-range'], 'this-quarter' ); ?> value="this-quarter"><?php esc_attr_e( 'This quarter', 'supportcandy' ); ?></option>
+						<option <?php selected( $db_gs['default-date-range'], 'last-quarter' ); ?> value="last-quarter"><?php esc_attr_e( 'Last quarter', 'supportcandy' ); ?></option>
+						<option <?php selected( $db_gs['default-date-range'], 'this-year' ); ?> value="this-year"><?php esc_attr_e( 'This year', 'supportcandy' ); ?></option>
+						<option <?php selected( $db_gs['default-date-range'], 'last-year' ); ?> value="last-year"><?php esc_attr_e( 'Last year', 'supportcandy' ); ?></option>
 					</select>
 					<script>
 						jQuery('#wpsc-ddr').selectWoo({

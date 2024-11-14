@@ -45,7 +45,8 @@ function wpsc_get_ticket_list(is_humbargar = false) {
 
 	var data = {
 		action: 'wpsc_get_ticket_list',
-		_ajax_nonce: supportcandy.nonce
+		_ajax_nonce: supportcandy.nonce,
+		is_frontend: supportcandy.is_frontend
 	};
 	if (typeof supportcandy.ticketList != 'undefined' && typeof supportcandy.ticketList.filters != 'undefined') {
 		data.filters = supportcandy.ticketList.filters;

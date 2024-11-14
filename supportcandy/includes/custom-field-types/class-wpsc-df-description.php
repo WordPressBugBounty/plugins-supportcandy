@@ -161,6 +161,7 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 			// JS events.
 			add_action( 'wpsc_js_validate_ticket_form', array( __CLASS__, 'js_validate_ticket_form' ) );
 			add_action( 'wpsc_js_create_ticket_formdata', array( __CLASS__, 'js_create_ticket_formdata' ) );
+			add_action( 'wpsc_js_clear_value_hidden_fields', array( __CLASS__, 'js_clear_value_hidden_fields' ) );
 
 			// create ticket form.
 			add_filter( 'wpsc_create_ticket_data', array( __CLASS__, 'set_create_ticket_data' ), 10, 3 );
@@ -702,6 +703,25 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 			$threads = WPSC_Thread::find( $filters );
 			$thread  = isset( $threads['results'][0] ) ? $threads['results'][0] : array();
 			return $thread && $thread->is_active ? $thread->get_printable_string() : '';
+		}
+
+		/**
+		 * Clear value of hidden fields
+		 *
+		 * @return void
+		 */
+		public static function js_clear_value_hidden_fields() {
+			?>
+			case '<?php echo esc_attr( self::$slug ); ?>':
+				var is_tinymce = (typeof tinyMCE != "undefined") && tinyMCE.activeEditor && !tinyMCE.activeEditor.isHidden();
+				if (is_tinymce && tinymce.get('description')){
+					tinyMCE.get('description').setContent('');
+				} else {
+					jQuery('#description').val('');
+				}
+				break;
+			<?php
+			echo PHP_EOL;
 		}
 	}
 endif;

@@ -215,68 +215,72 @@ if ( ! class_exists( 'WPSC_Addons' ) ) :
 					<div id="wpsc-container">
 						<div class="wpsc-licenses-container">
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/email-piping')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/email-piping.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/email-piping.png' ); ?>" alt="">
 								<p>Allows customers and agents to create and reply to tickets directly from their email inboxes.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/workflows')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/workflows.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/workflows.png' ); ?>" alt="">
 								<p>Unlock the power of automation with SupportCandy workflows, revolutionizing the way you manage your processes.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/sla')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/sla.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/sla.png' ); ?>" alt="">
 								<p>You can offer and track the time you take to respond to and resolve different types of incoming tickets from customers.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/usergroups')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/usergroups.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/usergroups.png' ); ?>" alt="">
 								<p>You can create a group of users or companies so that the company’s supervisor can manage all tickets created by the group members.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/agentgroups')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/agentgroups.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/agentgroups.png' ); ?>" alt="">
 								<p>You can create groups of agents to assign tickets just like individual agents. The supervisor of the group can assign tickets to his team members.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/satisfaction-survey')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/satisfaction-survey.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/satisfaction-survey.png' ); ?>" alt="">
 								<p>Collect customer feedback and rating for each ticket. This helps you understand how your team performs.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/timer')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/timer.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/timer.png' ); ?>" alt="">
 								<p>Allows your agents to separately record the time spent on each ticket in the form of a stopwatch.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/private-credentials')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/private-credentials.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/private-credentials.png' ); ?>" alt="">
 								<p>Allows your customers to share sensitive information within the ticket so that it is visible to only agents with permission.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/schedule-tickets')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/schedule-tickets.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/schedule-tickets.png' ); ?>" alt="">
 								<p>Automatically create periodic tickets by setting recurring time and information.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/canned-reply')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/canned-reply.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/canned-reply.png' ); ?>" alt="">
 								<p>Agents can save their replies which can be accessed in just a few clicks while replying to the tickets.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/automatic-close-tickets')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/automatic-close-tickets.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/automatic-close-tickets.png' ); ?>" alt="">
 								<p>Automatically close the ticket after x days of inactivity. You can also send an inactivity warning email to the customer before x days of closing the ticket.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/reports')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/reports.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/reports.png' ); ?>" alt="">
 								<p>Measure and improve the efficiency of your support using our advanced reporting.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/export-tickets')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/export-tickets.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/export-tickets.png' ); ?>" alt="">
 								<p>Export tickets in CSV format as per the current filter from the ticket list page.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/print-ticket')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/print-ticket.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/print-ticket.png' ); ?>" alt="">
 								<p>Add print ticket feature to SupportCandy using custom templates.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/assign-agent-rules')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/assign-agent-rules.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/assign-agent-rules.png' ); ?>" alt="">
 								<p>Conditionally assign agents to new tickets automatically using set rules and workload.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/productivity-suite/')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/productivity-suite.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/productivity-suite.png' ); ?>" alt="">
 								<p>The productivity suite is a collection of features designed to help agents/users perform a variety of tasks more efficiently and effectively.</p>
+							</div>
+							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/webhooks/')">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/webhooks.png' ); ?>" alt="">
+								<p>Webhooks deliver real-time notifications, ensuring you stay informed during critical support events, from new ticket creation to closures and agent assignments. Tailor your support experience with dynamic, customizable alerts.</p>
 							</div>
 						</div>
 					</div>
@@ -291,28 +295,36 @@ if ( ! class_exists( 'WPSC_Addons' ) ) :
 					<div id="wpsc-container">
 						<div class="wpsc-licenses-container">
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/woocommerce-integration')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/woocommerce.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/woocommerce.png' ); ?>" alt="">
 								<p>Allows your customers to choose orders and products within the ticket form. Also, allows your agents to view customer orders within the ticket.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/slack-integration/')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/slack.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/slack.png' ); ?>" alt="">
 								<p>Get instant notifications to your Slack Channel and respond directly from Slack thread reply.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/gravity-forms-integration')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/gravity-forms.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/gravity-forms.png' ); ?>" alt="">
 								<p>Integrate Gravity Forms with SupportCandy and allows you to create multiple ticket forms.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/edd-integration')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/edd.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/edd.png' ); ?>" alt="">
 								<p>Allows your customers to choose orders and products within the ticket form. Also, allows your agents to view customer orders within the ticket.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/faq-integrations')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/faq-integrations.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/faq-integrations.png' ); ?>" alt="">
 								<p>Intergrates popular FAQ plugins with SupportCandy.</p>
 							</div>
 							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/knoledgebase-integrations')">
-								<img src="http://localhost/wp-content/plugins/supportcandy/asset/images/knowledgebase-integrations.png" alt="">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/knowledgebase-integrations.png' ); ?>" alt="">
 								<p>Integrates popular knowledge-base plugins to SupportCandy.</p>
+							</div>
+							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/lms-integration')">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/lms-integration.png' ); ?>" alt="">
+								<p>Integrates popular LMS plugins to SupportCandy.</p>
+							</div>
+							<div class="license-container" onclick="window.open('https://supportcandy.net/downloads/email-marketing-tools-integration/')">
+								<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/marketing-tool.png' ); ?>" alt="">
+								<p>Elevate customer engagement by connecting SupportCandy with leading email marketing tools like MailChimp, GetResponse, and Brevo.</p>
 							</div>
 						</div>
 					</div>

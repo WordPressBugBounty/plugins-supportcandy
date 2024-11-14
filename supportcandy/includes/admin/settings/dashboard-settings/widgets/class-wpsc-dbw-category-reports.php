@@ -38,6 +38,7 @@ if ( ! class_exists( 'WPSC_DBW_Category_Reports' ) ) :
 			) {
 				return;
 			}
+			$db_gs = get_option( 'wpsc-db-gs-settings' );
 			?>
 			<div class="wpsc-dash-widget wpsc-dash-widget-mid wpsc-<?php echo esc_attr( $slug ); ?>">
 				<div class="wpsc-dash-widget-header">
@@ -52,10 +53,18 @@ if ( ! class_exists( 'WPSC_DBW_Category_Reports' ) ) :
 					</div>
 					<div class="wpsc-dash-widget-actions">
 						<select name="" id="date_wise_category_report" onchange="wpsc_category_pie_chart();" style="min-height: 18px !important;max-height: 18px !important;line-height: 15px !important;font-size: 12px !important;">
-							<option value="last_7"><?php esc_attr_e( 'Last 7 days', 'supportcandy' ); ?></option>
-							<option value="last_week"><?php esc_attr_e( 'Last Week', 'supportcandy' ); ?></option>
-							<option value="last_30"><?php esc_attr_e( 'Last 30 Days', 'supportcandy' ); ?></option>
-							<option value="last_month"><?php esc_attr_e( 'Last Month', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'today' ); ?> value="today"><?php esc_attr_e( 'Today', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'yesterday' ); ?> value="yesterday"><?php esc_attr_e( 'Yesterday', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'last-7' ); ?> value="last-7"><?php esc_attr_e( 'Last 7 days', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'this-week' ); ?> value="this-week"><?php esc_attr_e( 'This week', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'last-week' ); ?> value="last-week"><?php esc_attr_e( 'Last week', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'last-30-days' ); ?> value="last-30-days"><?php esc_attr_e( 'Last 30 days', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'this-month' ); ?> value="this-month"><?php esc_attr_e( 'This month', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'last-month' ); ?> value="last-month"><?php esc_attr_e( 'Last month', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'this-quarter' ); ?> value="this-quarter"><?php esc_attr_e( 'This quarter', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'last-quarter' ); ?> value="last-quarter"><?php esc_attr_e( 'Last quarter', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'this-year' ); ?> value="this-year"><?php esc_attr_e( 'This year', 'supportcandy' ); ?></option>
+							<option <?php selected( $db_gs['default-date-range'], 'last-year' ); ?> value="last-year"><?php esc_attr_e( 'Last year', 'supportcandy' ); ?></option>
 						</select>
 					</div>
 				</div>

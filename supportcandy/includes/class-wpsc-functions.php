@@ -994,38 +994,109 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 
 			$today = new DateTime();
 			switch ( $date ) {
-				case 'last_7':
-					// calculate last 7 days since today's date.
+				case 'today':
+					// Start of today at 00:00:00.
+					$today_start = clone $today;
+					$today_start->setTime( 0, 0, 0 );
+					// End of today with the current time.
+					$today_end = clone $today;
+					return array( $today_start->format( 'Y-m-d H:i:s' ), $today_end->format( 'Y-m-d H:i:s' ) );
+
+				case 'yesterday':
+					// Start of yesterday at 00:00:00.
+					$yesterday_start = clone $today;
+					$yesterday_start->modify( '-1 day' )->setTime( 0, 0, 0 );
+					// End of yesterday at 23:59:59.
+					$yesterday_end = clone $yesterday_start;
+					$yesterday_end->setTime( 23, 59, 59 );
+					return array( $yesterday_start->format( 'Y-m-d H:i:s' ), $yesterday_end->format( 'Y-m-d H:i:s' ) );
+
+				case 'last-7':
+					// Calculate last 7 days from today's date.
 					$last7_days_start = clone $today;
 					$last7_days_start->modify( '-6 days' )->setTime( 0, 0, 0 );
 					$last7_days_end = clone $today;
 					$last7_days_end->setTime( 23, 59, 59 );
 					return array( $last7_days_start->format( 'Y-m-d H:i:s' ), $last7_days_end->format( 'Y-m-d H:i:s' ) );
-				case 'last_week':
-					// calculate last week's start and end datetime from today's date.
+
+				case 'this-week':
+					// Calculate this week's start and end (Sunday to Saturday).
 					$week_start = clone $today;
-					$week_start->modify( 'last Sunday' )->sub( new DateInterval( 'P6D' ) )->setTime( 0, 0, 0 );
+					$week_start->modify( 'last Sunday' )->setTime( 0, 0, 0 );
 					$week_end = clone $week_start;
-					$week_end->modify( 'next Sunday' )->setTime( 23, 59, 59 );
+					$week_end->modify( 'next Saturday' )->setTime( 23, 59, 59 );
 					return array( $week_start->format( 'Y-m-d H:i:s' ), $week_end->format( 'Y-m-d H:i:s' ) );
-				case 'last_30':
-					// calculate last 30 days since today's date.
+
+				case 'last-week':
+					// Calculate last week's start and end (Sunday to Saturday).
+					$last_week_start = clone $today;
+					$last_week_start->modify( 'last Sunday' )->sub( new DateInterval( 'P7D' ) )->setTime( 0, 0, 0 );
+					$last_week_end = clone $last_week_start;
+					$last_week_end->modify( 'next Saturday' )->setTime( 23, 59, 59 );
+					return array( $last_week_start->format( 'Y-m-d H:i:s' ), $last_week_end->format( 'Y-m-d H:i:s' ) );
+
+				case 'last-30-days':
+					// Calculate last 30 days from today's date.
 					$last30_days_start = clone $today;
 					$last30_days_start->modify( '-29 days' )->setTime( 0, 0, 0 );
 					return array( $last30_days_start->format( 'Y-m-d H:i:s' ), $today->format( 'Y-m-d H:i:s' ) );
-				case 'last_month':
-					// calculate last months's start and end datetime from today's date.
+
+				case 'this-month':
+					// Calculate this month's start and end date.
+					$start_month = clone $today;
+					$start_month->modify( 'first day of this month' )->setTime( 0, 0, 0 );
+					$end_month = clone $today;
+					$end_month->setTime( 23, 59, 59 );
+					return array( $start_month->format( 'Y-m-d H:i:s' ), $end_month->format( 'Y-m-d H:i:s' ) );
+
+				case 'this-quarter':
+					// Calculate this quarter's start and end date.
+					$month = (int) $today->format( 'n' );
+					$start_quarter = clone $today;
+					$start_quarter->setDate( $today->format( 'Y' ), floor( ( $month - 1 ) / 3 ) * 3 + 1, 1 )->setTime( 0, 0, 0 );
+					return array( $start_quarter->format( 'Y-m-d H:i:s' ), $today->format( 'Y-m-d H:i:s' ) );
+
+				case 'this-year':
+					// Calculate this year's start date to today.
+					$start_year = clone $today;
+					$start_year->setDate( $today->format( 'Y' ), 1, 1 )->setTime( 0, 0, 0 );
+					return array( $start_year->format( 'Y-m-d H:i:s' ), $today->format( 'Y-m-d H:i:s' ) );
+
+				case 'last-month':
+					// Calculate last month's start and end date.
 					$last_month_start = clone $today;
 					$last_month_start->modify( 'first day of last month' )->setTime( 0, 0, 0 );
 					$last_month_end = clone $today;
 					$last_month_end->modify( 'last day of last month' )->setTime( 23, 59, 59 );
 					return array( $last_month_start->format( 'Y-m-d H:i:s' ), $last_month_end->format( 'Y-m-d H:i:s' ) );
-				case 'this_month':
-					$start_month = clone $today;
-					$start_month->modify( 'first day of this month' )->setTime( 0, 0, 0 );
-					$end_month = clone $today;
-					$end_month->modify( 'last day of this month' )->setTime( 23, 59, 59 );
-					return array( $start_month->format( 'Y-m-d H:i:s' ), $end_month->format( 'Y-m-d H:i:s' ) );
+
+				case 'last-quarter':
+					// Last quarter: from the first to the last day of the previous quarter.
+					$current_month = (int) $today->format( 'n' );
+
+					// Calculate the first month of the previous quarter.
+					$last_quarter_start_month = 3 * ( floor( ( $current_month - 1 ) / 3 ) ) - 2;
+					if ( $last_quarter_start_month <= 0 ) {
+						// If the calculated month is 0 or negative, it means we are in Q1, so the last quarter is Q4 of the previous year.
+						$last_quarter_start_month += 12;
+						$start_last_quarter = ( clone $today )->setDate( $today->format( 'Y' ) - 1, $last_quarter_start_month, 1 )->setTime( 0, 0, 0 );
+					} else {
+						$start_last_quarter = ( clone $today )->setDate( $today->format( 'Y' ), $last_quarter_start_month, 1 )->setTime( 0, 0, 0 );
+					}
+
+					// Calculate the end of the last quarter.
+					$end_last_quarter = clone $start_last_quarter;
+					$end_last_quarter->modify( '+2 months' )->modify( 'last day of this month' )->setTime( 23, 59, 59 );
+
+					return array( $start_last_quarter->format( 'Y-m-d H:i:s' ), $end_last_quarter->format( 'Y-m-d H:i:s' ) );
+
+				case 'last-year':
+					// Calculate last year's start and end date.
+					$start_last_year = clone $today;
+					$start_last_year->setDate( $today->format( 'Y' ) - 1, 1, 1 )->setTime( 0, 0, 0 );
+					$end_last_year = clone $start_last_year;
+					$end_last_year->setDate( $today->format( 'Y' ) - 1, 12, 31 )->setTime( 23, 59, 59 );
+					return array( $start_last_year->format( 'Y-m-d H:i:s' ), $end_last_year->format( 'Y-m-d H:i:s' ) );
 			}
 		}
 
@@ -1085,7 +1156,7 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 				);
 			}
 
-			return $url;
+			return apply_filters( 'wpsc_get_ticket_url_by_view', $url, $ticket_id, $view );
 		}
 	}
 endif;

@@ -360,7 +360,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 								?>
 							</td>
 							<td>
-								<a class="wpsc-link"><span class="edit <?php echo esc_attr( $unique_id ); ?>"><?php esc_attr_e( 'Edit', 'wpsc-cr' ); ?></span></a> | 
+								<a class="wpsc-link"><span class="edit <?php echo esc_attr( $unique_id ); ?>"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span></a> | 
 								<a class="wpsc-link"><span class="delete <?php echo esc_attr( $unique_id ); ?>"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span></a>
 							</td>
 						</tr>

@@ -2415,6 +2415,7 @@ function wpsc_get_tickets() {
   var data = {
     action: "wpsc_get_tickets",
     _ajax_nonce: supportcandy.nonce,
+    is_frontend : supportcandy.is_frontend
   };
   if (
     typeof supportcandy.ticketList != "undefined" &&
@@ -2713,86 +2714,133 @@ function wpsc_delete_customer(customer_id, nonce) {
  */
 function wpsc_db_set_filter_duration_dates(duration) {
 
-	let dateStr = '';
-	let date    = new Date();
+  let dateStr = '';
+	let date = new Date();
+	let from_date, to_date;
+
 	switch (duration) {
 
-		case 'today':
-			dateStr = date.toISOString().split('T')[0];
-			date_from_to = {
-				'from' : dateStr,
-				'to' : dateStr
-			}
-			break;
+    case 'today':
+      dateStr = date.toISOString().split('T')[0];
+      date_from_to = {
+        'from': dateStr,
+        'to': dateStr
+      };
+      break;
+    
+    case 'yesterday':
+      date.setDate(date.getDate() - 1);
+      dateStr = date.toISOString().split('T')[0];
+      date_from_to = {
+        'from': dateStr,
+        'to': dateStr
+      };
+      break;
+    
+    case 'this-week':
+      let firstDayOfWeek = date.getDay() === 0 ? 6 : date.getDay() - 1;
+      date.setDate(date.getDate() - firstDayOfWeek);
+      from_date = date.toISOString().split('T')[0];
+      date.setDate(date.getDate() + 6);
+      to_date = date.toISOString().split('T')[0];
+      date_from_to = {
+        'from': from_date,
+        'to': to_date
+      };
+      break;
+    
+    case 'last-week':
+      let firstDayOfLastWeek = date.getDay() === 0 ? 7 : date.getDay();
+      date.setDate(date.getDate() - firstDayOfLastWeek - 6);
+      from_date = date.toISOString().split('T')[0];
+      date.setDate(date.getDate() + 6);
+      to_date = date.toISOString().split('T')[0];
+      date_from_to = {
+        'from': from_date,
+        'to': to_date
+      };
+      break;
+    
+    case 'last-7':
+      date.setDate(date.getDate() - 1); // Exclude today
+      to_date = date.toISOString().split('T')[0];
+      date.setDate(date.getDate() - 6); // Last 7 days from yesterday
+      from_date = date.toISOString().split('T')[0];
+      date_from_to = {
+        'from': from_date,
+        'to': to_date
+      };
+      break;
+    
+    case 'last-30-days':
+      date.setDate(date.getDate() - 1); // Exclude today
+      to_date = date.toISOString().split('T')[0];
+      date.setDate(date.getDate() - 29); // Last 30 days from yesterday
+      from_date = date.toISOString().split('T')[0];
+      date_from_to = {
+        'from': from_date,
+        'to': to_date
+      };
+      break;
+    
+    case 'this-month':
+      let this_month_starts = new Date(date.getFullYear(), date.getMonth(), 1);
+      let this_month_ends = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      date_from_to = {
+        'from': `${this_month_starts.getFullYear()}-${(this_month_starts.getMonth() + 1).toString().padStart(2, '0')}-${this_month_starts.getDate().toString().padStart(2, '0')}`,
+        'to': `${this_month_ends.getFullYear()}-${(this_month_ends.getMonth() + 1).toString().padStart(2, '0')}-${this_month_ends.getDate().toString().padStart(2, '0')}`
+      };
+      break;
 
-		case 'yesterday':
-			date.setDate( date.getDate() - 1 );
-			dateStr = date.toISOString().split('T')[0];
-			date_from_to = {
-				'from' : dateStr,
-				'to' : dateStr
-			}
-			break;
+    case 'last-month':
+      date.setMonth(date.getMonth() - 1);
+      let last_month_starts = new Date(date.getFullYear(), date.getMonth(), 1);
+      let last_month_ends = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      date_from_to = {
+        'from': `${last_month_starts.getFullYear()}-${(last_month_starts.getMonth() + 1).toString().padStart(2, '0')}-${last_month_starts.getDate().toString().padStart(2, '0')}`,
+        'to': `${last_month_ends.getFullYear()}-${(last_month_ends.getMonth() + 1).toString().padStart(2, '0')}-${last_month_ends.getDate().toString().padStart(2, '0')}`
+      };
+      break;
 
-		case 'this-week':
-			if (date.getDay() == 0) {
-				date.setDate( date.getDate() - 6 );
-			} else {
-				date.setDate( date.getDate() - date.getDay() + 1 );
-			}
-			from_date = date.toISOString().split('T')[0];
-			date.setDate( date.getDate() + 6 );
-			to_date = date.toISOString().split('T')[0];
-			date_from_to = {
-				'from' : from_date,
-				'to' : to_date
-			}
-			break;
-
-		case 'last-week':
-			if (date.getDay() == 0) {
-				date.setDate( date.getDate() - 13 );
-			} else {
-				date.setDate( date.getDate() - date.getDay() - 6 );
-			}
-			from_date = date.toISOString().split('T')[0];
-			date.setDate( date.getDate() + 6 );
-			to_date = date.toISOString().split('T')[0];
-			date_from_to = {
-				'from' : from_date,
-				'to' : to_date
-			}
-			break;
-
-		case 'last-30-days':
-			from_date = date.toISOString().split('T')[0];
-			date.setDate( date.getDate() - 29 );
-			to_date = date.toISOString().split('T')[0];
-			date_from_to = {
-				'from' : to_date,
-				'to' : from_date
-			}
-			break;
-
-		case 'this-month':
-			from_date = new Date( date.getFullYear(), date.getMonth(), 1 ).toISOString().split('T')[0];
-			to_date = new Date( date.getFullYear(), date.getMonth() + 1, 0 ).toISOString().split('T')[0];
-			date_from_to = {
-				'from' : from_date,
-				'to' : to_date
-			}
-			break;
-
-		case 'last-month':
-			date.setMonth( date.getMonth(), 0 );
-			to_date = date.toISOString().split('T')[0];
-			from_date = new Date( date.getFullYear(), date.getMonth(), 1 ).toISOString().split('T')[0];
-			date_from_to = {
-				'from' : from_date,
-				'to' : to_date
-			}
-			break;
-	}
+    case 'this-quarter':
+      let this_quarter_month_starts = Math.floor(date.getMonth() / 3) * 3;
+      let quarter_start = new Date(date.getFullYear(), this_quarter_month_starts, 1);
+      let quarter_end = new Date(date.getFullYear(), this_quarter_month_starts + 3, 0);
+      date_from_to = {
+        'from': `${quarter_start.getFullYear()}-${(quarter_start.getMonth() + 1).toString().padStart(2, '0')}-${quarter_start.getDate().toString().padStart(2, '0')}`,
+        'to': `${quarter_end.getFullYear()}-${(quarter_end.getMonth() + 1).toString().padStart(2, '0')}-${quarter_end.getDate().toString().padStart(2, '0')}`
+      };
+      break;
+    
+    case 'last-quarter':
+      let last_quarter_month_ends = Math.floor(date.getMonth() / 3) * 3 - 1; // End month of last quarter
+      let last_quarter_month_starts = last_quarter_month_ends - 2; // Start month of last quarter
+      if (last_quarter_month_ends < 0) {
+        last_quarter_month_ends += 12;
+        last_quarter_month_starts += 12;
+      }
+      let last_quarter_start = new Date(date.getFullYear(), last_quarter_month_starts, 1);
+      let last_quarter_end = new Date(date.getFullYear(), last_quarter_month_ends + 1, 0);
+      date_from_to = {
+        'from': `${last_quarter_start.getFullYear()}-${(last_quarter_start.getMonth() + 1).toString().padStart(2, '0')}-${last_quarter_start.getDate().toString().padStart(2, '0')}`,
+        'to': `${last_quarter_end.getFullYear()}-${(last_quarter_end.getMonth() + 1).toString().padStart(2, '0')}-${last_quarter_end.getDate().toString().padStart(2, '0')}`
+      };
+      break;
+    
+    case 'this-year':
+      date_from_to = {
+        'from': `${date.getFullYear()}-01-01`,
+        'to': `${date.getFullYear()}-12-31`
+      };
+      break;
+    
+    case 'last-year':
+      date_from_to = {
+        'from': `${date.getFullYear() - 1}-01-01`,
+        'to': `${date.getFullYear() - 1}-12-31`
+      };
+      break;
+  }
 	return date_from_to;
 }
 
