@@ -193,7 +193,6 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 				$this->body = '<div style="direction: rtl;">' . $this->body . '</div>';
 			}
 			$headers .= "Content-Type: text/html; charset=utf-8\r\n";
-			$headers .= 'In-Reply-To:<' . $this->from_email . '>';
 			$headers = apply_filters( 'wpsc_en_headers', $headers, $this );
 
 			// send.

@@ -318,13 +318,20 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 					$value = self::get_tff_value( $cf->slug );
 					if ( $cf->field == 'ticket' ) {
 
-						foreach ( $value as $id ) {
-							$attachment            = new WPSC_Attachment( $id );
-							$attachment->is_active = 1;
-							$attachment->save();
+						$data[ $cf->slug ] = '';
+						if ( ! empty( $value ) ) {
+							$updated_values = array();
+							foreach ( $value as $id ) {
+								$attachment = new WPSC_Attachment( $id );
+								// Check if attachment is already active and linked to a ticket.
+								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+										$attachment->is_active = 1;
+										$attachment->save();
+										$updated_values[] = $id;
+								}
+							}
+							$data[ $cf->slug ] = ! empty( $updated_values ) ? implode( '|', $updated_values ) : '';
 						}
-						$data[ $cf->slug ] = $value ? implode( '|', $value ) : '';
-
 					} elseif ( $cf->field == 'agentonly' ) {
 
 						$data[ $cf->slug ] = '';
@@ -342,23 +349,28 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 						}
 						if ( array_diff( $existing_val, $value ) || array_diff( $value, $existing_val ) ) {
 
+							$updated_values = array();
 							if ( $value ) {
-
 								foreach ( $value as $id ) {
-									$attachment              = new WPSC_Attachment( $id );
-									$attachment->is_active   = 1;
-									$attachment->source      = 'cf';
-									$attachment->source_id   = $cf->id;
-									$attachment->customer_id = $customer->id;
-									$attachment->save();
+									$attachment = new WPSC_Attachment( $id );
+									// Check if attachment is already active and linked to a ticket.
+									if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+
+										$attachment->is_active   = 1;
+										$attachment->source      = 'cf';
+										$attachment->source_id   = $cf->id;
+										$attachment->customer_id = $customer->id;
+										$attachment->save();
+										$updated_values[] = $id;
+									}
 								}
 							}
 
-							$customer->{$cf->slug} = $value;
+							$customer->{$cf->slug} = $updated_values;
 							$customer->save();
 
 							$prev_val = $existing_val ? implode( '|', $existing_val ) : '';
-							$new_val  = $value ? implode( '|', $value ) : '';
+							$new_val  = $updated_values ? implode( '|', $updated_values ) : '';
 
 							// Set log for this change.
 							WPSC_Log::insert(
@@ -415,8 +427,20 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 
 					if ( in_array( $cf->field, array( 'ticket', 'agentonly' ) ) ) {
 
-						$data[ $cf->slug ] = $cf->field == 'ticket' && $attachments ? implode( '|', $attachments ) : '';
-
+						$data[ $cf->slug ] = '';
+						if ( $cf->field == 'ticket' && $attachments ) {
+							$updated_values = array();
+							foreach ( $attachments as $id ) {
+								$attachment = new WPSC_Attachment( $id );
+								// Check if attachment is already active and linked to a ticket.
+								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+										$attachment->is_active = 1;
+										$attachment->save();
+										$updated_values[] = $id;
+								}
+							}
+							$data[ $cf->slug ] = ! empty( $updated_values ) ? implode( '|', $updated_values ) : '';
+						}
 					} else {
 
 						$customer = new WPSC_Customer( $data['customer'] );
@@ -429,17 +453,22 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 
 						if ( $attachments && ( array_diff( $attachments, $existing_val ) || array_diff( $existing_val, $attachments ) ) ) {
 
-							$customer->{$cf->slug} = $attachments;
-							$customer->save();
-
+							$updated_values = array();
 							foreach ( $attachments as $id ) {
-								$attachment              = new WPSC_Attachment( $id );
-								$attachment->is_active   = 1;
-								$attachment->source      = 'cf';
-								$attachment->source_id   = $cf->id;
-								$attachment->customer_id = $customer->id;
-								$attachment->save();
+								$attachment = new WPSC_Attachment( $id );
+								// Check if attachment is already active and linked to a ticket.
+								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+									$attachment->is_active   = 1;
+									$attachment->source      = 'cf';
+									$attachment->source_id   = $cf->id;
+									$attachment->customer_id = $customer->id;
+									$attachment->save();
+									$updated_values[] = $id;
+								}
 							}
+
+							$customer->{$cf->slug} = $updated_values;
+							$customer->save();
 
 							// Set log for this change.
 							WPSC_Log::insert(
@@ -581,13 +610,16 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 							if ( ! $id ) {
 								return false;
 							}
+
 							$attachment = new WPSC_Attachment( $id );
-							$attachment->is_active = 1;
-							$attachment->ticket_id = $ticket->id;
-							$attachment->source    = 'cf';
-							$attachment->source_id = $cf->id;
-							$attachment->save();
-							return $id;
+							if ( ( ! ( $attachment->is_active && $attachment->ticket_id ) ) || ( $attachment->is_active && $attachment->ticket_id == $ticket->id ) ) {
+								$attachment->is_active = 1;
+								$attachment->ticket_id = $ticket->id;
+								$attachment->source    = 'cf';
+								$attachment->source_id = $cf->id;
+								$attachment->save();
+								return $id;
+							}
 						},
 						$new_ids
 					)
@@ -627,17 +659,19 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 
 			if ( array_diff( $prev, $new ) || array_diff( $new, $prev ) ) {
 
-				$ticket->{$cf->slug} = $new;
-
+				$updated_values = array();
 				foreach ( $new as $id ) {
-
 					$attachment = new WPSC_Attachment( $id );
-					$attachment->is_active = 1;
-					$attachment->ticket_id = $ticket->id;
-					$attachment->source    = 'cf';
-					$attachment->source_id = $cf->id;
-					$attachment->save();
+					if ( ( ! ( $attachment->is_active && $attachment->ticket_id ) ) || ( $attachment->is_active && $attachment->ticket_id == $ticket->id ) ) {
+						$attachment->is_active = 1;
+						$attachment->ticket_id = $ticket->id;
+						$attachment->source    = 'cf';
+						$attachment->source_id = $cf->id;
+						$attachment->save();
+						$updated_values[] = $id;
+					}
 				}
+				$ticket->{$cf->slug} = $updated_values;
 			}
 		}
 

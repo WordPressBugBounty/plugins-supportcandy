@@ -152,7 +152,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				CREATE TABLE {$wpdb->prefix}psmsc_custom_fields (
 					id INT NOT NULL AUTO_INCREMENT,
 					name VARCHAR(200) NOT NULL,
-					extra_info TEXT NOT NULL DEFAULT '',
+					extra_info TEXT NULL,
 					slug VARCHAR(200) NULL,
 					field VARCHAR(50) NULL,
 					type VARCHAR(100) NULL,

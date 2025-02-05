@@ -384,7 +384,7 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
-			$password = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; 	// phpcs:ignore
+			$password = isset( $_POST['password'] ) ? $_POST['password'] : ''; 	// phpcs:ignore
 			if ( ! $password ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}

@@ -1242,6 +1242,8 @@ function wpsc_check_tff_visibility() {
 
   jQuery('#wpsc-ct-submit').attr( 'disabled', true );
   jQuery('.wpsc-ct-loader').html( supportcandy.inline_loader );
+  jQuery("select.create-as").attr( "disabled", true );
+
   var form = jQuery("form.wpsc-create-ticket")[0];
   var dataform = new FormData(form);
 
@@ -1277,10 +1279,12 @@ function wpsc_check_tff_visibility() {
       });
       jQuery('#wpsc-ct-submit').removeAttr("disabled");
       jQuery('.wpsc-ct-loader').html('');
+      jQuery("select.create-as").removeAttr( "disabled" );
     }).fail(function(xhr, status, error) {
       console.error('AJAX request failed:', status, error);  
       jQuery('#wpsc-ct-submit').removeAttr("disabled");
       jQuery('.wpsc-ct-loader').html('');
+      jQuery("select.create-as").removeAttr( "disabled" );
     });
 }
 

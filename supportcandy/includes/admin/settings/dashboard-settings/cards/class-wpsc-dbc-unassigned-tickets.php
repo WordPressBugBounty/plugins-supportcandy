@@ -97,11 +97,6 @@ if ( ! class_exists( 'WPSC_DBC_Unassigned_Tickets' ) ) :
 							'compare' => '=',
 							'val'     => '',
 						),
-						array(
-							'slug'    => 'status',
-							'compare' => 'IN',
-							'val'     => $more_settings['unresolved-ticket-statuses'],
-						),
 					),
 				)
 			)['total_items'];

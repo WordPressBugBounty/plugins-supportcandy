@@ -500,8 +500,13 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 
 			$data['description']     = self::get_tff_value( 'description' );
 			$description_attachments = isset( $_POST['description_attachments'] ) ? array_filter( array_map( 'intval', $_POST['description_attachments'] ) ) : array(); // phpcs:ignore
-			foreach ( $description_attachments as $id ) {
-				$attachment            = new WPSC_Attachment( $id );
+			foreach ( $description_attachments as $key => $id ) {
+				$attachment = new WPSC_Attachment( $id );
+				// Check if attachment is already active and linked to a ticket.
+				if ( $attachment->is_active && $attachment->ticket_id ) {
+					unset( $description_attachments[ $key ] );
+					continue;
+				}
 				$attachment->is_active = 1;
 				$attachment->save();
 			}

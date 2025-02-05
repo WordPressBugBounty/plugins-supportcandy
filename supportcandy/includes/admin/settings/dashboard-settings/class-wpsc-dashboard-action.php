@@ -42,7 +42,6 @@ if ( ! class_exists( 'WPSC_Dashboard_Action' ) ) :
 			}
 
 			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			$ticket_list = get_option( 'wpsc-tl-ms-customer-view' );
 			$more_settings = $current_user->is_agent ? get_option( 'wpsc-tl-ms-agent-view' ) : get_option( 'wpsc-tl-ms-customer-view' );
 
 			// closed statuses.
@@ -73,7 +72,7 @@ if ( ! class_exists( 'WPSC_Dashboard_Action' ) ) :
 				$obj = new stdClass();
 				$obj->slug = 'status';
 				$obj->operator = 'IN';
-				$obj->operand_val_1 = $ticket_list['unresolved-ticket-statuses'];
+				$obj->operand_val_1 = $more_settings['unresolved-ticket-statuses'];
 
 				$custom_filters[] = array( $obj );
 
@@ -120,7 +119,7 @@ if ( ! class_exists( 'WPSC_Dashboard_Action' ) ) :
 			if ( $view === '0' ) {
 				$url = admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list' );
 			} elseif ( ( $page_settings['ticket-url-page'] == 'support-page' && $page_settings['support-page'] ) ||
-					$page_settings['ticket-url-page'] == 'open-ticket-page' && $page_settings['open-ticket-page'] ) {
+					( $page_settings['ticket-url-page'] == 'open-ticket-page' && $page_settings['open-ticket-page'] ) ) {
 
 				$url = get_permalink( $page_settings['support-page'] );
 				$url = add_query_arg(
