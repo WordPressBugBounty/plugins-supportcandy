@@ -342,15 +342,13 @@ if ( ! class_exists( 'WPSC_DF_Date_Updated' ) ) :
 					break;
 
 				case 'today':
-					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$str  = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
+					$today = new DateTime();
+					$str  = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $today->format( 'Y-m-d 00:00:00 ' ) ) . '\' AND \'' . esc_sql( $today->format( 'Y-m-d 23:59:59 ' ) ) . '\'';
 					break;
 
 				case 'yesterday':
-					$end_date = new DateTime();
-					$start_date = $end_date->modify( '-1 day' );
-					$str = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $start_date->format( 'Y-m-d 00:00:00 ' ) ) . '\' AND \'' . esc_sql( $end_date->format( 'Y-m-d 23:59:59 ' ) ) . '\'';
+					$yesterday = ( new DateTime() )->modify( '-1 day' );
+					$str = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $yesterday->format( 'Y-m-d 00:00:00 ' ) ) . '\' AND \'' . esc_sql( $yesterday->format( 'Y-m-d 23:59:59 ' ) ) . '\'';
 					break;
 
 				case 'this-week':

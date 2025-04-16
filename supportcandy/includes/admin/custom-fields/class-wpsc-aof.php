@@ -122,16 +122,19 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 							{ targets: -1, searchable: false },
 							{ targets: '_all', className: 'dt-left' }
 						],
-						dom: 'Bfrtip',
-						buttons: [
-							{
-								text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
-								className: 'wpsc-button small primary',
-								action: function ( e, dt, node, config ) {
-									wpsc_get_add_new_custom_field('agentonly', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_new_custom_field' ) ); ?>');
-								}
-							}
-						],
+						layout: {
+							topStart: {
+								buttons: [
+									{
+										text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
+										className: 'wpsc-button small primary',
+										action: function ( e, dt, node, config ) {
+											wpsc_get_add_new_custom_field('agentonly', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_new_custom_field' ) ); ?>');
+										}
+									}
+								],
+							},
+						},
 						language: supportcandy.translations.datatables
 					});
 				</script>

@@ -1,6 +1,6 @@
 <?php // phpcs:ignorefile
 
-// Exit if accessed directly
+// Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -9,18 +9,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Allows plugins to use their own update API.
  *
  * @author Easy Digital Downloads
- * @version 1.9.1
+ * @version 1.9.4
  */
 class WPSC_EDD_SL_Plugin_Updater {
 
-	private $api_url              = '';
-	private $api_data             = array();
-	private $plugin_file          = '';
-	private $name                 = '';
-	private $slug                 = '';
-	private $version              = '';
-	private $wp_override          = false;
-	private $beta                 = false;
+	private $api_url     = '';
+	private $api_data    = array();
+	private $plugin_file = '';
+	private $name        = '';
+	private $slug        = '';
+	private $version     = '';
+	private $wp_override = false;
+	private $beta        = false;
 	private $failed_request_cache_key;
 
 	/**
@@ -29,9 +29,9 @@ class WPSC_EDD_SL_Plugin_Updater {
 	 * @uses plugin_basename()
 	 * @uses hook()
 	 *
-	 * @param string  $_api_url     The URL pointing to the custom API endpoint.
-	 * @param string  $_plugin_file Path to the plugin file.
-	 * @param array   $_api_data    Optional data to send with API calls.
+	 * @param string $_api_url     The URL pointing to the custom API endpoint.
+	 * @param string $_plugin_file Path to the plugin file.
+	 * @param array  $_api_data    Optional data to send with API calls.
 	 */
 	public function __construct( $_api_url, $_plugin_file, $_api_data = null ) {
 
@@ -41,7 +41,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 		$this->api_data                 = $_api_data;
 		$this->plugin_file              = $_plugin_file;
 		$this->name                     = plugin_basename( $_plugin_file );
-		$this->slug                     = basename( $_plugin_file, '.php' );
+		$this->slug                     = basename( dirname( $_plugin_file ) );
 		$this->version                  = $_api_data['version'];
 		$this->wp_override              = isset( $_api_data['wp_override'] ) ? (bool) $_api_data['wp_override'] : false;
 		$this->beta                     = ! empty( $this->api_data['beta'] ) ? true : false;
@@ -60,7 +60,6 @@ class WPSC_EDD_SL_Plugin_Updater {
 
 		// Set up hooks.
 		$this->init();
-
 	}
 
 	/**
@@ -76,7 +75,6 @@ class WPSC_EDD_SL_Plugin_Updater {
 		add_filter( 'plugins_api', array( $this, 'plugins_api_filter' ), 10, 3 );
 		add_action( 'after_plugin_row', array( $this, 'show_update_notification' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'show_changelog' ) );
-
 	}
 
 	/**
@@ -89,12 +87,10 @@ class WPSC_EDD_SL_Plugin_Updater {
 	 *
 	 * @uses api_request()
 	 *
-	 * @param array   $_transient_data Update array build by WordPress.
+	 * @param array $_transient_data Update array build by WordPress.
 	 * @return array Modified update array with custom plugin data.
 	 */
 	public function check_update( $_transient_data ) {
-
-		global $pagenow;
 
 		if ( ! is_object( $_transient_data ) ) {
 			$_transient_data = new stdClass();
@@ -104,7 +100,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 			return $_transient_data;
 		}
 
-		$current = $this->get_repo_api_data();
+		$current = $this->get_update_transient_data();
 		if ( false !== $current && is_object( $current ) && isset( $current->new_version ) ) {
 			if ( version_compare( $this->version, $current->new_version, '<' ) ) {
 				$_transient_data->response[ $this->name ] = $current;
@@ -143,6 +139,13 @@ class WPSC_EDD_SL_Plugin_Updater {
 			// This is required for your plugin to support auto-updates in WordPress 5.5.
 			$version_info->plugin = $this->name;
 			$version_info->id     = $this->name;
+			$version_info->tested = $this->get_tested_version( $version_info );
+			if ( ! isset( $version_info->requires ) ) {
+				$version_info->requires = '';
+			}
+			if ( ! isset( $version_info->requires_php ) ) {
+				$version_info->requires_php = '';
+			}
 
 			$this->set_version_info_cache( $version_info );
 		}
@@ -151,10 +154,71 @@ class WPSC_EDD_SL_Plugin_Updater {
 	}
 
 	/**
+	 * Gets a limited set of data from the API response.
+	 * This is used for the update_plugins transient.
+	 *
+	 * @since 3.8.12
+	 * @return \stdClass|false
+	 */
+	private function get_update_transient_data() {
+		$version_info = $this->get_repo_api_data();
+
+		if ( ! $version_info ) {
+			return false;
+		}
+
+		$limited_data               = new \stdClass();
+		$limited_data->slug         = $this->slug;
+		$limited_data->plugin       = $this->name;
+		$limited_data->url          = $version_info->url;
+		$limited_data->package      = $version_info->package;
+		$limited_data->icons        = $this->convert_object_to_array( $version_info->icons );
+		$limited_data->banners      = $this->convert_object_to_array( $version_info->banners );
+		$limited_data->new_version  = $version_info->new_version;
+		$limited_data->tested       = $version_info->tested;
+		$limited_data->requires     = $version_info->requires;
+		$limited_data->requires_php = $version_info->requires_php;
+
+		return $limited_data;
+	}
+
+	/**
+	 * Gets the plugin's tested version.
+	 *
+	 * @since 1.9.2
+	 * @param object $version_info
+	 * @return null|string
+	 */
+	private function get_tested_version( $version_info ) {
+
+		// There is no tested version.
+		if ( empty( $version_info->tested ) ) {
+			return null;
+		}
+
+		// Strip off extra version data so the result is x.y or x.y.z.
+		list( $current_wp_version ) = explode( '-', get_bloginfo( 'version' ) );
+
+		// The tested version is greater than or equal to the current WP version, no need to do anything.
+		if ( version_compare( $version_info->tested, $current_wp_version, '>=' ) ) {
+			return $version_info->tested;
+		}
+		$current_version_parts = explode( '.', $current_wp_version );
+		$tested_parts          = explode( '.', $version_info->tested );
+
+		// The current WordPress version is x.y.z, so update the tested version to match it.
+		if ( isset( $current_version_parts[2] ) && $current_version_parts[0] === $tested_parts[0] && $current_version_parts[1] === $tested_parts[1] ) {
+			$tested_parts[2] = $current_version_parts[2];
+		}
+
+		return implode( '.', $tested_parts );
+	}
+
+	/**
 	 * Show the update notification on multisite subsites.
 	 *
-	 * @param string  $file
-	 * @param array   $plugin
+	 * @param string $file
+	 * @param array  $plugin
 	 */
 	public function show_update_notification( $file, $plugin ) {
 
@@ -220,18 +284,19 @@ class WPSC_EDD_SL_Plugin_Updater {
 		);
 
 		printf(
-			esc_html( wpsc__( 'There is a new version of %1$s available.', 'easy-digital-downloads' ) ),
+			/* translators: the plugin name. */
+			esc_html__( 'There is a new version of %1$s available.', 'easy-digital-downloads' ),
 			esc_html( $plugin['Name'] )
 		);
 
 		if ( ! current_user_can( 'update_plugins' ) ) {
 			echo ' ';
-			echo esc_html( wpsc__( 'Contact your network administrator to install the update.', 'easy-digital-downloads' ) );
+			esc_html_e( 'Contact your network administrator to install the update.', 'easy-digital-downloads' );
 		} elseif ( empty( $update_cache->response[ $this->name ]->package ) && ! empty( $changelog_link ) ) {
 			echo ' ';
 			printf(
-			/* translators: 1. opening anchor tag, do not translate 2. the new plugin version 3. closing anchor tag, do not translate. */
-				wpsc__( '%1$sView version %2$s details%3$s.', 'easy-digital-downloads' ),
+				/* translators: 1: opening anchor tag, do not translate 2. the new plugin version 3. closing anchor tag, do not translate. */
+				__( '%1$sView version %2$s details%3$s.', 'easy-digital-downloads' ),
 				'<a target="_blank" class="thickbox open-plugin-details-modal" href="' . esc_url( $changelog_link ) . '">',
 				esc_html( $update_cache->response[ $this->name ]->new_version ),
 				'</a>'
@@ -239,7 +304,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 		} elseif ( ! empty( $changelog_link ) ) {
 			echo ' ';
 			printf(
-				wpsc__( '%1$sView version %2$s details%3$s or %4$supdate now%5$s.', 'easy-digital-downloads' ),
+				__( '%1$sView version %2$s details%3$s or %4$supdate now%5$s.', 'easy-digital-downloads' ),
 				'<a target="_blank" class="thickbox open-plugin-details-modal" href="' . esc_url( $changelog_link ) . '">',
 				esc_html( $update_cache->response[ $this->name ]->new_version ),
 				'</a>',
@@ -250,7 +315,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 			printf(
 				' %1$s%2$s%3$s',
 				'<a target="_blank" class="update-link" href="' . esc_url( wp_nonce_url( $update_link, 'upgrade-plugin_' . $file ) ) . '">',
-				esc_html( wpsc__( 'Update now.', 'easy-digital-downloads' ) ),
+				esc_html__( 'Update now.', 'easy-digital-downloads' ),
 				'</a>'
 			);
 		}
@@ -277,9 +342,9 @@ class WPSC_EDD_SL_Plugin_Updater {
 	 *
 	 * @uses api_request()
 	 *
-	 * @param mixed   $_data
-	 * @param string  $_action
-	 * @param object  $_args
+	 * @param mixed  $_data
+	 * @param string $_action
+	 * @param object $_args
 	 * @return object $_data
 	 */
 	public function plugins_api_filter( $_data, $_action = '', $_args = null ) {
@@ -306,15 +371,15 @@ class WPSC_EDD_SL_Plugin_Updater {
 			),
 		);
 
-		// Get the transient where we store the api request for this plugin for 24 hours
+		// Get the transient where we store the api request for this plugin for 24 hours.
 		$edd_api_request_transient = $this->get_cached_version_info();
 
-		//If we have no transient-saved value, run the API, set a fresh transient with the API value, and return that value too right now.
+		// If we have no transient-saved value, run the API, set a fresh transient with the API value, and return that value too right now.
 		if ( empty( $edd_api_request_transient ) ) {
 
 			$api_response = $this->api_request( 'plugin_information', $to_send );
 
-			// Expires in 3 hours
+			// Expires in 3 hours.
 			$this->set_version_info_cache( $api_response );
 
 			if ( false !== $api_response ) {
@@ -348,6 +413,10 @@ class WPSC_EDD_SL_Plugin_Updater {
 			$_data->plugin = $this->name;
 		}
 
+		if ( ! isset( $_data->version ) && ! empty( $_data->new_version ) ) {
+			$_data->version = $_data->new_version;
+		}
+
 		return $_data;
 	}
 
@@ -378,8 +447,8 @@ class WPSC_EDD_SL_Plugin_Updater {
 	/**
 	 * Disable SSL verification in order to prevent download update failures
 	 *
-	 * @param array   $args
-	 * @param string  $url
+	 * @param array  $args
+	 * @param string $url
 	 * @return object $array
 	 */
 	public function http_request_args( $args, $url ) {
@@ -388,7 +457,6 @@ class WPSC_EDD_SL_Plugin_Updater {
 			$args['sslverify'] = $this->verify_ssl();
 		}
 		return $args;
-
 	}
 
 	/**
@@ -398,8 +466,8 @@ class WPSC_EDD_SL_Plugin_Updater {
 	 * @uses wp_remote_post()
 	 * @uses is_wp_error()
 	 *
-	 * @param string  $_action The requested action.
-	 * @param array   $_data   Parameters for the API action.
+	 * @param string $_action The requested action.
+	 * @param array  $_data   Parameters for the API action.
 	 * @return false|object|void
 	 */
 	private function api_request( $_action, $_data ) {
@@ -409,7 +477,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 			return;
 		}
 
-		// Don't allow a plugin to ping itself
+		// Don't allow a plugin to ping itself.
 		if ( trailingslashit( home_url() ) === $this->api_url ) {
 			return false;
 		}
@@ -482,7 +550,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 		}
 
 		if ( ! current_user_can( 'update_plugins' ) ) {
-			wp_die( esc_html( wpsc__( 'You do not have permission to install plugin updates', 'easy-digital-downloads' ) ), esc_html( wpsc__( 'Error', 'easy-digital-downloads' ) ), array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to install plugin updates', 'easy-digital-downloads' ), esc_html__( 'Error', 'easy-digital-downloads' ), array( 'response' => 403 ) );
 		}
 
 		$version_info = $this->get_repo_api_data();
@@ -525,44 +593,45 @@ class WPSC_EDD_SL_Plugin_Updater {
 		 */
 		$api_params = apply_filters( 'edd_sl_plugin_updater_api_params', $api_params, $this->api_data, $this->plugin_file );
 
-		$request = wp_remote_post(
+		$request = new \EDD\Utils\RemoteRequest(
 			$this->api_url,
 			array(
 				'timeout'   => 15,
 				'sslverify' => $this->verify_ssl(),
 				'body'      => $api_params,
-			)
+				'method'    => 'POST',
+			),
 		);
 
-		if ( is_wp_error( $request ) || ( 200 !== wp_remote_retrieve_response_code( $request ) ) ) {
+		if ( is_wp_error( $request->response ) || ( 200 !== $request->code ) ) {
 			$this->log_failed_request();
 
 			return false;
 		}
 
-		$request = json_decode( wp_remote_retrieve_body( $request ) );
+		$body = json_decode( $request->body );
 
-		if ( $request && isset( $request->sections ) ) {
-			$request->sections = maybe_unserialize( $request->sections );
+		if ( $body && isset( $body->sections ) ) {
+			$body->sections = maybe_unserialize( $body->sections );
 		} else {
-			$request = false;
+			$body = false;
 		}
 
-		if ( $request && isset( $request->banners ) ) {
-			$request->banners = maybe_unserialize( $request->banners );
+		if ( $body && isset( $body->banners ) ) {
+			$body->banners = maybe_unserialize( $body->banners );
 		}
 
-		if ( $request && isset( $request->icons ) ) {
-			$request->icons = maybe_unserialize( $request->icons );
+		if ( $body && isset( $body->icons ) ) {
+			$body->icons = maybe_unserialize( $body->icons );
 		}
 
-		if ( ! empty( $request->sections ) ) {
-			foreach ( $request->sections as $key => $section ) {
-				$request->$key = (array) $section;
+		if ( ! empty( $body->sections ) ) {
+			foreach ( $body->sections as $key => $section ) {
+				$body->$key = (array) $section;
 			}
 		}
 
-		return $request;
+		return $body;
 	}
 
 	/**
@@ -579,7 +648,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 
 		$cache = get_option( $cache_key );
 
-		// Cache is expired
+		// Cache is expired.
 		if ( empty( $cache['timeout'] ) || time() > $cache['timeout'] ) {
 			return false;
 		}
@@ -591,7 +660,6 @@ class WPSC_EDD_SL_Plugin_Updater {
 		}
 
 		return $cache['value'];
-
 	}
 
 	/**
@@ -613,7 +681,7 @@ class WPSC_EDD_SL_Plugin_Updater {
 
 		update_option( $cache_key, $data, 'no' );
 
-		// Delete the duplicate option
+		// Delete the duplicate option.
 		delete_option( 'edd_api_request_' . md5( serialize( $this->slug . $this->api_data['license'] . $this->beta ) ) );
 	}
 
@@ -638,5 +706,4 @@ class WPSC_EDD_SL_Plugin_Updater {
 
 		return 'edd_sl_' . md5( serialize( $string ) );
 	}
-
 }

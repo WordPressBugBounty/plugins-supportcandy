@@ -380,32 +380,35 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
-					dom: 'Bfrtip',
-					buttons: [
-						{
-							text: '<?php echo esc_attr( wpsc__( 'Add new', 'supportcandy' ) ); ?>',
-							className: 'wpsc-button small primary',
-							action: function ( e, dt, node, config ) {
-								if (source === 'agent-profile') {
-									jQuery('.wpsc-section-container').html(supportcandy.loader_html);
-								} else {
-									jQuery('.wpsc-setting-section-body').html(supportcandy.loader_html);
-								}
-								var data = { 
-									action: 'wpsc_get_add_agent_wh_exception', 
-									agent_id: supportcandy.temp.agent_id,
-									_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_agent_wh_exception' ) ); ?>'
-								};
-								jQuery.post(supportcandy.ajax_url, data, function (response) {
-									if (source === 'agent-profile') {
-										jQuery('.wpsc-section-container').html(response);
-									} else {
-										jQuery('.wpsc-setting-section-body').html(response);
+					layout: {
+						topStart: {
+							buttons: [
+								{
+									text: '<?php echo esc_attr( wpsc__( 'Add new', 'supportcandy' ) ); ?>',
+									className: 'wpsc-button small primary',
+									action: function ( e, dt, node, config ) {
+										if (source === 'agent-profile') {
+											jQuery('.wpsc-section-container').html(supportcandy.loader_html);
+										} else {
+											jQuery('.wpsc-setting-section-body').html(supportcandy.loader_html);
+										}
+										var data = { 
+											action: 'wpsc_get_add_agent_wh_exception', 
+											agent_id: supportcandy.temp.agent_id,
+											_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_agent_wh_exception' ) ); ?>'
+										};
+										jQuery.post(supportcandy.ajax_url, data, function (response) {
+											if (source === 'agent-profile') {
+												jQuery('.wpsc-section-container').html(response);
+											} else {
+												jQuery('.wpsc-setting-section-body').html(response);
+											}
+										});
 									}
-								});
-							}
-						}
-					],
+								}
+							],
+						},
+					},
 					language: supportcandy.translations.datatables
 				});
 				// Edit.

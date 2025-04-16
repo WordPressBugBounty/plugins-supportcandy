@@ -3,9 +3,9 @@ Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
 Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.3.1
+Stable tag: 3.3.2
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -221,6 +221,11 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.3.2 (April 16, 2025) =
+Fix: Date Created and Date Updated filters for Today and Yesterday not functioning correctly
+Fix: Issue creating custom fields on certain server configurations
+Fix: DataTables library updated to the latest version
 
 = 3.3.1 (February 05, 2025) =
 Fix: Resolved a vulnerability in attachment uploads

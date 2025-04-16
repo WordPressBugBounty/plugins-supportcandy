@@ -426,10 +426,14 @@ if ( ! class_exists( 'WPSC_Custom_Field' ) ) :
 				$cf->data['slug'] = $slug;
 			}
 
-			// Disable InnoDB strict mode if enabled to avoid limit of number of columns in tables.
-			$strict_mode = $wpdb->get_var( "SHOW VARIABLES LIKE 'innodb_strict_mode'", 1 );
-			if ( $strict_mode == 'ON' ) {
-				$wpdb->query( "SET innodb_strict_mode = 'OFF'" );
+			// Check if user has privileges to change innodb_strict_mode.
+			$has_privileges = $wpdb->get_var( 'SELECT @@innodb_strict_mode' ) !== null;
+			if ( $has_privileges ) {
+				// Disable InnoDB strict mode if enabled to avoid limit of number of columns in tables.
+				$strict_mode = $wpdb->get_var( "SHOW VARIABLES LIKE 'innodb_strict_mode'", 1 );
+				if ( $strict_mode == 'ON' ) {
+					$wpdb->query( "SET innodb_strict_mode = 'OFF'" );
+				}
 			}
 
 			// Add column to tickets table if field is either ticket or agentonly.

@@ -360,6 +360,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 							currentEl.remove();
 							nextEl.before(field.html);
 						});
+						wpsc_check_tff_visibility();
 					});
 				}
 				<?php

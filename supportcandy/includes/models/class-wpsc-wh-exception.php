@@ -474,27 +474,30 @@ if ( ! class_exists( 'WPSC_Wh_Exception' ) ) :
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
-					dom: 'Bfrtip',
-					buttons: [
-						{
-							text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
-							className: 'wpsc-button small primary',
-							action: function ( e, dt, node, config ) {
+					layout: {
+						topStart: {
+							buttons: [
+								{
+									text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
+									className: 'wpsc-button small primary',
+									action: function ( e, dt, node, config ) {
 
-								wpsc_show_modal();
-								var data = { action: 'wpsc_get_add_wh_exception' };
-								jQuery.post(supportcandy.ajax_url, data, function (response) {
+										wpsc_show_modal();
+										var data = { action: 'wpsc_get_add_wh_exception' };
+										jQuery.post(supportcandy.ajax_url, data, function (response) {
 
-									// Set to modal
-									jQuery('.wpsc-modal-header').text(response.title);
-									jQuery('.wpsc-modal-body').html(response.body);
-									jQuery('.wpsc-modal-footer').html(response.footer);
-									// Display modal
-									wpsc_show_modal_inner_container();
-								});
-							}
-						}
-					],
+											// Set to modal
+											jQuery('.wpsc-modal-header').text(response.title);
+											jQuery('.wpsc-modal-body').html(response.body);
+											jQuery('.wpsc-modal-footer').html(response.footer);
+											// Display modal
+											wpsc_show_modal_inner_container();
+										});
+									}
+								}
+							],
+						},
+					},
 					language: supportcandy.translations.datatables
 				});
 			</script>

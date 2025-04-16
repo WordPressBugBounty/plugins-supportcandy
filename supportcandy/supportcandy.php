@@ -3,12 +3,12 @@
  * Plugin Name: SupportCandy
  * Plugin URI: https://supportcandy.net/
  * Description: Easy & Powerful support ticket system for WordPress
- * Version: 3.3.1
+ * Version: 3.3.2
  * Author: SupportCandy
  * Author URI: https://wordpress.org/plugins/supportcandy/
  * Requires at least: 5.6
  * Requires PHP: 7.4
- * Tested up to: 6.7
+ * Tested up to: 6.8
  * Text Domain: supportcandy
  * Domain Path: /i18n
  * License: GPLv3 or later
@@ -32,7 +32,7 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 		 *
 		 * @var string
 		 */
-		public static $version = '3.3.1';
+		public static $version = '3.3.2';
 
 		/**
 		 * Database version

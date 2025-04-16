@@ -101,24 +101,27 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 									{ targets: -1, searchable: false },
 									{ targets: '_all', className: 'dt-left' }
 								],
-								dom: 'Bfrtip',
-								buttons: [
-									{
-										text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
-										className: 'wpsc-button small primary',
-										action: function ( e, dt, node, config ) {
-											jQuery( '.wpsc-setting-section-body' ).html( supportcandy.loader_html );
-											var data = { action: 'wpsc_get_add_agent_role' , _ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_agent_role' ) ); ?>' };
-											jQuery.post(
-												supportcandy.ajax_url,
-												data,
-												function (response) {
-													jQuery( '.wpsc-setting-section-body' ).html( response );
+								layout: {
+									topStart: {
+										buttons: [
+											{
+												text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
+												className: 'wpsc-button small primary',
+												action: function ( e, dt, node, config ) {
+													jQuery( '.wpsc-setting-section-body' ).html( supportcandy.loader_html );
+													var data = { action: 'wpsc_get_add_agent_role' , _ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_agent_role' ) ); ?>' };
+													jQuery.post(
+														supportcandy.ajax_url,
+														data,
+														function (response) {
+															jQuery( '.wpsc-setting-section-body' ).html( response );
+														}
+													);
 												}
-											);
-										}
+											}
+										],
 									}
-								],
+								},
 								language: supportcandy.translations.datatables
 							});
 						</script>
@@ -374,7 +377,6 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
-					dom: 'Bfrtip',
 					language: supportcandy.translations.datatables,
 					bPaginate: false,
 					bInfo: false,
@@ -764,13 +766,11 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
-					dom: 'Bfrtip',
 					language: supportcandy.translations.datatables,
 					bPaginate: false,
 					bInfo: false,
 				});
 			</script>
-
 			<?php
 			wp_die();
 		}

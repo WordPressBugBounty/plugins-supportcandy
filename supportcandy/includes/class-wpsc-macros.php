@@ -231,7 +231,7 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 				});
 
 				jQuery(document).ready(function() {
-					jQuery('div.dataTables_filter input', macroTable.table().container()).focus();
+					jQuery('div.dt-search input', macroTable.table().container()).focus();
 				})
 
 				// Insert tag directly into editor

@@ -66,7 +66,6 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 			$agents    = WPSC_Agent::find( $args )['results'];
 			$roles     = get_option( 'wpsc-agent-roles', array() );
 			$unique_id = uniqid( 'wpsc_' );?>
-
 			<div class="wpsc-setting-header">
 				<h2><?php esc_attr_e( 'Agents', 'supportcandy' ); ?></h2>
 			</div>
@@ -121,28 +120,31 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 									{ targets: -1, searchable: false },
 									{ targets: '_all', className: 'dt-left' }
 								],
-								dom: 'Bfrtip',
-								buttons: [
-									{
-										text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
-										className: 'wpsc-button small primary',
-										action: function ( e, dt, node, config ) {
-											wpsc_show_modal();
-											var data = { action: 'wpsc_get_add_agent' };
-											jQuery.post(
-												supportcandy.ajax_url,
-												data,
-												function (response) {
+								layout: {
+									topStart: {
+										buttons: [
+											{
+												text: '<?php esc_attr_e( 'Add new', 'supportcandy' ); ?>',
+												className: 'wpsc-button small primary',
+												action: function ( e, dt, node, config ) {
+													wpsc_show_modal();
+													var data = { action: 'wpsc_get_add_agent' };
+													jQuery.post(
+														supportcandy.ajax_url,
+														data,
+														function (response) {
 
-													jQuery( '.wpsc-modal-header' ).text( response.title );
-													jQuery( '.wpsc-modal-body' ).html( response.body );
-													jQuery( '.wpsc-modal-footer' ).html( response.footer );
-													wpsc_show_modal_inner_container();
+															jQuery( '.wpsc-modal-header' ).text( response.title );
+															jQuery( '.wpsc-modal-body' ).html( response.body );
+															jQuery( '.wpsc-modal-footer' ).html( response.footer );
+															wpsc_show_modal_inner_container();
+														}
+													);
 												}
-											);
-										}
+											}
+										]
 									}
-								],
+								},
 								language: supportcandy.translations.datatables
 							});
 						</script>

@@ -510,24 +510,27 @@ if ( ! class_exists( 'WPSC_Current_Agent_Profile' ) ) :
 							{ targets: -1, searchable: false },
 							{ targets: '_all', className: 'dt-left' }
 						],
-						dom: 'Bfrtip',
-						buttons: [
-							{
-								text: '<?php echo esc_attr( wpsc__( 'Add new', 'supportcandy' ) ); ?>',
-								className: 'wpsc-button small primary',
-								action: function ( e, dt, node, config ) {
-									jQuery('.wpsc-exceptions-container').html(supportcandy.loader_html);
-									var data = { 
-										action: 'wpsc_get_add_agent_wh_exception', 
-										agent_id: <?php echo esc_attr( $current_user->agent->id ); ?>,
-										_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_agent_wh_exception' ) ); ?>'
-									};
-									jQuery.post(supportcandy.ajax_url, data, function (response) {
-										jQuery('.wpsc-exceptions-container').html(response);
-									});
-								}
-							}
-						],
+						layout: {
+							topStart: {
+								buttons: [
+									{
+										text: '<?php echo esc_attr( wpsc__( 'Add new', 'supportcandy' ) ); ?>',
+										className: 'wpsc-button small primary',
+										action: function ( e, dt, node, config ) {
+											jQuery('.wpsc-exceptions-container').html(supportcandy.loader_html);
+											var data = { 
+												action: 'wpsc_get_add_agent_wh_exception', 
+												agent_id: <?php echo esc_attr( $current_user->agent->id ); ?>,
+												_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_add_agent_wh_exception' ) ); ?>'
+											};
+											jQuery.post(supportcandy.ajax_url, data, function (response) {
+												jQuery('.wpsc-exceptions-container').html(response);
+											});
+										}
+									}
+								],
+							},
+						},
 						language: supportcandy.translations.datatables
 					});
 					// Edit.
