@@ -456,7 +456,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 			);
 
 			// set signature if agent.
-			$signature = $current_user->is_agent && $current_user->customer->email == $ticket->customer->email ? $current_user->agent->get_signature() : '';
+			$signature = $current_user->is_agent && ( $current_user->customer->email == $ticket->customer->email || $advanced['raised-by-user'] == 'agent' ) ? $current_user->agent->get_signature() : '';
 			if ( $signature ) {
 				$description .= '<br>' . $signature;
 			}

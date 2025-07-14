@@ -1911,6 +1911,7 @@ table.wpsc-working-hrs {
 
 .wpsc-dash-widget-mid .wpsc-dash-widget-content {
   max-height: 400px;
+  height: 400px;
 }
 
 .wpsc-dbw-info {

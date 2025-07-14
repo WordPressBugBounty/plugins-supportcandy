@@ -32,7 +32,19 @@ if ( ! class_exists( 'WPSC_License' ) ) :
 						<button class="sync page-title-action"><?php esc_attr_e( 'Sync', 'supportcandy' ); ?></button>
 					</h1>
 				</div>
-				<p><?php esc_attr_e( 'Activate license keys for add-ons in order to get support and updates.', 'supportcandy' ); ?></p>
+				<p>
+					<?php
+					printf(
+						/* translators: %s: Documentation link */
+						esc_html__( 'Activate license keys for add-ons in order to get support and updates. For detailed instructions, please visit our %s.', 'supportcandy' ),
+						sprintf(
+							'<a href="%s" target="_blank" rel="noopener">%s</a>',
+							esc_url( 'https://supportcandy.net/docs/license-activation/' ),
+							esc_html__( 'documentation page', 'supportcandy' )
+						)
+					);
+					?>
+				</p></p>
 				<div class="wpsc-licenses-container">
 					<?php do_action( 'wpsc_licenses' ); ?>
 				</div>

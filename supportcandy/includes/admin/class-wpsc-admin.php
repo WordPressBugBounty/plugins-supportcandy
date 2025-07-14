@@ -97,8 +97,8 @@ if ( ! class_exists( 'WPSC_Admin' ) ) :
 			wp_enqueue_style( 'fullcalendar', WPSC_PLUGIN_URL . 'asset/libs/fullcalendar/lib/main.min.css', array(), WPSC_VERSION );
 
 			// DataTables.
-			wp_enqueue_script( 'datatables', WPSC_PLUGIN_URL . 'asset/libs/DataTables/datatables.min.js', array( 'jquery' ), WPSC_VERSION, true );
-			wp_enqueue_style( 'datatables', WPSC_PLUGIN_URL . 'asset/libs/DataTables/datatables.min.css', array(), WPSC_VERSION );
+			wp_enqueue_script( 'wpsc-datatables', WPSC_PLUGIN_URL . 'asset/libs/DataTables/datatables.min.js', array( 'jquery' ), WPSC_VERSION, true );
+			wp_enqueue_style( 'wpsc-datatables', WPSC_PLUGIN_URL . 'asset/libs/DataTables/datatables.min.css', array(), WPSC_VERSION );
 
 			// ChartJs.
 			wp_enqueue_script( 'chartjs', WPSC_PLUGIN_URL . 'asset/libs/chartjs/dist/chart.min.js', array( 'jquery' ), WPSC_VERSION, true );

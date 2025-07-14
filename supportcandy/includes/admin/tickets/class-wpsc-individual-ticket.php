@@ -1188,7 +1188,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 							<span class="thread-time" title="<?php echo esc_attr( $time_title ); ?>"><?php echo esc_attr( $time_str ); ?></span>
 						</div>
 						<?php
-
+						do_action( 'wpsc_it_thread_header', $thread );
 						if ( $thread->is_active ) {
 							?>
 							<div class="actions">

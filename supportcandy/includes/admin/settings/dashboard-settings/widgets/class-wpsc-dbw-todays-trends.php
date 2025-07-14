@@ -23,8 +23,8 @@ if ( ! class_exists( 'WPSC_DBW_Todays_Trends' ) ) :
 		/**
 		 * Todays trends
 		 *
-		 * @param $slug   $slug - slug name.
-		 * @param $widget $widget - widget array.
+		 * @param string $slug - slug name.
+		 * @param array  $widget - widget array.
 		 * @return void
 		 */
 		public static function print_dashboard_widget( $slug, $widget ) {
@@ -151,6 +151,8 @@ if ( ! class_exists( 'WPSC_DBW_Todays_Trends' ) ) :
 						type: 'line',
 						data,
 						options: {
+							responsive: true,
+							maintainAspectRatio: false,
 							scales: {
 								y: {
 									beginAtZero: true

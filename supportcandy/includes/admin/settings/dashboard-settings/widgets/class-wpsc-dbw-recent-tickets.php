@@ -27,8 +27,8 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Tickets' ) ) :
 		/**
 		 * Recent tickets
 		 *
-		 * @param $slug   $slug - slug name.
-		 * @param $widget $widget - widget array.
+		 * @param string $slug - slug name.
+		 * @param array  $widget - widget array.
 		 * @return void
 		 */
 		public static function print_dashboard_widget( $slug, $widget ) {

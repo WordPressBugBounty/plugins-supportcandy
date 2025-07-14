@@ -1814,9 +1814,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				'agent-list'            => esc_attr__( 'Agent Workload', 'supportcandy' ),
 				'recent-activities'     => esc_attr__( 'Recent Activities', 'supportcandy' ),
 				'recent-tickets'        => esc_attr__( 'Recent Tickets', 'supportcandy' ),
-				'category-report'       => esc_attr__( 'Unresolved tickets by Category', 'supportcandy' ),
-				'unresolved-priorities' => esc_attr__( 'Unresolved tickets by Priority', 'supportcandy' ),
-				'unresolved-statuses'   => esc_attr__( 'Unresolved tickets by Status', 'supportcandy' ),
+				'category-report'       => esc_attr__( 'Tickets by Category', 'supportcandy' ),
+				'unresolved-priorities' => esc_attr__( 'Tickets by Priority', 'supportcandy' ),
+				'unresolved-statuses'   => esc_attr__( 'Tickets by Status', 'supportcandy' ),
 				'week-trends'           => esc_attr__( 'Ticket statistics by day of week', 'supportcandy' ),
 			);
 			foreach ( $labels as $key => $string ) {

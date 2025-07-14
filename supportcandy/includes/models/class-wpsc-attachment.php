@@ -1170,8 +1170,8 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		 */
 		public static function file_download( $attachment ) {
 
-			// Turn off output buffering.
-			if ( ob_get_level() ) {
+			// Turn off all output buffering.
+			while ( ob_get_level() ) {
 				ob_end_clean();
 			}
 
@@ -1180,10 +1180,6 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 			if ( ! file_exists( $file_path ) ) {
 				echo 'File does not exists!';
 				exit;
-			}
-
-			if ( ob_get_length() > 0 ) {
-				ob_clean();
 			}
 
 			// Check whether attachment is of image type.

@@ -25,8 +25,8 @@ if ( ! class_exists( 'WPSC_DBW_Ticket_Statistics' ) ) :
 		/**
 		 * Ticket statistics
 		 *
-		 * @param $slug   $slug - slug name.
-		 * @param $widget $widget - widget array.
+		 * @param string $slug   Slug name.
+		 * @param array  $widget Widget array.
 		 * @return void
 		 */
 		public static function print_dashboard_widget( $slug, $widget ) {
@@ -173,6 +173,8 @@ if ( ! class_exists( 'WPSC_DBW_Ticket_Statistics' ) ) :
 						type: 'line',
 						data,
 						options: {
+							responsive: true,
+							maintainAspectRatio: false,
 							scales: {
 								y: {
 									beginAtZero: true
@@ -294,13 +296,13 @@ if ( ! class_exists( 'WPSC_DBW_Ticket_Statistics' ) ) :
 				case 'weeks':
 					$response['label'] = sprintf(
 						'%1$s - %2$s',
-						( new DateTime( $from_date ) )->format( 'M d' ),
-						( new DateTime( $to_date ) )->format( 'M d' )
+						date_i18n( 'M d', strtotime( $from_date ) ),
+						date_i18n( 'M d', strtotime( $to_date ) )
 					);
 					break;
 
 				case 'months':
-					$response['label'] = ( new DateTime( $from_date ) )->format( 'F Y' );
+					$response['label'] = date_i18n( 'F Y', strtotime( $from_date ) );
 					break;
 
 				case 'years':
