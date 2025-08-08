@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.3.4
+Stable tag: 3.3.5
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -129,6 +129,9 @@ Available in 20+ languages. Also compatible with popular translation plugins lik
 
 If you are a translator, you can get free access to all premium add-ons for a year in exchange for translating them into your language if it is not available already. We will renew the Premium subscription next year if you continue contributing to the translation. If interested, don't hesitate to contact us via our [support page](https://supportcandy.net/support-ticket/).
 
+= Our Other Plugins =
+* [PSM Multi Currency Switcher & Currency Converter for WooCommerce](https://psmplugins.com/multi-currency-for-woocommerce/) - Offer your customers a seamless multi-currency shopping experience. This plugin automatically updates exchange rates, detects your customer's currency by their location, and provides robust switching options so you can sell around the world with ease.
+
 == Installation ==
 
 = Using The WordPress Dashboard =
@@ -221,6 +224,12 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.3.5 (August 08, 2025) =
+New: Raised By widget now includes a direct link to the user's WordPress profile.
+Fix: File uploads now work correctly for files with non-standard MIME type extensions
+Fix: Corrected a bug where agents were incorrectly displayed as active on a ticket even after they had left the conversation
+Fix: Resolved a conflict with TranslatePress that was blocking ticket creation
 
 = 3.3.4 (July 14, 2025) =
 Fix: Resolved conflict with DataTables script used by other plugins

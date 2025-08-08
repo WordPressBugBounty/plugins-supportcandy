@@ -140,6 +140,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		 */
 		public static function layout() {
 
+			$current_user = WPSC_Current_User::$current_user;
+
 			$gs = get_option( 'wpsc-gs-general' );
 			self::load_current_ticket();
 			self::load_actions();
@@ -166,6 +168,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			</div>
 			<div style="display:none" id="wpsc-ticket-url"><?php echo esc_url( self::$ticket->get_url() ); ?></div>
 			<input type="hidden" id="wpsc-current-ticket" value="<?php echo intval( self::$ticket->id ); ?>">
+			<input type="hidden" id="wpsc-current-agent" value="<?php echo intval( $current_user->agent->id ); ?>">
 			<script>
 				
 				var arrow_up = '<?php WPSC_Icons::get( 'chevron-up' ); ?>';
@@ -3383,6 +3386,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			</div>
 
 			<script>
+				supportcandy.agent_collision = true;
 				wpsc_get_live_agents(<?php echo intval( $current_user->agent->id ); ?>, <?php echo intval( self::$ticket->id ); ?>);
 				function wpsc_get_live_agents( agent_id, ticket_id ){
 					
@@ -3428,7 +3432,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					window.addEventListener('beforeunload', function (event) {
 						// Check if the event is due to a refresh
 						if (event.currentTarget.performance.navigation.type !== 1) {
-
 							const urlParams = new URLSearchParams( window.location.search );
 							if( supportcandy.is_frontend === '0' ) {
 								section = urlParams.get('section');

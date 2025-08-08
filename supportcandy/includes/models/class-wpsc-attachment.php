@@ -104,14 +104,22 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		public static function wpsc_custom_upload_mimes( $existing_mimes ) {
 
 			$settings = get_option( 'wpsc-gs-file-attachments', array() );
-			foreach ( $settings['mime-exceptions'] as $type ) {
 
-				$type_array = explode( ':', $type );
-				$existing_mimes[ $type_array[0] ] = $type_array[1];
-			}
+			// Merge allowed-file-ext-mimes first.
 			if ( isset( $settings['allowed-file-ext-mimes'] ) ) {
 				$existing_mimes = array_merge( $existing_mimes, $settings['allowed-file-ext-mimes'] );
 			}
+
+			// Then apply mime-exceptions to give them priority.
+			if ( isset( $settings['mime-exceptions'] ) && is_array( $settings['mime-exceptions'] ) ) {
+				foreach ( $settings['mime-exceptions'] as $type ) {
+					$type_array = explode( ':', $type );
+					if ( count( $type_array ) === 2 ) {
+						$existing_mimes[ $type_array[0] ] = $type_array[1];
+					}
+				}
+			}
+
 			return $existing_mimes;
 		}
 

@@ -333,43 +333,43 @@ if ( ! class_exists( 'WPSC_DF_Browser' ) ) :
 			$browsers = array(
 				array(
 					'regex' => '/Navigator(.*)/i',
-					'name'  => esc_attr__( 'Navigator', 'supportcandy' ),
+					'name'  => 'Navigator',
 				),
 				array(
 					'regex' => '/Firefox(.*)/i',
-					'name'  => esc_attr__( 'Firefox', 'supportcandy' ),
+					'name'  => 'Firefox',
 				),
 				array(
 					'regex' => '/MSIE(.*)/i',
-					'name'  => esc_attr__( 'Internet Explorer', 'supportcandy' ),
+					'name'  => 'Internet Explorer',
 				),
 				array(
 					'regex' => '/chrome(.*)/i',
-					'name'  => esc_attr__( 'Google Chrome', 'supportcandy' ),
+					'name'  => 'Google Chrome',
 				),
 				array(
 					'regex' => '/MAXTHON(.*)/i',
-					'name'  => esc_attr__( 'MAXTHON', 'supportcandy' ),
+					'name'  => 'MAXTHON',
 				),
 				array(
 					'regex' => '/Opera(.*)/i',
-					'name'  => esc_attr__( 'Opera', 'supportcandy' ),
+					'name'  => 'Opera',
 				),
 				array(
 					'regex' => '/Edg(.*)/i',
-					'name'  => esc_attr__( 'Edge', 'supportcandy' ),
+					'name'  => 'Edge',
 				),
 				array(
 					'regex' => '/Konqueror(.*)/i',
-					'name'  => esc_attr__( 'Konqueror', 'supportcandy' ),
+					'name'  => 'Konqueror',
 				),
 				array(
 					'regex' => '/SamsungBrowser(.*)/i',
-					'name'  => esc_attr__( 'SamsungBrowser', 'supportcandy' ),
+					'name'  => 'SamsungBrowser',
 				),
 				array(
 					'regex' => '/Safari(.*)/i',
-					'name'  => esc_attr__( 'Safari', 'supportcandy' ),
+					'name'  => 'Safari',
 				),
 			);
 

@@ -38,6 +38,9 @@ if ( ! class_exists( 'WPSC_ITW_Raisedby' ) ) :
 			add_action( 'wp_ajax_wpsc_get_rb_info', array( __CLASS__, 'get_rb_info' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_get_rb_info', array( __CLASS__, 'get_rb_info' ) );
 
+			// View WordPress user profile.
+			add_action( 'wp_ajax_wpsc_wp_user_profile', array( __CLASS__, 'wp_customers_info' ) );
+
 			// Edit raised by info.
 			add_action( 'wp_ajax_wpsc_get_edit_rb_info', array( __CLASS__, 'get_edit_rb_info' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_get_edit_rb_info', array( __CLASS__, 'get_edit_rb_info' ) );
@@ -137,6 +140,16 @@ if ( ! class_exists( 'WPSC_ITW_Raisedby' ) ) :
 					'callback' => 'wpsc_get_rb_other_tickets',
 				),
 			);
+
+			WPSC_Individual_Ticket::load_current_ticket();
+			$ticket = WPSC_Individual_Ticket::$ticket;
+			if ( WPSC_Functions::is_site_admin() && $ticket->customer->user ) {
+				$actions['wp-user-profile'] = array(
+					'label'    => esc_attr__( 'WordPress Profile', 'supportcandy' ),
+					'icon'     => 'wp-logo',
+					'callback' => 'wpsc_wp_user_profile',
+				);
+			}
 			return apply_filters( 'wpsc_itw_raisedby_actions', $actions );
 		}
 
@@ -824,6 +837,23 @@ if ( ! class_exists( 'WPSC_ITW_Raisedby' ) ) :
 				'footer' => $footer,
 			);
 			wp_send_json( $response );
+		}
+
+		/**
+		 * URL to WordPress edit customer.
+		 *
+		 * @return void
+		 */
+		public static function wp_customers_info() {
+
+			if ( check_ajax_referer( 'wpsc_wp_user_profile', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			WPSC_Individual_Ticket::load_current_ticket();
+			$ticket = WPSC_Individual_Ticket::$ticket;
+			$customer_id = $ticket->customer->user->ID;
+			wp_send_json( array( 'url' => admin_url( 'user-edit.php?user_id=' . $customer_id ) ) );
 		}
 
 		/**

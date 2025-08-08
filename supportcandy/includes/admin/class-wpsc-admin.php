@@ -210,6 +210,15 @@ if ( ! class_exists( 'WPSC_Admin' ) ) :
 				array( 'WPSC_Addons', 'layout' )
 			);
 
+			add_submenu_page(
+				'wpsc-tickets',
+				esc_attr__( 'Other Plugins', 'supportcandy' ),
+				'<strong style="color: #F1C40F;">' . esc_attr__( 'Other Plugins', 'supportcandy' ) . '</strong>',
+				'manage_options',
+				'wpsc-other-plugins',
+				array( 'WPSC_Other_Plugins', 'layout' )
+			);
+
 			// hidden submenu page for manual scheduled tasks.
 			add_submenu_page(
 				' ',

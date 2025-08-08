@@ -3066,3 +3066,23 @@ function wpsc_it_refresh_tags(ticket_id) {
 		}
 	);
 }
+
+/**
+ * View user wordpress profile
+ */
+function wpsc_wp_user_profile(el, ticket_id, nonce) {
+  var data = {
+    action: "wpsc_wp_user_profile",
+    ticket_id,
+    _ajax_nonce: nonce
+  };
+  jQuery.post(
+    supportcandy.ajax_url,
+    data,
+    function (response) {
+      if (response.url) {
+        window.open(response.url, "_blank");
+      }
+    }
+  );
+}

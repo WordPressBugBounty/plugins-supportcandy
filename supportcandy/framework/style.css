@@ -2146,3 +2146,7 @@ table.wpsc-working-hrs {
 .wpsc-reg-user > .wpsc-tff {
   padding-left: 0px !important;
 }
+
+.wpsc-icon-wp-logo {
+  height: 15px !important;
+}

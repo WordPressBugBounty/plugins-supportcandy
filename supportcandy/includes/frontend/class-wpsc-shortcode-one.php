@@ -366,6 +366,8 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 						return;
 					}
 
+					wpsc_update_live_agents();
+
 					// set flag to differenciate between ticket list and individual ticket
 					supportcandy.ticketListIsIndividual = false;
 
@@ -468,6 +470,8 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 					jQuery('.wpsc-tickets-nav.new-ticket, .wpsc-humbargar-menu-item.new-ticket').addClass('active');
 					jQuery('.wpsc-humbargar-title').html(supportcandy.humbargar_titles.new_ticket);
 
+					wpsc_update_live_agents();
+
 					// set url
 					var url = new URL(window.location.href);
 					var search_params = url.searchParams;
@@ -504,6 +508,8 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 					jQuery('.wpsc-tickets-nav.my-profile, .wpsc-humbargar-menu-item.my-profile').addClass('active');
 					jQuery('.wpsc-humbargar-title').html(supportcandy.humbargar_titles.my_profile);
 
+					wpsc_update_live_agents();
+
 					// set url
 					var url = new URL(window.location.href);
 					var search_params = url.searchParams;
@@ -536,6 +542,8 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 					jQuery('.wpsc-tickets-nav, .wpsc-humbargar-menu-item').removeClass('active');
 					jQuery('.wpsc-tickets-nav.agent-profile, .wpsc-humbargar-menu-item.agent-profile').addClass('active');
 					jQuery('.wpsc-humbargar-title').html(supportcandy.humbargar_titles.agent_profile);
+
+					wpsc_update_live_agents();
 
 					// set url
 					var url = new URL(window.location.href);
@@ -573,6 +581,8 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 					jQuery( '.wpsc-tickets-nav.dashboard, .wpsc-humbargar-menu-item.dashboard' ).addClass( 'active' );
 					jQuery( '.wpsc-humbargar-title' ).html( supportcandy.humbargar_titles.dashboard );
 
+					wpsc_update_live_agents();
+
 					// set url
 					var url = new URL(window.location.href);
 					var search_params = url.searchParams;
@@ -605,6 +615,32 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 
 					jQuery('.wpsc-shortcode-container').html('<div class="wpsc-body"></div>');
 					wpsc_get_ticket_form();
+				}
+
+				/**
+				 * Update live agents
+				 */
+				function wpsc_update_live_agents() {
+
+					if (!supportcandy.ticketListIsIndividual) {
+						return;
+					}
+					agent_id = jQuery("#wpsc-current-agent").val();
+					if (!agent_id) {
+						return;
+					}
+					if (typeof supportcandy.agent_collision === "undefined" || !supportcandy.agent_collision) {
+						return;
+					}
+
+					ticket_id = jQuery("#wpsc-current-ticket").val();
+					var data = { action: 'wpsc_check_live_agents', agent_id, ticket_id, operation: 'leave', _ajax_nonce: supportcandy.nonce };
+					jQuery.post(
+						supportcandy.ajax_url,
+						data,
+						function (response) {
+						}
+					);
 				}
 			</script>
 			<?php

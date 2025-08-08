@@ -200,7 +200,7 @@ if ( ! class_exists( 'WPSC_Addons' ) ) :
 						<div class="inner-header">
 							<div class="flex">
 								<h1 class="header-title-main">Simple, straight forward pricing.</h1>
-								<p class="header-subtitle-main">We believe in providing honest and fair pricing. Purchase in confidence with our 30-day money-back guarantee.</p>
+								<p class="header-subtitle-main">We believe in providing honest and fair pricing. Purchase in confidence with our 14-day money-back guarantee.</p>
 							</div>
 						</div>
 					</div>
