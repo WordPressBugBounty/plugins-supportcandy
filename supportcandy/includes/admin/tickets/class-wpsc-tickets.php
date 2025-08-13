@@ -49,6 +49,10 @@ if ( ! class_exists( 'WPSC_Tickets' ) ) :
 
 			// agent dashboard.
 			add_action( 'wp_ajax_wpsc_get_agent_dashboard', array( __CLASS__, 'get_agent_dashboard' ) );
+
+			// show sales banner.
+			add_action( 'wpsc_before_tickets_page', array( __CLASS__, 'show_sales_banner' ) );
+			add_action( 'wp_ajax_wpsc_dismiss_sale_banner', array( __CLASS__, 'dismiss_sale_banner' ) );
 		}
 
 		/**
@@ -164,18 +168,7 @@ if ( ! class_exists( 'WPSC_Tickets' ) ) :
 			<div class="wrap">
 				<hr class="wp-header-end">
 				<div id="wpsc-container" style="display:none;">
-					<?php
-					if ( current_user_can( 'manage_options' ) && ! class_exists( 'WPSC_EP' ) && current_time( 'Y-m-d' ) < '2025-08-31' ) {
-						?>
-						<div style="display: flex; justify-content: space-between; flex-wrap: wrap;background-color: #000;color: #fff;padding: 10px 15px; margin-bottom: 10px; border-radius: 5px;">
-							<p style="margin:0; font-size: 12px; font-weight: 500;">
-								Our Biggest Sale of the Year is Live! Get 50% off on all plans, starting from $39.50 (USD). Offer valid until August 31, 2025.
-							</p>
-							<a href="https://supportcandy.net/pricing?utm_source=plugin&utm_medium=banner&utm_campaign=plugin_flash_sale" target="_blank" style="color: #fff; text-decoration: underline;">View Plans</a>
-						</div>
-						<?php
-					}
-					?>
+					<?php do_action( 'wpsc_before_tickets_page' ); ?>
 					<div class="wpsc-shortcode-container">
 						<div class="wpsc-header wpsc-hidden-xs">
 							<?php
@@ -429,6 +422,52 @@ if ( ! class_exists( 'WPSC_Tickets' ) ) :
 				}
 			</style>
 			<?php
+			wp_die();
+		}
+
+		/**
+		 * Show sales banner
+		 *
+		 * @return void
+		 */
+		public static function show_sales_banner() {
+			if ( current_user_can( 'manage_options' ) &&
+					! ( class_exists( 'WPSC_EP' ) || class_exists( 'WPSC_Workflows' ) || class_exists( 'WPSC_SLA' ) || class_exists( 'WPSC_SF' ) || class_exists( 'WPSC_WOO' ) ) &&
+						current_time( 'Y-m-d' ) < '2025-08-31' &&
+						! get_transient( 'wpsc_sale_banner_dismissed' ) ) {
+				?>
+				<div style="display: flex; justify-content: space-between; flex-wrap: wrap;background-color: #000;color: #fff;padding: 10px 15px; margin-bottom: 10px; border-radius: 5px;">
+					<p style="margin:0; font-size: 12px; font-weight: 500;">
+						Our Biggest Sale of the Year is Live! Get 50% off on all plans, starting from $39.50 (USD). Offer valid until August 31, 2025.
+					</p>
+					<div style="display: flex; align-items: center; gap: 15px;">
+						<a href="https://supportcandy.net/pricing?utm_source=plugin&utm_medium=banner&utm_campaign=plugin_flash_sale" target="_blank" style="color: #fff; text-decoration: underline;">View Plans</a>
+						<a href="#" id="wpsc-sale-banner-dismiss" style="color: #fff; text-decoration: underline;">Dismiss</a>
+					</div>
+				</div>
+				<?php
+			}
+			?>
+			<script>
+				jQuery(document).ready(function() {
+					jQuery('#wpsc-sale-banner-dismiss').on('click', function(e){
+						e.preventDefault();
+						jQuery.post(ajaxurl, { action: 'wpsc_dismiss_sale_banner' }, function(){
+							window.location.reload();
+						});
+					});
+				});
+			</script>
+			<?php
+		}
+
+		/**
+		 * Dismiss the sales banner
+		 *
+		 * @return void
+		 */
+		public static function dismiss_sale_banner() {
+			set_transient( 'wpsc_sale_banner_dismissed', 1, 8 * DAY_IN_SECONDS );
 			wp_die();
 		}
 	}

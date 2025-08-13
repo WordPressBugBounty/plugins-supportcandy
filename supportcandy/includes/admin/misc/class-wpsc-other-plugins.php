@@ -102,7 +102,7 @@ if ( ! class_exists( 'WPSC_Other_Plugins' ) ) :
 						<img src="<?php echo esc_url( WPSC_PLUGIN_URL . '/asset/images/multi-currency-banner.png' ); ?>" alt="">
 						<p>Offer your customers a seamless multi-currency shopping experience. 
 							This plugin automatically updates exchange rates, detects your customer's currency by their location, and provides robust switching options so you can sell around the world with ease.</p>
-						<p><a href="https://psmplugins.com/multi-currency-for-woocommerce/" target="_blank" rel="noopener noreferrer">Visit product page >>></a></p>
+						<p><a href="https://psmplugins.com/multi-currency-for-woocommerce?utm_source=plugin&utm_medium=multi_currency&utm_campaign=supportcandy_other_plugins" target="_blank">Visit product page >>></a></p>
 					</div>
 					<div class="wpsc-other-plugins-footer-container">
 						<h2 class="footer-title-main">More plugins are on the way !</h2>

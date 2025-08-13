@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.3.5
+Stable tag: 3.3.6
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -224,6 +224,9 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.3.6 (August 13, 2025) =
+Fix: Flash sale banner not dissmissable.
 
 = 3.3.5 (August 08, 2025) =
 New: Raised By widget now includes a direct link to the user's WordPress profile.
