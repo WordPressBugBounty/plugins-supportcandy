@@ -1473,6 +1473,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					'public-mode'                   => 0,
 					'public-mode-reply'             => 0,
 					'reply-confirmation'            => 1,
+					'note-confirmation'             => 0,
 					'thread-date-display-as'        => 'diff',
 					'thread-date-format'            => 'F d, Y h:i A',
 					'do-not-notify-owner'           => 1,
@@ -2541,6 +2542,12 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 						wp_unschedule_event( $timestamp, 'wpsc_v2_upgrade_cleanup' );
 					}
 				}
+			}
+
+			if ( version_compare( self::$current_version, '3.3.7', '<' ) ) {
+				$advanced = get_option( 'wpsc-ms-advanced-settings' );
+				$advanced['note-confirmation'] = 0;
+				update_option( 'wpsc-ms-advanced-settings', $advanced );
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );

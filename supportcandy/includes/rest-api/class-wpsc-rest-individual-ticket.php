@@ -604,12 +604,24 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 								case 'body':
 									if ( $thread['type'] == 'log' ) {
 										$body = json_decode( $thread[ $item ], true );
-										$body['prev'] = strval( $body['prev'] );
-										$body['prev'] = $body['prev'] && is_array( $body['prev'] ) ? implode( ',', $body['prev'] ) : $body['prev'];
-										$body['prev'] = $body['prev'] && is_numeric( strpos( '|', $body['prev'] ) ) ? str_replace( '|', ',', $body['prev'] ) : $body['prev'];
-										$body['new'] = strval( $body['new'] );
-										$body['new'] = $body['new'] && is_array( $body['new'] ) ? implode( ',', $body['new'] ) : $body['new'];
-										$body['new'] = $body['new'] && is_numeric( strpos( '|', $body['new'] ) ) ? str_replace( '|', ',', $body['new'] ) : $body['new'];
+										// Handle 'prev' field.
+										if ( isset( $body['prev'] ) ) {
+											if ( is_array( $body['prev'] ) ) {
+												$body['prev'] = implode( ',', $body['prev'] );
+											}
+											if ( is_string( $body['prev'] ) && strpos( $body['prev'], '|' ) !== false ) {
+												$body['prev'] = str_replace( '|', ',', $body['prev'] );
+											}
+										}
+										// Handle 'new' field.
+										if ( isset( $body['new'] ) ) {
+											if ( is_array( $body['new'] ) ) {
+												$body['new'] = implode( ',', $body['new'] );
+											}
+											if ( is_string( $body['new'] ) && strpos( $body['new'], '|' ) !== false ) {
+												$body['new'] = str_replace( '|', ',', $body['new'] );
+											}
+										}
 										$temp[ $item ] = $body;
 									} else {
 										$temp[ $item ] = $thread[ $item ];

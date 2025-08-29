@@ -882,6 +882,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					var description = is_tinymce && tinymce.get('description') ? tinyMCE.get('description').getContent() : jQuery('#description').val().trim();
 					if (!description) return;
 
+					<?php if ( $advanced['note-confirmation'] ) : ?>
+						var flag = confirm(supportcandy.translations.confirm);
+						if (!flag) return;
+					<?php endif; ?>
+
 					var form = jQuery('form.wpsc-reply-section')[0];
 					var dataform = new FormData(form);
 					dataform.append('ticket_id', ticket_id);

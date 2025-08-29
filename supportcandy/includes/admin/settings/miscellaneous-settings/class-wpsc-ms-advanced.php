@@ -36,6 +36,7 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 					'public-mode'                   => 0,
 					'public-mode-reply'             => 0,
 					'reply-confirmation'            => 1,
+					'note-confirmation'             => 0,
 					'thread-date-display-as'        => 'diff',
 					'thread-date-format'            => 'F d, Y h:i A',
 					'do-not-notify-owner'           => 1,
@@ -123,6 +124,15 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 					<select id="wpsc-reply-confirmation" name="reply-confirmation">
 						<option <?php selected( $settings['reply-confirmation'], 1 ); ?> value="1"><?php esc_attr_e( 'Enable', 'supportcandy' ); ?></option>
 						<option <?php selected( $settings['reply-confirmation'], 0 ); ?> value="0"><?php esc_attr_e( 'Disable', 'supportcandy' ); ?></option>
+					</select>
+				</div>
+				<div class="wpsc-input-group">
+					<div class="label-container">
+						<label for=""><?php esc_attr_e( 'Note confirmation', 'supportcandy' ); ?></label>
+					</div>
+					<select id="wpsc-note-confirmation" name="note-confirmation">
+						<option <?php selected( $settings['note-confirmation'], 1 ); ?> value="1"><?php esc_attr_e( 'Enable', 'supportcandy' ); ?></option>
+						<option <?php selected( $settings['note-confirmation'], 0 ); ?> value="0"><?php esc_attr_e( 'Disable', 'supportcandy' ); ?></option>
 					</select>
 				</div>
 				<div class="wpsc-input-group">
@@ -393,6 +403,7 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 					'public-mode'                   => isset( $_POST['public-mode'] ) ? intval( $_POST['public-mode'] ) : 1,
 					'public-mode-reply'             => isset( $_POST['public-mode-reply'] ) ? intval( $_POST['public-mode-reply'] ) : 0,
 					'reply-confirmation'            => isset( $_POST['reply-confirmation'] ) ? intval( $_POST['reply-confirmation'] ) : 1,
+					'note-confirmation'             => isset( $_POST['note-confirmation'] ) ? intval( $_POST['note-confirmation'] ) : 0,
 					'thread-date-display-as'        => isset( $_POST['thread-date-display-as'] ) ? sanitize_text_field( wp_unslash( $_POST['thread-date-display-as'] ) ) : 'diff',
 					'thread-date-format'            => isset( $_POST['thread-date-format'] ) ? sanitize_text_field( wp_unslash( $_POST['thread-date-format'] ) ) : 'F d, Y h:i A',
 					'do-not-notify-owner'           => isset( $_POST['do-not-notify-owner'] ) ? intval( $_POST['do-not-notify-owner'] ) : 0,
