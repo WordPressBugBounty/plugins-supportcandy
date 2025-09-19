@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.3.7
+Stable tag: 3.3.8
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -224,6 +224,13 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.3.8 (September 19, 2025) =
+New: Added GDPR setting to disable IP address collection
+Fix: ticket_history_all,ticket_history_all_with_logs,ticket_history_all_with_notes,ticket_history_all_with_notes_and_logs not returning all replies/notes/logs
+Fix: Active agents not cleared on tab close
+Fix: Security vulnerability patched
+Fix: PHP notice for customers resolved
 
 = 3.3.7 (August 29, 2025) =
 New: Confirmation pop-up for private note submission (can be disabled from settings).

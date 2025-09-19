@@ -234,6 +234,11 @@ if ( ! class_exists( 'WPSC_DF_IP_Address' ) ) :
 		 */
 		public static function get_current_user_ip() {
 
+			$gdpr = get_option( 'wpsc-gdpr-settings', array() );
+			if ( ! $gdpr['ip-address-collection'] ) {
+				return '';
+			}
+
 			$ip_address = isset( $_SERVER ) && isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 			if ( strlen( $ip_address ) > 28 || $ip_address == '::1' ) {
 				$ip_address = '';

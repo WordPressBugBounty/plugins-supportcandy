@@ -52,6 +52,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 					'allow-gdpr-reg-user'          => 1,
 					'gdpr-text-reg-user'           => $gdpr_text,
 					'editor-reg-user'              => 'html',
+					'ip-address-collection'        => 1,
 				)
 			);
 			update_option( 'wpsc-gdpr-settings', $gdpr );
@@ -152,7 +153,16 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 							<option <?php selected( $settings['personal-data-retention-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'supportcandy' ); ?></option>
 						</select>  
 					</div>
-				</div>    
+				</div>
+				<div class="wpsc-input-group">
+					<div class="label-container">
+						<label for=""><?php esc_attr_e( 'IP Address Collection', 'supportcandy' ); ?></label>
+					</div>
+					<select id="wpsc-ip-address-collection" name="ip-address-collection">
+						<option <?php selected( $settings['ip-address-collection'], 1 ); ?> value="1"><?php esc_attr_e( 'Enable', 'supportcandy' ); ?></option>
+						<option <?php selected( $settings['ip-address-collection'], 0 ); ?> value="0"><?php esc_attr_e( 'Disable', 'supportcandy' ); ?></option>
+					</select>
+				</div>
 				<?php do_action( 'wpsc_ms_gdpr' ); ?>
 				<input type="hidden" name="action" value="wpsc_set_ms_gdpr">
 				<input id="editor" type="hidden" name="editor" value="<?php echo esc_attr( $settings['editor'] ); ?>">
@@ -256,6 +266,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 					'allow-gdpr-reg-user'          => isset( $_POST['allow-gdpr-reg-user'] ) ? intval( $_POST['allow-gdpr-reg-user'] ) : 1,
 					'gdpr-text-reg-user'           => isset( $_POST ) && isset( $_POST['gdpr-text-reg-user'] ) ? wp_kses_post( wp_unslash( $_POST['gdpr-text-reg-user'] ) ) : '',
 					'editor-reg-user'              => isset( $_POST['editor-reg-user'] ) ? sanitize_text_field( wp_unslash( $_POST['editor-reg-user'] ) ) : 'html',
+					'ip-address-collection'        => isset( $_POST['ip-address-collection'] ) ? intval( $_POST['ip-address-collection'] ) : 0,
 				)
 			);
 			update_option( 'wpsc-gdpr-settings', $settings );

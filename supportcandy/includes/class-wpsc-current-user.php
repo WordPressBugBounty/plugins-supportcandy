@@ -819,6 +819,16 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 		 */
 		public static function confirm_guest_login() {
 
+			// Add rate limiting.
+			$ip_address = WPSC_DF_IP_Address::get_current_user_ip();
+			$attempt_key = 'wpsc_otp_attempts_' . md5( $ip_address );
+			$attempts = get_transient( $attempt_key );
+			$attempts = $attempts ? $attempts : 1;
+
+			if ( $attempts >= 5 ) {
+				wp_send_json_error( 'Too many attempts. Please try again later.', 429 );
+			}
+
 			if ( check_ajax_referer( 'wpsc_confirm_guest_login', '_ajax_nonce', false ) != 1 ) {
 				wp_send_json_error( 'Unauthorised request!', 401 );
 			}
@@ -829,7 +839,7 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 				wp_send_json_error( 'Unauthorozed', 400 );
 			}
 
-			$verification_otp = isset( $_POST['otp'] ) ? intval( $_POST['otp'] ) : '';
+			$verification_otp = isset( $_POST['otp'] ) ? sanitize_text_field( wp_unslash( $_POST['otp'] ) ) : '';
 			if ( ! $verification_otp ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
@@ -845,6 +855,22 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 			}
 
 			if ( ! $otp->is_valid( $verification_otp ) ) {
+
+				// Increment attempt counter.
+				++$attempts;
+				set_transient( $attempt_key, $attempts, 300 ); // 5 minute lockout.
+
+				// Add per-OTP attempt tracking.
+				$otp_attempt_key = 'wpsc_otp_' . $id . '_attempts';
+				$otp_attempts = get_transient( $otp_attempt_key );
+				$otp_attempts = $otp_attempts ? $otp_attempts + 1 : 1;
+				set_transient( $otp_attempt_key, $otp_attempts, 600 );
+
+				if ( $otp_attempts >= 3 ) {
+					WPSC_Email_OTP::destroy( $otp );
+					wp_send_json_error( 'OTP has been invalidated due to too many failed attempts', 403 );
+				}
+
 				wp_send_json( array( 'isSuccess' => 0 ) );
 				wp_die();
 			}
@@ -854,6 +880,9 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 			$data['auth_type']  = 'login';
 			$otp->data          = wp_json_encode( $data );
 			$otp->save();
+
+			// Clear rate limiting on success.
+			delete_transient( $attempt_key );
 
 			// add customer record if not set.
 			$customer = WPSC_Customer::get_by_email( $data['email'] );

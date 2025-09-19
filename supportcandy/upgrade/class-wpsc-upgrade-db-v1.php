@@ -1764,7 +1764,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 					$map[ $prev->term_id ] = $wpdb->insert_id;
 
 					// get members of the group.
-					$group_user_ids = get_term_meta( $prev->term_id, 'agentgroup_user_id' );
+					$group_user_ids = get_term_meta( $prev->term_id, 'agentgroup_user_id', false );
 					$member_ids = array();
 					foreach ( $group_user_ids as $user_id ) {
 						$member_ids[] = $map[ $user_id ];
@@ -3101,7 +3101,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 
 						case 3:
 							$options_map = get_option( 'wpsc_upgrade_cf_options_map' );
-							$val = get_term_meta( $prev->term_id, $field->slug );
+							$val = get_term_meta( $prev->term_id, $field->slug, false );
 							if ( $val ) {
 								$rule[ $cf->slug ] = implode(
 									'|',
@@ -3432,7 +3432,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 
 						case 3:
 							$options_map = get_option( 'wpsc_upgrade_cf_options_map' );
-							$val = get_term_meta( $prev->term_id, $field->slug );
+							$val = get_term_meta( $prev->term_id, $field->slug, false );
 							if ( $val ) {
 								$rule[ $cf->slug ] = implode(
 									'|',
@@ -3625,7 +3625,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 			foreach ( $usergroups as $prev ) {
 
 				$members = array();
-				$prev_members = get_term_meta( $prev->term_id, 'wpsc_usergroup_userid' );
+				$prev_members = get_term_meta( $prev->term_id, 'wpsc_usergroup_userid', false );
 				foreach ( $prev_members as $user_id ) {
 					$customer_id = $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_customers WHERE user = " . $user_id );
 					if ( ! $customer_id ) {
@@ -3644,7 +3644,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 				}
 
 				$supervisors = array();
-				$prev_supervisors = get_term_meta( $prev->term_id, 'wpsc_usergroup_supervisor_id' );
+				$prev_supervisors = get_term_meta( $prev->term_id, 'wpsc_usergroup_supervisor_id', false );
 				foreach ( $prev_supervisors as $user_id ) {
 					$supervisors[] = $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_customers WHERE user = " . $user_id );
 				}
@@ -3747,7 +3747,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 									function ( $agent_id ) use ( $map ) {
 										return $agent_id ? $map[ $agent_id ] : '';
 									},
-									get_post_meta( $ticket->ID, $prev->slug )
+									get_post_meta( $ticket->ID, $prev->slug, false )
 								)
 							);
 							$data[ $cf->slug ] = implode( '|', $val );
@@ -3800,7 +3800,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 
 						case 3:
 							$options = wpsc_get_cf_options( $cf->id );
-							$prev_val = get_post_meta( $ticket->ID, $prev->slug );
+							$prev_val = get_post_meta( $ticket->ID, $prev->slug, false );
 							$new_val = array();
 							foreach ( $options as $option ) {
 								if ( in_array( $option->name, $prev_val ) ) {
@@ -3811,7 +3811,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 							break;
 
 						case 10:
-							$prev_val = array_filter( get_post_meta( $ticket->ID, $prev->slug ) );
+							$prev_val = array_filter( get_post_meta( $ticket->ID, $prev->slug, false ) );
 							$new_val = array();
 							$upload_dir   = wp_upload_dir();
 							foreach ( $prev_val as $item ) {

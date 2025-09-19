@@ -2135,7 +2135,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 					$map[ $prev->term_id ] = $wpdb->insert_id;
 
 					// get members of the group.
-					$group_user_ids = get_term_meta( $prev->term_id, 'agentgroup_user_id' );
+					$group_user_ids = get_term_meta( $prev->term_id, 'agentgroup_user_id', false );
 					$member_ids = array();
 					foreach ( $group_user_ids as $user_id ) {
 						$member_ids[] = $map[ $user_id ];
@@ -3476,7 +3476,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 
 						case 3:
 							$options_map = get_option( 'wpsc_upgrade_cf_options_map' );
-							$val = get_term_meta( $prev->term_id, $field->slug );
+							$val = get_term_meta( $prev->term_id, $field->slug, false );
 							if ( $val ) {
 								$rule[ $cf->slug ] = implode(
 									'|',
@@ -3872,7 +3872,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 
 						case 3:
 							$options_map = get_option( 'wpsc_upgrade_cf_options_map' );
-							$val = get_term_meta( $prev->term_id, $field->slug );
+							$val = get_term_meta( $prev->term_id, $field->slug, false );
 							if ( $val ) {
 								$rule[ $cf->slug ] = implode(
 									'|',
@@ -4141,7 +4141,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			foreach ( $usergroups as $prev ) {
 
 				$members = array();
-				$prev_members = get_term_meta( $prev->term_id, 'wpsc_usergroup_userid' );
+				$prev_members = get_term_meta( $prev->term_id, 'wpsc_usergroup_userid', false );
 				foreach ( $prev_members as $user_id ) {
 					$customer_id = $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_customers WHERE user = " . $user_id );
 					if ( ! $customer_id ) {
@@ -4160,7 +4160,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 				}
 
 				$supervisors = array();
-				$prev_supervisors = get_term_meta( $prev->term_id, 'wpsc_usergroup_supervisor_id' );
+				$prev_supervisors = get_term_meta( $prev->term_id, 'wpsc_usergroup_supervisor_id', false );
 				foreach ( $prev_supervisors as $user_id ) {
 					$supervisors[] = $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_customers WHERE user = " . $user_id );
 				}

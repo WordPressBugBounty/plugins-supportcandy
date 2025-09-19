@@ -283,7 +283,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				CREATE TABLE {$wpdb->prefix}psmsc_email_otp (
 					id INT NOT NULL AUTO_INCREMENT,
 					email VARCHAR(200) NOT NULL,
-					otp INT NOT NULL,
+					otp VARCHAR(10) NOT NULL,
 					date_expiry DATETIME NOT NULL,
 					data LONGTEXT NULL DEFAULT NULL,
 					PRIMARY KEY (id)
@@ -1454,6 +1454,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					'allow-gdpr-reg-user'          => 1,
 					'gdpr-text-reg-user'           => $translation,
 					'editor-reg-user'              => 'html',
+					'ip-address-collection'        => 1,
 				)
 			);
 
@@ -2548,6 +2549,15 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				$advanced = get_option( 'wpsc-ms-advanced-settings' );
 				$advanced['note-confirmation'] = 0;
 				update_option( 'wpsc-ms-advanced-settings', $advanced );
+			}
+
+			if ( version_compare( self::$current_version, '3.3.8', '<' ) ) {
+
+				$gdpr = get_option( 'wpsc-gdpr-settings', array() );
+				$gdpr['ip-address-collection'] = 1;
+				update_option( 'wpsc-gdpr-settings', $gdpr );
+
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_email_otp MODIFY otp VARCHAR(10) NOT NULL" );
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );

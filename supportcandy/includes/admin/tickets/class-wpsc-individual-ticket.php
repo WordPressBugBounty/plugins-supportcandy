@@ -168,7 +168,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			</div>
 			<div style="display:none" id="wpsc-ticket-url"><?php echo esc_url( self::$ticket->get_url() ); ?></div>
 			<input type="hidden" id="wpsc-current-ticket" value="<?php echo intval( self::$ticket->id ); ?>">
-			<input type="hidden" id="wpsc-current-agent" value="<?php echo intval( $current_user->agent->id ); ?>">
+			<input type="hidden" id="wpsc-current-agent" value="<?php echo $current_user->is_agent ? intval( $current_user->agent->id ) : 0; ?>">
 			<script>
 				
 				var arrow_up = '<?php WPSC_Icons::get( 'chevron-up' ); ?>';
@@ -3433,31 +3433,30 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 				}
 
 				jQuery(document).ready(function(){
-					// check if user close the tab or close the browser.
-					window.addEventListener('beforeunload', function (event) {
-						// Check if the event is due to a refresh
-						if (event.currentTarget.performance.navigation.type !== 1) {
-							const urlParams = new URLSearchParams( window.location.search );
-							if( supportcandy.is_frontend === '0' ) {
-								section = urlParams.get('section');
-							}else{
-								section = urlParams.get('wpsc-section');
-							}
-							if( ! ( section == 'ticket-list' && ( urlParams.has('id') || urlParams.has('ticket-id')) ) ){
-								return;
-							}
-							var agent_id = <?php echo intval( $current_user->agent->id ); ?>;
-							var ticket_id = <?php echo intval( self::$ticket->id ); ?>;
-							var data = { action: 'wpsc_check_live_agents', agent_id, ticket_id, operation: 'leave', _ajax_nonce: supportcandy.nonce };
-							jQuery.post(
-								supportcandy.ajax_url,
-								data,
-								function (response) {
-								}
-							);
-						}
-					});
+					window.addEventListener('beforeunload', function () {
+						const urlParams = new URLSearchParams(window.location.search);
 
+						// Determine section
+						let section = supportcandy.is_frontend === '0'
+							? urlParams.get('section')
+							: urlParams.get('wpsc-section');
+
+						// Only trigger if we are on the ticket detail page
+						if (!(section === 'ticket-list' && (urlParams.has('id') || urlParams.has('ticket-id')))) {
+							return;
+						}
+
+						// Prepare data
+						const data = new FormData();
+						data.append('action', 'wpsc_check_live_agents');
+						data.append('agent_id', '<?php echo intval( $current_user->agent->id ); ?>');
+						data.append('ticket_id', '<?php echo intval( self::$ticket->id ); ?>');
+						data.append('operation', 'leave');
+						data.append('_ajax_nonce', supportcandy.nonce);
+
+						// Send reliably on tab close
+						navigator.sendBeacon(supportcandy.ajax_url, data);
+					});
 				});
 			</script>
 			<?php

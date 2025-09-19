@@ -544,7 +544,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 		public static function replace_ticket_history_all( $str, $ticket ) {
 
 			$filters = array(
-				'meta_query' => array(
+				'items_per_page' => 0,
+				'meta_query'     => array(
 					'relation' => 'AND',
 					array(
 						'slug'    => 'ticket',
@@ -562,8 +563,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 						'val'     => 1,
 					),
 				),
-				'orderby'    => 'id',
-				'order'      => 'DESC',
+				'orderby'        => 'id',
+				'order'          => 'DESC',
 			);
 
 			$threads = WPSC_Thread::find( $filters );
@@ -648,7 +649,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 		public static function replace_ticket_history_all_with_notes( $str, $ticket ) {
 
 			$filters = array(
-				'meta_query' => array(
+				'items_per_page' => 0,
+				'meta_query'     => array(
 					'relation' => 'AND',
 					array(
 						'slug'    => 'ticket',
@@ -666,8 +668,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 						'val'     => 1,
 					),
 				),
-				'orderby'    => 'id',
-				'order'      => 'DESC',
+				'orderby'        => 'id',
+				'order'          => 'DESC',
 			);
 
 			$threads = WPSC_Thread::find( $filters );
@@ -700,7 +702,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 		public static function replace_ticket_history_all_with_logs( $str, $ticket ) {
 
 			$filters = array(
-				'meta_query' => array(
+				'items_per_page' => 0,
+				'meta_query'     => array(
 					'relation' => 'AND',
 					array(
 						'slug'    => 'ticket',
@@ -718,8 +721,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 						'val'     => 1,
 					),
 				),
-				'orderby'    => 'id',
-				'order'      => 'DESC',
+				'orderby'        => 'id',
+				'order'          => 'DESC',
 			);
 
 			$threads = WPSC_Thread::find( $filters );
@@ -752,7 +755,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 		public static function replace_ticket_history_all_with_notes_and_logs( $str, $ticket ) {
 
 			$filters = array(
-				'meta_query' => array(
+				'items_per_page' => 0,
+				'meta_query'     => array(
 					'relation' => 'AND',
 					array(
 						'slug'    => 'ticket',
@@ -770,8 +774,8 @@ if ( ! class_exists( 'WPSC_Macros' ) ) :
 						'val'     => 1,
 					),
 				),
-				'orderby'    => 'id',
-				'order'      => 'DESC',
+				'orderby'        => 'id',
+				'order'          => 'DESC',
 			);
 
 			$threads = WPSC_Thread::find( $filters );
