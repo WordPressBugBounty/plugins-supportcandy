@@ -662,7 +662,7 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 				wp_send_json_error( __( 'Unauthorized', 'supportcandy' ), 401 );
 			}
 
-			$verification_otp = isset( $_POST['otp'] ) ? intval( $_POST['otp'] ) : '';
+			$verification_otp = isset( $_POST['otp'] ) ? sanitize_text_field( wp_unslash( $_POST['otp'] ) ) : '';
 			if ( ! $verification_otp ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}

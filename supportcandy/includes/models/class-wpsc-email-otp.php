@@ -206,7 +206,7 @@ if ( ! class_exists( 'WPSC_Email_OTP' ) ) :
 				array( 'email' => $data['email'] )
 			);
 
-			$data['otp'] = substr( str_shuffle( 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' ), 0, 8 );
+			$data['otp'] = substr( str_shuffle( 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' ), 0, 8 );
 			$success     = $wpdb->insert(
 				$wpdb->prefix . 'psmsc_email_otp',
 				$data

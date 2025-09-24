@@ -396,7 +396,7 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 
 			$page_settings = get_option( 'wpsc-gs-page-settings' );
 
-			$verification_otp = isset( $_POST['otp'] ) ? intval( $_POST['otp'] ) : '';
+			$verification_otp = isset( $_POST['otp'] ) ? sanitize_text_field( wp_unslash( $_POST['otp'] ) ) : '';
 			if ( ! $verification_otp ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
