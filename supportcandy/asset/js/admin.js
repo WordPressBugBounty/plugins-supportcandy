@@ -3172,10 +3172,10 @@ function wpsc_set_en_general(el) {
 /**
  * Reset email notification general settings
  */
-function wpsc_reset_en_general(el) {
+function wpsc_reset_en_general(el, nonce) {
   jQuery(".wpsc-modal-footer button").attr("disabled", true);
   jQuery(el).text(supportcandy.translations.please_wait);
-  var data = { action: "wpsc_reset_en_general" };
+  var data = { action: "wpsc_reset_en_general", _ajax_nonce: nonce };
   jQuery.post(supportcandy.ajax_url, data, function (response) {
     wpsc_get_en_general_setting();
   });
@@ -5953,7 +5953,7 @@ function wpsc_get_ap_dashboard() {
   supportcandy.current_tab = "dashboard";
   jQuery(".wpsc-setting-tab-container button").removeClass("active");
   jQuery(
-    ".wpsc-setting-tab-container button." + supportcandy.current_tabs
+    ".wpsc-setting-tab-container button." + supportcandy.current_tab
   ).addClass("active");
 
   window.history.replaceState(
@@ -6043,4 +6043,87 @@ function wpsc_update_live_agents() {
 		function (response) {
 		}
 	);
+}
+
+/**
+ * Get ticket list
+ */
+function wpsc_get_archive_ticket_list(is_humbargar = false) {
+
+  supportcandy.current_section = "archive-ticket-list";
+  if (is_humbargar) {
+    wpsc_toggle_humbargar();
+  }
+
+  var id = supportcandy.current_archived_ticket_id;
+  if (id) {
+    delete supportcandy.current_archived_ticket_id;
+    wpsc_get_individual_archive_ticket(id);
+    return;
+  }
+
+  // set flag to differenciate between ticket list and individual ticket.
+  supportcandy.ticketListIsIndividual = false;
+
+  jQuery(".wpsc-tickets-nav, .wpsc-humbargar-menu-item").removeClass("active");
+  jQuery(
+    ".wpsc-tickets-nav.archive-ticket-list, .wpsc-humbargar-menu-item.archive-ticket-list"
+  ).addClass("active");
+  jQuery(".wpsc-humbargar-title").html(
+    supportcandy.humbargar_titles.archived_ticket_list
+  );
+
+  window.history.replaceState(
+    {},
+    null,
+    "admin.php?page=wpsc-archive-tickets&section=archive-ticket-list"
+  );
+  jQuery(".wpsc-body").html(supportcandy.loader_html);
+
+  wpsc_scroll_top();
+
+  var data = {
+    action: "wpsc_get_archive_ticket_list",
+    _ajax_nonce: supportcandy.nonce,
+    is_frontend: supportcandy.is_frontend,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    jQuery(".wpsc-body").html(response);
+    wpsc_reset_responsive_style();
+  });
+  wpsc_delete_auto_draft();
+}
+
+/**
+ * Get individual ticket
+ */
+function wpsc_get_individual_archive_ticket(id) {
+  jQuery(".wpsc-tickets-nav, .wpsc-humbargar-menu-item").removeClass("active");
+  jQuery(
+    ".wpsc-tickets-nav.archive-ticket-list, .wpsc-humbargar-menu-item.archive-ticket-list"
+  ).addClass("active");
+  jQuery(".wpsc-humbargar-title").html(
+    supportcandy.humbargar_titles.archived_ticket_list
+  );
+
+  window.history.replaceState(
+    {},
+    null,
+    "admin.php?page=wpsc-archive-tickets&section=archive-ticket-list&id=" + id
+  );
+  jQuery(".wpsc-body").html(supportcandy.loader_html);
+
+  wpsc_scroll_top();
+
+  // set flag to differenciate between ticket list and individual ticket.
+  supportcandy.ticketListIsIndividual = true;
+
+  var data = {
+    action: "wpsc_get_individual_archive_ticket",
+    ticket_id: id,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    jQuery(".wpsc-body").html(response);
+    wpsc_reset_responsive_style();
+  });
 }

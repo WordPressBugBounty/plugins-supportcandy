@@ -166,6 +166,7 @@ if ( ! class_exists( 'WPSC_DF_ID' ) ) :
 
 			// ticket search query.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -250,27 +251,68 @@ if ( ! class_exists( 'WPSC_DF_ID' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+			$column = 't.' . sanitize_key( $cf->slug );
+
+			/**
+			 * Normalize IDs (INT only)
+			 */
+			$normalize_ids = static function ( $values ) {
+
+				$values = is_array( $values ) ? $values : array( $values );
+				$ids    = array();
+
+				foreach ( $values as $v ) {
+					if ( is_numeric( $v ) && (int) $v > 0 ) {
+						$ids[] = (int) $v;
+					}
+				}
+
+				return array_unique( $ids );
+			};
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						'(^|[|])' . $ids[0] . '($|[|])'
+					);
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
+					}
+
+					$regex = '(^|[|])(' . implode( '|', $ids ) . ')($|[|])';
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						$regex
+					);
 
 				case 'NOT IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=1';
+					}
+
+					$regex = '(^|[|])(' . implode( '|', $ids ) . ')($|[|])';
+
+					return $wpdb->prepare(
+						"{$column} NOT RLIKE %s",
+						$regex
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
@@ -338,7 +380,7 @@ if ( ! class_exists( 'WPSC_DF_ID' ) ) :
 		public static function ticket_search( $sql, $filter, $custom_fields, $search, $allowed_search_fields ) {
 
 			if ( in_array( 'id', $allowed_search_fields ) ) {
-				$sql[] = 'CONVERT(t.id USING utf8) LIKE \'%' . $search . '%\'';
+				$sql[] = 't.id LIKE \'%' . $search . '%\'';
 			}
 			return $sql;
 		}

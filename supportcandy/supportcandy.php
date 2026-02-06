@@ -3,12 +3,12 @@
  * Plugin Name: SupportCandy
  * Plugin URI: https://supportcandy.net/
  * Description: Easy & Powerful support ticket system for WordPress
- * Version: 3.3.9
+ * Version: 3.4.5
  * Author: SupportCandy
  * Author URI: https://wordpress.org/plugins/supportcandy/
  * Requires at least: 5.6
  * Requires PHP: 7.4
- * Tested up to: 6.8
+ * Tested up to: 6.9
  * Text Domain: supportcandy
  * Domain Path: /i18n
  * License: GPLv3 or later
@@ -32,7 +32,7 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 		 *
 		 * @var string
 		 */
-		public static $version = '3.3.9';
+		public static $version = '3.4.5';
 
 		/**
 		 * Database version
@@ -47,7 +47,6 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 		public static function init() {
 
 			self::define_constants();
-			add_action( 'init', array( __CLASS__, 'load_textdomain' ), 1 );
 			self::load_files();
 		}
 
@@ -65,18 +64,6 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 			self::define( 'WPSC_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 			self::define( 'WPSC_VERSION', self::$version );
 			self::define( 'WPSC_DB_VERSION', self::$db_version );
-		}
-
-		/**
-		 * Loads internationalization strings
-		 *
-		 * @return void
-		 */
-		public static function load_textdomain() {
-
-			$locale = apply_filters( 'plugin_locale', get_locale(), 'supportcandy' );
-			load_textdomain( 'supportcandy', WP_LANG_DIR . '/supportcandy/supportcandy-' . $locale . '.mo' );
-			load_plugin_textdomain( 'supportcandy', false, plugin_basename( __DIR__ ) . '/i18n' );
 		}
 
 		/**

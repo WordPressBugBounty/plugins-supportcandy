@@ -248,7 +248,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 		public static function save_settings() {
 
 			if ( check_ajax_referer( 'wpsc_set_ms_gdpr', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -289,7 +289,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 		public static function reset_settings() {
 
 			if ( check_ajax_referer( 'wpsc_reset_ms_gdpr', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -384,11 +384,17 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 				),
 			);
 
-			$response = WPSC_Ticket::find( $filters );
-			$tickets  = $response['results'];
+			// Anonymize active tickets.
+			$active_tickets = WPSC_Ticket::find( $filters );
+			$active_tickets  = $active_tickets['results'];
+			foreach ( $active_tickets as $ticket ) {
+				self::anonymize_ticket( $ticket );
+			}
 
-			foreach ( $tickets as $ticket ) {
-
+			// Anonymize archive tickets.
+			$archive_tickets = WPSC_Archive_Ticket::find( $filters );
+			$archive_tickets  = $archive_tickets['results'];
+			foreach ( $archive_tickets as $ticket ) {
 				self::anonymize_ticket( $ticket );
 			}
 		}
@@ -396,7 +402,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 		/**
 		 * Anonymize ticket & customer data
 		 *
-		 * @param WPSC_Ticket $ticket -  ticket object.
+		 * @param WPSC_Ticket/WPSC_Archive_Ticket $ticket -  ticket object.
 		 * @return void
 		 */
 		public static function anonymize_ticket( $ticket ) {
@@ -404,7 +410,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 			foreach ( WPSC_Custom_Field::$custom_fields as $cf ) {
 
 				if ( in_array( $cf->field, array( 'ticket', 'agentonly' ) ) && $cf->is_personal_info ) {
-					$val                 = $cf->type::$has_multiple_val ? array() : '';
+					$val = $cf->type::$has_multiple_val ? array() : '';
 					$ticket->{$cf->slug} = $val;
 				}
 			}
@@ -419,7 +425,9 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 					),
 				),
 			);
-			$threads = WPSC_Thread::find( $filters )['results'];
+
+			$thread_class = is_a( $ticket, 'WPSC_Ticket' ) ? 'WPSC_Thread' : 'WPSC_Archive_Thread';
+			$threads = $thread_class::find( $filters )['results'];
 
 			$anonymous_customer = WPSC_Functions::anonymous_customer();
 			foreach ( $threads as $thread ) {
@@ -529,7 +537,30 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 					),
 				),
 			);
-			$tickets = WPSC_Ticket::find( $filters )['results'];
+
+			// Get active tickets.
+			$active_tickets = WPSC_Ticket::find( $filters )['results'];
+			$active_export_tickets = array();
+			$active_export_tickets = self::get_export_ticket_data( $active_tickets );
+
+			// Get archive tickets.
+			$archive_tickets = WPSC_Archive_Ticket::find( $filters )['results'];
+			$archive_export_tickets = array();
+			$archive_export_tickets = self::get_export_ticket_data( $archive_tickets );
+
+			return array(
+				'data' => array_merge( $active_export_tickets, $archive_export_tickets ),
+				'done' => true,
+			);
+		}
+
+		/**
+		 * Dummy function to avoid ending class with last public function.
+		 *
+		 * @param array $tickets - tickets array.
+		 * @return array
+		 */
+		private static function get_export_ticket_data( $tickets ) {
 
 			$export_tickets = array();
 			foreach ( $tickets as $key => $ticket ) {
@@ -574,11 +605,7 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 					'data'        => $data,
 				);
 			}
-
-			return array(
-				'data' => $export_tickets,
-				'done' => true,
-			);
+			return $export_tickets;
 		}
 
 		/**
@@ -622,13 +649,20 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 					),
 				),
 			);
+
+			// Anonymize active tickets.
 			$tickets = WPSC_Ticket::find( $filters )['results'];
-
 			foreach ( $tickets as $ticket ) {
-
 				self::anonymize_ticket( $ticket );
 			}
 
+			// Anonymize archived tickets.
+			$tickets = WPSC_Archive_Ticket::find( $filters )['results'];
+			foreach ( $tickets as $ticket ) {
+				self::anonymize_ticket( $ticket );
+			}
+
+			// Delete customer record.
 			WPSC_Customer::destroy( $customer );
 
 			/* translators: %s: email address */

@@ -177,6 +177,7 @@ if ( ! class_exists( 'WPSC_CF_Email' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -328,37 +329,79 @@ if ( ! class_exists( 'WPSC_CF_Email' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
+			global $wpdb;
+			$column = self::get_sql_slug( $cf );
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					if ( ! is_string( $val ) || ! is_email( $val ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						"{$column} = %s",
+						$val
+					);
 
 				case 'IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$emails = array();
+					foreach ( $val as $email ) {
+						if ( is_string( $email ) && is_email( $email ) ) {
+							$emails[] = $email;
+						}
+					}
+
+					if ( empty( $emails ) ) {
+						return '1=0';
+					}
+
+					$placeholders = implode( ', ', array_fill( 0, count( $emails ), '%s' ) );
+					$operator     = ( $compare === 'IN' ) ? 'IN' : 'NOT IN';
+
+					return $wpdb->prepare(
+						"CONVERT({$column} USING utf8) {$operator} ({$placeholders})",
+						$emails
+					);
 
 				case 'LIKE':
-					$arr = array();
-					$val = explode( PHP_EOL, $val );
-					foreach ( $val as $term ) {
-						$term  = str_replace( '*', '%', trim( $term ) );
-						$arr[] = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) LIKE \'%' . esc_sql( $term ) . '%\'';
+					if ( ! is_string( $val ) ) {
+						return '1=0';
 					}
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
+
+					$terms = array_filter( array_map( 'trim', explode( PHP_EOL, $val ) ) );
+					$likes = array();
+					$args  = array();
+
+					foreach ( $terms as $term ) {
+
+						$term = str_replace( '*', '%', $term );
+						$term = $wpdb->esc_like( $term );
+
+						if ( $term === '' ) {
+							continue;
+						}
+
+						$likes[] = "CONVERT({$column} USING utf8) LIKE %s";
+						$args[]  = '%' . $term . '%';
+					}
+
+					if ( empty( $likes ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						'(' . implode( ' OR ', $likes ) . ')',
+						$args
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
@@ -557,7 +600,7 @@ if ( ! class_exists( 'WPSC_CF_Email' ) ) :
 		 */
 		public static function get_tff_value( $slug, $cf = false ) {
 
-			$email = isset( $_POST[ $slug ] ) ? sanitize_text_field( wp_unslash( $_POST[ $slug ] ) ) : ''; // phpcs:ignore
+			$email = isset( $_POST[ $slug ] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST[ $slug ] ) ) ) : ''; // phpcs:ignore
 			if ( ! filter_var( $email, FILTER_VALIDATE_EMAIL ) ) {
 				$email = '';
 			}
@@ -809,7 +852,7 @@ if ( ! class_exists( 'WPSC_CF_Email' ) ) :
 		 */
 		public static function get_cf_input_val( $cf ) {
 
-			$email = isset( $_POST[ $cf->slug ] ) ? sanitize_text_field( wp_unslash( $_POST[ $cf->slug ] ) ) : ''; // phpcs:ignore
+			$email = isset( $_POST[ $cf->slug ] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST[ $cf->slug ] ) ) ) : ''; // phpcs:ignore
 			return $email && filter_var( $email, FILTER_VALIDATE_EMAIL ) ? $email : '';
 		}
 
@@ -856,7 +899,7 @@ if ( ! class_exists( 'WPSC_CF_Email' ) ) :
 		public static function set_edit_ticket_cf( $cf, $ticket ) {
 
 			$prev = $ticket->{$cf->slug} ? $ticket->{$cf->slug} : '';
-			$new  = isset( $_POST[ $cf->slug ] ) ? sanitize_text_field( wp_unslash( $_POST[ $cf->slug ] ) ) : ''; // phpcs:ignore
+			$new  = isset( $_POST[ $cf->slug ] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST[ $cf->slug ] ) ) ) : ''; // phpcs:ignore
 			if ( $new && ! filter_var( $new, FILTER_VALIDATE_EMAIL ) ) {
 				return $ticket;
 			}
@@ -1234,7 +1277,7 @@ if ( ! class_exists( 'WPSC_CF_Email' ) ) :
 
 			// default value.
 			if ( in_array( 'default_value', $field_class::$allowed_properties ) ) {
-				$default_value     = isset( $_POST['default_value'] ) ? sanitize_email( wp_unslash( $_POST['default_value'] ) ) : ''; // phpcs:ignore
+				$default_value     = isset( $_POST['default_value'] ) ? strtolower( sanitize_email( wp_unslash( $_POST['default_value'] ) ) ) : ''; // phpcs:ignore
 				$cf->default_value = $default_value ? array( $default_value ) : array();
 			}
 

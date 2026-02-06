@@ -24,7 +24,7 @@ if ( ! class_exists( 'WPSC_Option_Controller' ) ) :
 		public static function add_new() {
 
 			if ( check_ajax_referer( 'wpsc_add_new_option', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -58,7 +58,7 @@ if ( ! class_exists( 'WPSC_Option_Controller' ) ) :
 		public static function update_option() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_option', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

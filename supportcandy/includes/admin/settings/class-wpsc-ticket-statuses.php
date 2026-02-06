@@ -73,9 +73,9 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 								<td><span class="wpsc-tag" style="color: <?php echo esc_attr( $status->color ); ?>; background-color: <?php echo esc_attr( $status->bg_color ); ?>;" ><?php echo esc_attr( $status->name ); ?></span></td>
 								<td>
 									<div class="actions">
-										<a class="wpsc-link" href="javascript:wpsc_get_edit_status(<?php echo esc_attr( $status->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_status' ) ); ?>');" ><?php echo esc_attr__( 'Edit', 'supportcandy' ); ?></a>
+										<span class="wpsc-link" onclick="wpsc_get_edit_status(<?php echo esc_attr( $status->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_status' ) ); ?>');" ><?php echo esc_attr__( 'Edit', 'supportcandy' ); ?></span>
 										<?php if ( ! in_array( $status->id, $default_statuses ) ) : ?>
-											| <a class="wpsc-link" href="javascript:wpsc_get_delete_status(<?php echo esc_attr( $status->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_status' ) ); ?>');" ><?php echo esc_attr__( 'Delete', 'supportcandy' ); ?></a>
+											| <span class="wpsc-link" onclick="wpsc_get_delete_status(<?php echo esc_attr( $status->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_status' ) ); ?>');" ><?php echo esc_attr__( 'Delete', 'supportcandy' ); ?></span>
 											<?php
 										endif;
 										?>
@@ -220,7 +220,7 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 		public static function set_add_status() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -289,7 +289,7 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 			global $wpdb;
 
 			if ( check_ajax_referer( 'wpsc_get_edit_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -394,7 +394,7 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 			global $wpdb;
 
 			if ( check_ajax_referer( 'wpsc_set_edit_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -480,7 +480,7 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 			}
 
 			if ( check_ajax_referer( 'wpsc_get_delete_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$title = esc_attr__( 'Delete status', 'supportcandy' );
@@ -555,7 +555,7 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 			}
 
 			if ( check_ajax_referer( 'wpsc_set_delete_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;

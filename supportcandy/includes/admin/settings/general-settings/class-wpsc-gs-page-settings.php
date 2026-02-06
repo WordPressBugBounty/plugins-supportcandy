@@ -264,7 +264,7 @@ if ( ! class_exists( 'WPSC_GS_Page_Settings' ) ) :
 		public static function save_settings() {
 
 			if ( check_ajax_referer( 'wpsc_set_gs_page_settings', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -318,7 +318,7 @@ if ( ! class_exists( 'WPSC_GS_Page_Settings' ) ) :
 		public static function reset_settings() {
 
 			if ( check_ajax_referer( 'wpsc_reset_gs_page_settings', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -334,7 +334,7 @@ if ( ! class_exists( 'WPSC_GS_Page_Settings' ) ) :
 		public static function search_wp_pages() {
 
 			if ( check_ajax_referer( 'wpsc_search_wp_pages', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

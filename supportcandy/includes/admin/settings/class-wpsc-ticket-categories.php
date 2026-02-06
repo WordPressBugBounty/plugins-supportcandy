@@ -69,11 +69,11 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 								<td><span class="title"><?php echo esc_attr( $category->name ); ?></span></td>
 								<td>
 									<div class="actions">
-										<a class="wpsc-link" href="javascript:wpsc_get_edit_category(<?php echo esc_attr( $category->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_category' ) ); ?>');" ><?php echo esc_attr__( 'Edit', 'supportcandy' ); ?></a>
+										<span class="wpsc-link" onclick="wpsc_get_edit_category(<?php echo esc_attr( $category->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_category' ) ); ?>');" ><?php echo esc_attr__( 'Edit', 'supportcandy' ); ?></span>
 										<?php
 										if ( $cf->default_value[0] != $category->id ) :
 											?>
-											| <a class="wpsc-link" href="javascript:wpsc_get_delete_category(<?php echo esc_attr( $category->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_category' ) ); ?>');" ><?php echo esc_attr__( 'Delete', 'supportcandy' ); ?></a>
+											| <span class="wpsc-link" onclick="wpsc_get_delete_category(<?php echo esc_attr( $category->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_category' ) ); ?>');" ><?php echo esc_attr__( 'Delete', 'supportcandy' ); ?></span>
 											<?php
 										endif;
 										?>
@@ -208,7 +208,7 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 		public static function wpsc_set_add_category() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_category', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -265,7 +265,7 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 			global $wpdb;
 
 			if ( check_ajax_referer( 'wpsc_get_edit_category', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -358,7 +358,7 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 			global $wpdb;
 
 			if ( check_ajax_referer( 'wpsc_set_edit_category', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -432,7 +432,7 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 			}
 
 			if ( check_ajax_referer( 'wpsc_get_delete_category', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$title = esc_attr__( 'Delete category', 'supportcandy' );
@@ -507,7 +507,7 @@ if ( ! class_exists( 'WPSC_Ticket_Categories' ) ) :
 			}
 
 			if ( check_ajax_referer( 'wpsc_set_delete_category', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;

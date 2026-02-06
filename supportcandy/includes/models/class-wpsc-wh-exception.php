@@ -456,8 +456,8 @@ if ( ! class_exists( 'WPSC_Wh_Exception' ) ) :
 								?>
 							</td>
 							<td>
-								<a href="javascript:wpsc_get_edit_wh_exception(<?php echo esc_attr( $exception->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_wh_exception' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a> |
-								<a href="javascript:wpsc_delete_wh_exception(<?php echo esc_attr( $exception->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_wh_exception' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+								<span class="wpsc-link" onclick="wpsc_get_edit_wh_exception(<?php echo esc_attr( $exception->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_wh_exception' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
+								<span class="wpsc-link" onclick="wpsc_delete_wh_exception(<?php echo esc_attr( $exception->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_wh_exception' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 							</td>
 						</tr>
 						<?php
@@ -633,7 +633,7 @@ if ( ! class_exists( 'WPSC_Wh_Exception' ) ) :
 		public static function set_add_exception() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -718,7 +718,7 @@ if ( ! class_exists( 'WPSC_Wh_Exception' ) ) :
 		public static function get_edit_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -857,7 +857,7 @@ if ( ! class_exists( 'WPSC_Wh_Exception' ) ) :
 		public static function set_edit_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -925,7 +925,7 @@ if ( ! class_exists( 'WPSC_Wh_Exception' ) ) :
 		public static function delete_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_delete_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

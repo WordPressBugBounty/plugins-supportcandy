@@ -166,6 +166,7 @@ if ( ! class_exists( 'WPSC_DF_Additional_Recipients' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 
 			// ticket form.
 			add_action( 'wpsc_js_validate_ticket_form', array( __CLASS__, 'js_validate_ticket_form' ) );

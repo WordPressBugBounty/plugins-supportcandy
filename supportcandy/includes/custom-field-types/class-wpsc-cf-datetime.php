@@ -344,30 +344,50 @@ if ( ! class_exists( 'WPSC_CF_Datetime' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
 
-			switch ( $compare ) {
-
-				case '=':
-				case '<':
-				case '>':
-				case '<=':
-				case '>=':
-					$from = WPSC_Functions::get_utc_date_str( $val . ':00' );
-					$str  = self::get_sql_slug( $cf ) . $compare . '\'' . esc_sql( $from ) . '\'';
-					break;
-
-				case 'BETWEEN':
-					$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ':00' );
-					$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ':00' );
-					$str  = self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
-
-				default:
-					$str = '1=1';
+			$column = self::get_sql_slug( $cf );
+			if ( ! $column ) {
+				return '1=0';
 			}
 
-			return $str;
+			$allowed_ops = array( '=', '<', '>', '<=', '>=', 'BETWEEN' );
+			if ( ! in_array( $compare, $allowed_ops, true ) ) {
+				return '1=0';
+			}
+
+			if ( in_array( $compare, array( '=', '<', '>', '<=', '>=' ), true ) ) {
+				if ( ! is_string( $val ) || ! WPSC_Functions::is_valid_datetime( $val ) ) {
+					return '1=0';
+				}
+				$datetime = WPSC_Functions::get_utc_date_str( $val . ':00' );
+				return $wpdb->prepare(
+					"{$column} {$compare} %s",
+					$datetime
+				);
+			}
+
+			if ( 'BETWEEN' === $compare ) {
+				if (
+					! is_array( $val ) ||
+					! isset( $val['operand_val_1'], $val['operand_val_2'] ) ||
+					! WPSC_Functions::is_valid_datetime( $val['operand_val_1'] ) ||
+					! WPSC_Functions::is_valid_datetime( $val['operand_val_2'] )
+				) {
+					return '1=0';
+				}
+
+				$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ':00' );
+				$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ':00' );
+
+				return $wpdb->prepare(
+					"{$column} BETWEEN %s AND %s",
+					$from,
+					$to
+				);
+			}
+
+			return '1=0';
 		}
 
 		/**

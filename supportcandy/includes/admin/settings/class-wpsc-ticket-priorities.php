@@ -70,11 +70,11 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 								<td><span class="wpsc-tag" style="color: <?php echo esc_attr( $priority->color ); ?>; background-color: <?php echo esc_attr( $priority->bg_color ); ?>;" ><?php echo esc_attr( $priority->name ); ?></span></td>
 								<td>
 									<div class="actions">
-										<a class="wpsc-link" href="javascript:wpsc_get_edit_priority(<?php echo esc_attr( $priority->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_priority' ) ); ?>');" ><?php echo esc_attr__( 'Edit', 'supportcandy' ); ?></a>
+										<span class="wpsc-link" onclick="wpsc_get_edit_priority(<?php echo esc_attr( $priority->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_priority' ) ); ?>');" ><?php echo esc_attr__( 'Edit', 'supportcandy' ); ?></span>
 										<?php
 										if ( $cf->default_value[0] != $priority->id ) :
 											?>
-											| <a class="wpsc-link" href="javascript:wpsc_get_delete_priority(<?php echo esc_attr( $priority->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_priority' ) ); ?>');" ><?php echo esc_attr__( 'Delete', 'supportcandy' ); ?></a>
+											| <span class="wpsc-link" onclick="wpsc_get_delete_priority(<?php echo esc_attr( $priority->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_priority' ) ); ?>');" ><?php echo esc_attr__( 'Delete', 'supportcandy' ); ?></span>
 											<?php
 										endif;
 										?>
@@ -217,7 +217,7 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 		public static function set_add_priority() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_priority', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -286,7 +286,7 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			global $wpdb;
 
 			if ( check_ajax_referer( 'wpsc_get_edit_priority', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -388,7 +388,7 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			global $wpdb;
 
 			if ( check_ajax_referer( 'wpsc_set_edit_priority', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -474,7 +474,7 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			}
 
 			if ( check_ajax_referer( 'wpsc_get_delete_priority', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$title = esc_attr__( 'Delete priority', 'supportcandy' );
@@ -549,7 +549,7 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			}
 
 			if ( check_ajax_referer( 'wpsc_set_delete_priority', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;

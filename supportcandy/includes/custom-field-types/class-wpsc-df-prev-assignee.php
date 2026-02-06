@@ -343,37 +343,76 @@ if ( ! class_exists( 'WPSC_DF_Prev_Assignee' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+			$column = 't.' . sanitize_key( $cf->slug );
+
+			/**
+			 * Normalize agent IDs:
+			 * - Empty / 0 => '^$'
+			 * - Force integers
+			 */
+			$normalize_ids = static function ( $values ) {
+				$values = is_array( $values ) ? $values : array( $values );
+				$ids = array();
+				foreach ( $values as $id ) {
+					if ( $id === '' || $id === '0' || $id === 0 ) {
+						$ids[] = '^$';
+					} else {
+						$id = absint( $id );
+						if ( $id ) {
+							$ids[] = (string) $id;
+						}
+					}
+				}
+				return array_unique( $ids );
+			};
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . ' RLIKE \'(^|[|])' . esc_sql( $val ) . '($|[|])\'';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
+					}
+
+					$pattern = count( $ids ) === 1
+						? $ids[0]
+						: '(' . implode( '|', $ids ) . ')';
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						'(^|[|])' . $pattern . '($|[|])'
+					);
 
 				case 'IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' ) {
-							$val[ $index ] = '^$';
-						}
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
 					}
-					$str = 't.' . $cf->slug . ' RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
+
+					$pattern = '(' . implode( '|', $ids ) . ')';
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						'(^|[|])' . $pattern . '($|[|])'
+					);
 
 				case 'NOT IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' ) {
-							$val[ $index ] = '^$';
-						}
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=1';
 					}
-					$str = 't.' . $cf->slug . ' NOT RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
+
+					$pattern = '(' . implode( '|', $ids ) . ')';
+
+					return $wpdb->prepare(
+						"{$column} NOT RLIKE %s",
+						'(^|[|])' . $pattern . '($|[|])'
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
@@ -544,7 +583,7 @@ if ( ! class_exists( 'WPSC_DF_Prev_Assignee' ) ) :
 		public static function agent_autocomplete_prev_assigned_agent() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_prev_assigned_agent', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;

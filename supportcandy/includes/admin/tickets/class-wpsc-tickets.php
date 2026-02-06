@@ -433,12 +433,12 @@ if ( ! class_exists( 'WPSC_Tickets' ) ) :
 		public static function show_sales_banner() {
 			if ( current_user_can( 'manage_options' ) &&
 					! ( class_exists( 'WPSC_EP' ) || class_exists( 'WPSC_Workflows' ) || class_exists( 'WPSC_SLA' ) || class_exists( 'WPSC_SF' ) || class_exists( 'WPSC_WOO' ) ) &&
-						current_time( 'Y-m-d' ) < '2025-09-30' &&
+						current_time( 'Y-m-d' ) < '2025-12-31' &&
 						! get_transient( 'wpsc_sale_banner_timeout' ) ) {
 				?>
-				<div style="display: flex; justify-content: space-between; flex-wrap: wrap;background-color: #000;color: #fff;padding: 10px 15px; margin-bottom: 10px; border-radius: 5px;">
+				<div class="wpsc-sale-banner" style="display: flex; justify-content: space-between; flex-wrap: wrap;background-color: #000;color: #fff;padding: 10px 15px; margin-bottom: 10px; border-radius: 5px;">
 					<p style="margin:0; font-size: 12px; font-weight: 500;">
-						Our Biggest Sale of the Year is Live! Get 50% off on all plans, starting from $39.50 (USD). Offer valid until September 30, 2025.
+						Get 50% off on all SupportCandy plans, starting from $39.50 (USD).
 					</p>
 					<div style="display: flex; align-items: center; gap: 15px;">
 						<a href="https://supportcandy.net/pricing?utm_source=plugin&utm_medium=banner&utm_campaign=plugin_flash_sale" target="_blank" style="color: #fff; text-decoration: underline;">View Plans</a>

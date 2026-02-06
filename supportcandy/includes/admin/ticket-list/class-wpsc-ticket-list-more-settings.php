@@ -328,7 +328,7 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 		public static function tl_ms_set_agent_view() {
 
 			if ( check_ajax_referer( 'wpsc_tl_ms_set_agent_view', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			global $wpdb;
@@ -380,7 +380,7 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 		public static function tl_ms_reset_agent_view() {
 
 			if ( check_ajax_referer( 'wpsc_tl_ms_reset_agent_view', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -523,7 +523,7 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 		public static function tl_ms_set_customer_view() {
 
 			if ( check_ajax_referer( 'wpsc_tl_ms_set_customer_view', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -553,7 +553,7 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 		public static function tl_ms_reset_customer_view() {
 
 			if ( check_ajax_referer( 'wpsc_tl_ms_reset_customer_view', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -645,7 +645,7 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 		public static function tl_ms_set_advanced() {
 
 			if ( check_ajax_referer( 'wpsc_tl_ms_set_advanced', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -671,7 +671,7 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 		public static function tl_ms_reset_advanced() {
 
 			if ( check_ajax_referer( 'wpsc_tl_ms_reset_advanced', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

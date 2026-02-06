@@ -89,7 +89,7 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Activities' ) ) :
 		public static function get_recent_activities() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$view = isset( $_POST['view'] ) ? sanitize_text_field( wp_unslash( $_POST['view'] ) ) : '0';
@@ -99,7 +99,7 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Activities' ) ) :
 			if ( $current_user->is_guest ||
 				! ( $current_user->is_agent && in_array( $current_user->agent->role, $widgets[ self::$widget ]['allowed-agent-roles'] ) )
 			) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$logs = WPSC_RA_Logs::get_activity_logs( 10, 1 );

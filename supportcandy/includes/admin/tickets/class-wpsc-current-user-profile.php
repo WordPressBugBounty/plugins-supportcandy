@@ -152,7 +152,7 @@ if ( ! class_exists( 'WPSC_Current_User_Profile' ) ) :
 		public static function set_my_profile() {
 
 			if ( check_ajax_referer( 'wpsc_set_my_profile', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			WPSC_MS_Recaptcha::validate( 'submit_my_profile' );
@@ -205,7 +205,7 @@ if ( ! class_exists( 'WPSC_Current_User_Profile' ) ) :
 		public static function logout() {
 
 			if ( check_ajax_referer( 'wpsc_user_logout', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;

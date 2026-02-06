@@ -126,7 +126,7 @@ if ( ! class_exists( 'WPSC_Dashboard_Settings' ) ) :
 		public static function get_edit_dashboard_card_widget() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_dashboard_card_widget', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -232,7 +232,7 @@ if ( ! class_exists( 'WPSC_Dashboard_Settings' ) ) :
 		public static function set_edit_dashboard_card_widget() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_dashboard_card_widget', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

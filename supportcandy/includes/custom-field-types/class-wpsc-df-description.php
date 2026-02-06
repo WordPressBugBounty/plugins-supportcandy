@@ -259,25 +259,34 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
-			switch ( $compare ) {
-
-				case 'LIKE':
-					$arr = array();
-					$val = explode( PHP_EOL, $val );
-					foreach ( $val as $term ) {
-						$term  = str_replace( '*', '%', trim( $term ) );
-						$arr[] = 'CONVERT(th.body USING utf8) LIKE \'%' . $term . '%\'';
-					}
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
-
-				default:
-					$str = '1=1';
+			if ( $compare !== 'LIKE' || empty( $val ) ) {
+				return '1=1';
 			}
 
-			return $str;
+			global $wpdb;
+			$column = 'CONVERT(th.body USING utf8)';
+			$terms  = preg_split( '/\R/', (string) $val );
+			$likes  = array();
+
+			foreach ( $terms as $term ) {
+
+				$term = trim( $term );
+				if ( $term === '' ) {
+					continue;
+				}
+
+				$term = str_replace( '*', '%', $term );
+				$term = $wpdb->esc_like( $term );
+
+				$likes[] = $wpdb->prepare(
+					"$column LIKE %s",
+					'%' . $term . '%'
+				);
+			}
+
+			return empty( $likes )
+				? '1=0'
+				: '(' . implode( ' OR ', $likes ) . ')';
 		}
 
 		/**
@@ -705,7 +714,9 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 					),
 				),
 			);
-			$threads = WPSC_Thread::find( $filters );
+
+			$class_name = is_a( $ticket, 'WPSC_Ticket' ) ? 'WPSC_Thread' : 'WPSC_Archive_Thread';
+			$threads = $class_name::find( $filters );
 			$thread  = isset( $threads['results'][0] ) ? $threads['results'][0] : array();
 			return $thread && $thread->is_active ? $thread->get_printable_string() : '';
 		}

@@ -3,9 +3,9 @@ Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
 Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 3.3.9
+Stable tag: 3.4.5
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -101,33 +101,6 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 * Service Request Management
 * Company, Hotel or Real Estate Service-Desk
 * To-Do List Management
-
-= Available Translations : =
-Available in 20+ languages. Also compatible with popular translation plugins like WPML, Polylang, Loco Translate, etc.
-* Arabic
-* French (France)
-* German (Germany)
-* Dutch (Netherlands)
-* Italian (Italy)
-* Portuguese (Portugal)
-* Spanish (Spain)
-* Chinese (China)
-* Chinese (Traditional)
-* Russian
-* Hebrew
-* Greek
-* Portuguese (Brazil)
-* Turkish
-* Swedish
-* Hungerian
-* Polish
-* Persian
-* Dutch (Belgium)
-* Japanese
-* Moroccan Arabic
-* Czech
-
-If you are a translator, you can get free access to all premium add-ons for a year in exchange for translating them into your language if it is not available already. We will renew the Premium subscription next year if you continue contributing to the translation. If interested, don't hesitate to contact us via our [support page](https://supportcandy.net/support-ticket/).
 
 = Our Other Plugins =
 * [PSM Multi Currency Switcher & Currency Converter for WooCommerce](https://psmplugins.com/multi-currency-for-woocommerce/) - Offer your customers a seamless multi-currency shopping experience. This plugin automatically updates exchange rates, detects your customer's currency by their location, and provides robust switching options so you can sell around the world with ease.
@@ -225,109 +198,38 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 
 == Changelog ==
 
+= 3.4.5 (January 28, 2026) =
+* Fix: Resolved an issue where archived tickets could not be deleted
+* Fix: Fixed a bug preventing actions from being performed in the settings panel
+* Fix: Addressed reported security vulnerabilities to improve overall system safety
+
+= 3.4.4 (December 24, 2025) =
+* New: Added back the ability to delete tickets.
+* New: Added back the bulk delete actions on the ticket list.
+* New: Added back the deleted filter to see deleted tickets.
+* New: Added back the permanantly delete deleted tickets setting.
+* Fix: when agentonly custom fields are modified through the REST API. Multiple changelogs being created for the same custom field.
+* Fix: The bug prevents email notifications from being sent to previously assigned agent groups.
+
+= 3.4.3 (November 22, 2025) =
+* Fix: Ticket description was not displaying in email notifications after last update.
+* Fix: Archive Ticket list reset was not working in some cases.
+
+= 3.4.2 (November 21, 2025) =
+New: Added Archive Tickets feature
+Fix: Resolved upgrade issues when updating from version 2 to version 3
+Fix: Fixed issue where the Submit button required double-clicking to create a ticket in some cases
+Fix: Fixed issue with ticket_url_plain macro not working
+Fix: Implemented security vulnerability fixes
+
+= 3.4.1 (October 08, 2025) =
+Fix: Translations not loading.
+
+= 3.4.0 (October 08, 2025) =
+New: Added database indexing to improve performance.
+Fix: Improved error handling when using an already registered email address during registration.
+
 = 3.3.9 (September 24, 2025) =
 Fix: User registration and Open ticket features are not working
 
-= 3.3.8 (September 19, 2025) =
-New: Added GDPR setting to disable IP address collection
-Fix: ticket_history_all,ticket_history_all_with_logs,ticket_history_all_with_notes,ticket_history_all_with_notes_and_logs not returning all replies/notes/logs
-Fix: Active agents not cleared on tab close
-Fix: Security vulnerability patched
-Fix: PHP notice for customers resolved
-
-= 3.3.7 (August 29, 2025) =
-New: Confirmation pop-up for private note submission (can be disabled from settings).
-Fix: Incorrect REST API response for /wp-json/supportcandy/v2/tickets/<ticket_id>/threads
-
-= 3.3.6 (August 13, 2025) =
-Fix: Flash sale banner not dissmissable.
-
-= 3.3.5 (August 08, 2025) =
-New: Raised By widget now includes a direct link to the user's WordPress profile.
-Fix: File uploads now work correctly for files with non-standard MIME type extensions
-Fix: Corrected a bug where agents were incorrectly displayed as active on a ticket even after they had left the conversation
-Fix: Resolved a conflict with TranslatePress that was blocking ticket creation
-
-= 3.3.4 (July 14, 2025) =
-Fix: Resolved conflict with DataTables script used by other plugins
-Fix: Report dates now follow the site's WordPress language settings
-Fix: Improved dashboard widget report responsiveness
-Fix: Fixed issue preventing attachment downloads due to a plugin conflict
-Fix: Agent signature now correctly appends when tickets are created by agents on behalf of customers
-
-= 3.3.3 (April 16, 2025) =
-Fix: Uncaught Error due to EDD updator class. Rolling back to previous version.
-
-= 3.3.2 (April 16, 2025) =
-Fix: Date Created and Date Updated filters for Today and Yesterday not functioning correctly
-Fix: Issue creating custom fields on certain server configurations
-Fix: DataTables library updated to the latest version
-
-= 3.3.1 (February 05, 2025) =
-Fix: Resolved a vulnerability in attachment uploads
-Fix: Unresolved ticket count was not displaying correctly on the dashboard
-Fix: Login issues occurring in certain cases
-Fix: Database notices appearing on older MySQL versions
-
-= 3.3.0 (November 14, 2024) =
-* New: Option to open tickets in a new tab (use Ctrl+Click to open tickets in a separate tab)
-* New: Additional date range filters added to dashboard widgets for enhanced filtering
-* Fix: Values of conditional custom fields not clearing properly in the new ticket form
-* Fix: Guest users unable to reply to tickets issue resolved
-* Fix: Deletion issues with ticket statuses, priorities, and categories fixed
-
-= 3.2.9 (August 12, 2024) =
-* Fix: Enhanced attachment security to prevent potential vulnerabilities
-* Fix: Improved compatibility with PHP 8.2
-
-= 3.2.8 (July 03, 2024) =
-* New: Dashboard widget to show number of tickets created by day of week
-* New: Filter added for customer list
-* Fix: Validation for Assignee field not working in create ticket form
-* Fix: File upload not working on some servers
-* Fix: Unable to create duplicate ticket 
-* Fix: Can't create a new ticket from a thread
-* New: Productivity Suite add-on (Premium)
-
-= 3.2.7 (April 23, 2024) =
-* New: Dyanamic filters added for date created and date updated
-* New: New condition "Last reply source" added
-* New: Appreance setting for "Reply & Close" button
-* New: Setting to disable "Reply & Close" button
-* New: Filter added for recent activity logs
-* New: Wating for visibility conditions
-* New: New macro {ticket_url_plain} added
-* New: Term and condtions, gdpr setting added for registration
-* New: Toggle button addde for ticket widgets 
-* Fix: Not showing correct live agents in agent collision
-* Fix: Unable to download attachments of duplicate tickets
-* Fix: Showing notice on PHP 8.1
-* Fix: Ticket list pagination not showing correct results
-* Fix: Unable to download attachments on some servers
-* Fix: Translation improvments
-
-= 3.2.6 (February 22, 2024) =
-* New: Added Auto-refresh setting for dashboard
-* New: Introduced a customizable option to set number custom field as integer or float
-* Fix: Datepicker not working on polish sites
-* Fix: Dashboard improvements and fixes
-* Fix: Bulk assign agent not working
-* Fix: Working hours setting not loading
-* Fix: Blank links showing in admin menu
-* Fix: Delete and replace category, priority and status not working
-
-= 3.2.5 (February 9, 2024) =
-* Fix: Unable to upload some attachments after v3.2.4
-* Fix: Wrong ticket url on dashboard
-
-= 3.2.4 (February 6, 2024) =
-* New: Dashboard feature added
-* New: Recent Activities feature for administrators
-* New: UI improvements for Customer Profile, My Account and Agent Profile
-* Fix: Vulnerability fix
-* Fix: Email notifications does not support RTL
-* FiX: Does not change ticket status after a reply added from API
-* Fix: Removed H1 tag from model header
-* Fix: Tags are not working in email piping rules
-
-[See changelog for all versions](https://supportcandy.net/changelog/).
+[See changelog for all versions](https://plugins.svn.wordpress.org/supportcandy/trunk/changelog.txt).

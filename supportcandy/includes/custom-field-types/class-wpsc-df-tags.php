@@ -166,6 +166,7 @@ if ( ! class_exists( 'WPSC_CF_TAGS' ) ) :
 
 			// ticket search query.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -430,37 +431,50 @@ if ( ! class_exists( 'WPSC_CF_TAGS' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
-			switch ( $compare ) {
-
-				case '=':
-					$str = $cf->slug . ' RLIKE \'(^|[|])' . esc_sql( $val ) . '($|[|])\'';
-					break;
-
-				case 'IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' ) {
-							$val[ $index ] = '^$';
-						}
-					}
-					$str = $cf->slug . ' RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
-
-				case 'NOT IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' ) {
-							$val[ $index ] = '^$';
-						}
-					}
-					$str = $cf->slug . ' NOT RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
-
-				default:
-					$str = '1=1';
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
 			}
 
-			return $str;
+			switch ( $compare ) {
+				case '=':
+					if ( ! is_string( $val ) || $val === '' ) {
+						return '1=0';
+					}
+
+					$tag = preg_quote( $val, '/' );
+					$tag = esc_sql( $tag );
+
+					return $slug . " RLIKE '(^|[|])" . $tag . "($|[|])'";
+
+				case 'IN':
+				case 'NOT IN':
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$patterns = array();
+					foreach ( $val as $v ) {
+						$v = trim( (string) $v );
+						if ( $v === '' ) {
+							$patterns[] = '^$';
+							continue;
+						}
+
+						$v = preg_quote( $v, '/' );
+						$patterns[] = esc_sql( $v );
+					}
+
+					if ( empty( $patterns ) ) {
+						return '1=0';
+					}
+
+					$operator = ( $compare === 'IN' ) ? 'RLIKE' : 'NOT RLIKE';
+					return $slug . " {$operator} '(^|[|])(" . implode( '|', $patterns ) . ")($|[|])'";
+
+				default:
+					return '1=1';
+			}
 		}
 
 		/**

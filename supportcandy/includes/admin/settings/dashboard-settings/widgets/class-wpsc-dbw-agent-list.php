@@ -97,7 +97,7 @@ if ( ! class_exists( 'WPSC_DBW_Agent_List' ) ) :
 			if ( $current_user->is_guest ||
 				! ( $current_user->is_agent && in_array( $current_user->agent->role, $widgets[ self::$widget ]['allowed-agent-roles'] ) )
 			) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_view = get_option( 'wpsc-tl-ms-agent-view', array() );
@@ -255,7 +255,7 @@ if ( ! class_exists( 'WPSC_DBW_Agent_List' ) ) :
 		public static function get_agent_status_ticket_list() {
 
 			if ( check_ajax_referer( 'wpsc_get_agent_status_ticket_list', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;

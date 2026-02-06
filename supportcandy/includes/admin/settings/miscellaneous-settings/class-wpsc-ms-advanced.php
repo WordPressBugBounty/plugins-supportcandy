@@ -33,35 +33,37 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 			$advanced = apply_filters(
 				'wpsc_ms_advanced_settings',
 				array(
-					'public-mode'                   => 0,
-					'public-mode-reply'             => 0,
-					'reply-confirmation'            => 1,
-					'note-confirmation'             => 0,
-					'thread-date-display-as'        => 'diff',
-					'thread-date-format'            => 'F d, Y h:i A',
-					'do-not-notify-owner'           => 1,
-					'do-not-notify-owner-status'    => 1,
-					'ticket-id-format'              => 'sequential',
-					'starting-ticket-id'            => 1,
-					'random-id-length'              => 8,
-					'ticket-history-macro-threads'  => 5,
-					'register-user-if-not-exist'    => 0,
-					'auto-delete-tickets-time'      => 0,
-					'auto-delete-tickets-unit'      => 'days',
-					'permanent-delete-tickets-time' => 0,
-					'permanent-delete-tickets-unit' => 'days',
-					'allow-bcc'                     => 0,
-					'allow-cc'                      => 0,
-					'view-more'                     => 1,
-					'allow-reply-to-close-ticket'   => array( 'customer', 'agent' ),
-					'raised-by-user'                => 'customer',
-					'allow-my-profile'              => 1,
-					'allow-agent-profile'           => 1,
-					'ticket-url-auth'               => 0,
-					'rest-api'                      => 1,
-					'agent-collision'               => 1,
-					'self-assign'                   => 1,
-					'reply-close'                   => 1,
+					'public-mode'                    => 0,
+					'public-mode-reply'              => 0,
+					'reply-confirmation'             => 1,
+					'note-confirmation'              => 0,
+					'thread-date-display-as'         => 'diff',
+					'thread-date-format'             => 'F d, Y h:i A',
+					'do-not-notify-owner'            => 1,
+					'do-not-notify-owner-status'     => 1,
+					'ticket-id-format'               => 'sequential',
+					'starting-ticket-id'             => 1,
+					'random-id-length'               => 8,
+					'ticket-history-macro-threads'   => 5,
+					'register-user-if-not-exist'     => 0,
+					'auto-archive-tickets-time'      => 0,
+					'auto-archive-tickets-unit'      => 'days',
+					'permanent-archive-tickets-time' => 0,
+					'permanent-archive-tickets-unit' => 'days',
+					'permanent-delete-tickets-time'  => 0,
+					'permanent-delete-tickets-unit'  => 'days',
+					'allow-bcc'                      => 0,
+					'allow-cc'                       => 0,
+					'view-more'                      => 1,
+					'allow-reply-to-close-ticket'    => array( 'customer', 'agent' ),
+					'raised-by-user'                 => 'customer',
+					'allow-my-profile'               => 1,
+					'allow-agent-profile'            => 1,
+					'ticket-url-auth'                => 0,
+					'rest-api'                       => 1,
+					'agent-collision'                => 1,
+					'self-assign'                    => 1,
+					'reply-close'                    => 1,
 				)
 			);
 			update_option( 'wpsc-ms-advanced-settings', $advanced );
@@ -223,20 +225,33 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 				</div>
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for=""><?php esc_attr_e( 'Auto delete closed tickets', 'supportcandy' ); ?></label>
+						<label for=""><?php esc_attr_e( 'Auto archive closed tickets', 'supportcandy' ); ?></label>
 					</div>
 					<div class="divide-bar">
-						<input type="number" id="wpsc-auto-delete-tickets-time" name="auto-delete-tickets-time" value="<?php echo esc_attr( $settings['auto-delete-tickets-time'] ); ?>">
-						<select id="wpsc-auto-delete-tickets-unit" name="auto-delete-tickets-unit">
-							<option <?php selected( $settings['auto-delete-tickets-unit'], 'days' ); ?> value="days"><?php esc_attr_e( 'Day(s)', 'supportcandy' ); ?></option>
-							<option <?php selected( $settings['auto-delete-tickets-unit'], 'month' ); ?> value="month"><?php esc_attr_e( 'Month(s)', 'supportcandy' ); ?></option>
-							<option <?php selected( $settings['auto-delete-tickets-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'supportcandy' ); ?></option>
+						<input type="number" id="wpsc-auto-archive-tickets-time" name="auto-archive-tickets-time" value="<?php echo esc_attr( $settings['auto-archive-tickets-time'] ); ?>">
+						<select id="wpsc-auto-archive-tickets-unit" name="auto-archive-tickets-unit">
+							<option <?php selected( $settings['auto-archive-tickets-unit'], 'days' ); ?> value="days"><?php esc_attr_e( 'Day(s)', 'supportcandy' ); ?></option>
+							<option <?php selected( $settings['auto-archive-tickets-unit'], 'month' ); ?> value="month"><?php esc_attr_e( 'Month(s)', 'supportcandy' ); ?></option>
+							<option <?php selected( $settings['auto-archive-tickets-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'supportcandy' ); ?></option>
 						</select>  
 					</div>
 				</div>
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for=""><?php esc_attr_e( 'Permanently delete tickets', 'supportcandy' ); ?></label>
+						<label for=""><?php esc_attr_e( 'Permanently delete archived tickets', 'supportcandy' ); ?></label>
+					</div>
+					<div class="divide-bar">
+						<input type="number" id="wpsc-permanent-archive-tickets-time" name="permanent-archive-tickets-time" value="<?php echo esc_attr( $settings['permanent-archive-tickets-time'] ); ?>">
+						<select id="wpsc-permanent-archive-tickets-unit" name="permanent-archive-tickets-unit">
+							<option <?php selected( $settings['permanent-archive-tickets-unit'], 'days' ); ?> value="days"><?php esc_attr_e( 'Day(s)', 'supportcandy' ); ?></option>
+							<option <?php selected( $settings['permanent-archive-tickets-unit'], 'month' ); ?> value="month"><?php esc_attr_e( 'Month(s)', 'supportcandy' ); ?></option>
+							<option <?php selected( $settings['permanent-archive-tickets-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'supportcandy' ); ?></option>
+						</select>  
+					</div>
+				</div>
+				<div class="wpsc-input-group">
+					<div class="label-container">
+						<label for=""><?php esc_attr_e( 'Permanently delete deleted tickets', 'supportcandy' ); ?></label>
 					</div>
 					<div class="divide-bar">
 						<input type="number" id="wpsc-permanent-delete-tickets-time" name="permanent-delete-tickets-time" value="<?php echo esc_attr( $settings['permanent-delete-tickets-time'] ); ?>">
@@ -388,7 +403,7 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 		public static function save_settings() {
 
 			if ( check_ajax_referer( 'wpsc_set_ms_advanced', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			global $wpdb;
@@ -400,35 +415,37 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 			$advanced = apply_filters(
 				'wpsc_set_ms_advanced',
 				array(
-					'public-mode'                   => isset( $_POST['public-mode'] ) ? intval( $_POST['public-mode'] ) : 1,
-					'public-mode-reply'             => isset( $_POST['public-mode-reply'] ) ? intval( $_POST['public-mode-reply'] ) : 0,
-					'reply-confirmation'            => isset( $_POST['reply-confirmation'] ) ? intval( $_POST['reply-confirmation'] ) : 1,
-					'note-confirmation'             => isset( $_POST['note-confirmation'] ) ? intval( $_POST['note-confirmation'] ) : 0,
-					'thread-date-display-as'        => isset( $_POST['thread-date-display-as'] ) ? sanitize_text_field( wp_unslash( $_POST['thread-date-display-as'] ) ) : 'diff',
-					'thread-date-format'            => isset( $_POST['thread-date-format'] ) ? sanitize_text_field( wp_unslash( $_POST['thread-date-format'] ) ) : 'F d, Y h:i A',
-					'do-not-notify-owner'           => isset( $_POST['do-not-notify-owner'] ) ? intval( $_POST['do-not-notify-owner'] ) : 0,
-					'do-not-notify-owner-status'    => isset( $_POST['do-not-notify-owner-status'] ) ? intval( $_POST['do-not-notify-owner-status'] ) : 0,
-					'ticket-id-format'              => isset( $_POST['ticket-id-format'] ) ? sanitize_text_field( wp_unslash( $_POST['ticket-id-format'] ) ) : 'sequential',
-					'starting-ticket-id'            => isset( $_POST['starting-ticket-id'] ) ? intval( $_POST['starting-ticket-id'] ) : 1,
-					'random-id-length'              => isset( $_POST['random-id-length'] ) ? intval( $_POST['random-id-length'] ) : 8,
-					'ticket-history-macro-threads'  => isset( $_POST['ticket-history-macro-threads'] ) ? intval( $_POST['ticket-history-macro-threads'] ) : 5,
-					'register-user-if-not-exist'    => isset( $_POST['register-user-if-not-exist'] ) ? intval( $_POST['register-user-if-not-exist'] ) : '0',
-					'auto-delete-tickets-time'      => isset( $_POST['auto-delete-tickets-time'] ) ? intval( $_POST['auto-delete-tickets-time'] ) : '0',
-					'auto-delete-tickets-unit'      => isset( $_POST['auto-delete-tickets-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['auto-delete-tickets-unit'] ) ) : 'days',
-					'permanent-delete-tickets-time' => isset( $_POST['permanent-delete-tickets-time'] ) ? intval( $_POST['permanent-delete-tickets-time'] ) : '0',
-					'permanent-delete-tickets-unit' => isset( $_POST['permanent-delete-tickets-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['permanent-delete-tickets-unit'] ) ) : 'days',
-					'allow-bcc'                     => isset( $_POST['allow-bcc'] ) ? intval( $_POST['allow-bcc'] ) : 0,
-					'allow-cc'                      => isset( $_POST['allow-cc'] ) ? intval( $_POST['allow-cc'] ) : 0,
-					'view-more'                     => isset( $_POST['view-more'] ) ? intval( $_POST['view-more'] ) : 1,
-					'allow-reply-to-close-ticket'   => isset( $_POST['allow-reply-to-close-ticket'] ) ? array_filter( array_map( 'sanitize_text_field', wp_unslash( $_POST['allow-reply-to-close-ticket'] ) ) ) : array(),
-					'raised-by-user'                => isset( $_POST['raised-by-user'] ) ? sanitize_text_field( wp_unslash( $_POST['raised-by-user'] ) ) : 'customer',
-					'allow-my-profile'              => isset( $_POST['allow-my-profile'] ) ? intval( $_POST['allow-my-profile'] ) : 0,
-					'allow-agent-profile'           => isset( $_POST['allow-agent-profile'] ) ? intval( $_POST['allow-agent-profile'] ) : 0,
-					'ticket-url-auth'               => isset( $_POST['ticket-url-auth'] ) ? intval( $_POST['ticket-url-auth'] ) : 0,
-					'rest-api'                      => isset( $_POST['rest-api'] ) ? intval( $_POST['rest-api'] ) : 0,
-					'agent-collision'               => isset( $_POST['agent-collision'] ) ? intval( $_POST['agent-collision'] ) : 0,
-					'self-assign'                   => isset( $_POST['self-assign'] ) ? intval( $_POST['self-assign'] ) : 0,
-					'reply-close'                   => isset( $_POST['reply-close'] ) ? intval( $_POST['reply-close'] ) : 0,
+					'public-mode'                    => isset( $_POST['public-mode'] ) ? intval( $_POST['public-mode'] ) : 1,
+					'public-mode-reply'              => isset( $_POST['public-mode-reply'] ) ? intval( $_POST['public-mode-reply'] ) : 0,
+					'reply-confirmation'             => isset( $_POST['reply-confirmation'] ) ? intval( $_POST['reply-confirmation'] ) : 1,
+					'note-confirmation'              => isset( $_POST['note-confirmation'] ) ? intval( $_POST['note-confirmation'] ) : 0,
+					'thread-date-display-as'         => isset( $_POST['thread-date-display-as'] ) ? sanitize_text_field( wp_unslash( $_POST['thread-date-display-as'] ) ) : 'diff',
+					'thread-date-format'             => isset( $_POST['thread-date-format'] ) ? sanitize_text_field( wp_unslash( $_POST['thread-date-format'] ) ) : 'F d, Y h:i A',
+					'do-not-notify-owner'            => isset( $_POST['do-not-notify-owner'] ) ? intval( $_POST['do-not-notify-owner'] ) : 0,
+					'do-not-notify-owner-status'     => isset( $_POST['do-not-notify-owner-status'] ) ? intval( $_POST['do-not-notify-owner-status'] ) : 0,
+					'ticket-id-format'               => isset( $_POST['ticket-id-format'] ) ? sanitize_text_field( wp_unslash( $_POST['ticket-id-format'] ) ) : 'sequential',
+					'starting-ticket-id'             => isset( $_POST['starting-ticket-id'] ) ? intval( $_POST['starting-ticket-id'] ) : 1,
+					'random-id-length'               => isset( $_POST['random-id-length'] ) ? intval( $_POST['random-id-length'] ) : 8,
+					'ticket-history-macro-threads'   => isset( $_POST['ticket-history-macro-threads'] ) ? intval( $_POST['ticket-history-macro-threads'] ) : 5,
+					'register-user-if-not-exist'     => isset( $_POST['register-user-if-not-exist'] ) ? intval( $_POST['register-user-if-not-exist'] ) : '0',
+					'auto-archive-tickets-time'      => isset( $_POST['auto-archive-tickets-time'] ) ? intval( $_POST['auto-archive-tickets-time'] ) : '0',
+					'auto-archive-tickets-unit'      => isset( $_POST['auto-archive-tickets-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['auto-archive-tickets-unit'] ) ) : 'days',
+					'permanent-archive-tickets-time' => isset( $_POST['permanent-archive-tickets-time'] ) ? intval( $_POST['permanent-archive-tickets-time'] ) : '0',
+					'permanent-archive-tickets-unit' => isset( $_POST['permanent-archive-tickets-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['permanent-archive-tickets-unit'] ) ) : 'days',
+					'permanent-delete-tickets-time'  => isset( $_POST['permanent-delete-tickets-time'] ) ? intval( $_POST['permanent-delete-tickets-time'] ) : '0',
+					'permanent-delete-tickets-unit'  => isset( $_POST['permanent-delete-tickets-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['permanent-delete-tickets-unit'] ) ) : 'days',
+					'allow-bcc'                      => isset( $_POST['allow-bcc'] ) ? intval( $_POST['allow-bcc'] ) : 0,
+					'allow-cc'                       => isset( $_POST['allow-cc'] ) ? intval( $_POST['allow-cc'] ) : 0,
+					'view-more'                      => isset( $_POST['view-more'] ) ? intval( $_POST['view-more'] ) : 1,
+					'allow-reply-to-close-ticket'    => isset( $_POST['allow-reply-to-close-ticket'] ) ? array_filter( array_map( 'sanitize_text_field', wp_unslash( $_POST['allow-reply-to-close-ticket'] ) ) ) : array(),
+					'raised-by-user'                 => isset( $_POST['raised-by-user'] ) ? sanitize_text_field( wp_unslash( $_POST['raised-by-user'] ) ) : 'customer',
+					'allow-my-profile'               => isset( $_POST['allow-my-profile'] ) ? intval( $_POST['allow-my-profile'] ) : 0,
+					'allow-agent-profile'            => isset( $_POST['allow-agent-profile'] ) ? intval( $_POST['allow-agent-profile'] ) : 0,
+					'ticket-url-auth'                => isset( $_POST['ticket-url-auth'] ) ? intval( $_POST['ticket-url-auth'] ) : 0,
+					'rest-api'                       => isset( $_POST['rest-api'] ) ? intval( $_POST['rest-api'] ) : 0,
+					'agent-collision'                => isset( $_POST['agent-collision'] ) ? intval( $_POST['agent-collision'] ) : 0,
+					'self-assign'                    => isset( $_POST['self-assign'] ) ? intval( $_POST['self-assign'] ) : 0,
+					'reply-close'                    => isset( $_POST['reply-close'] ) ? intval( $_POST['reply-close'] ) : 0,
 				)
 			);
 			update_option( 'wpsc-ms-advanced-settings', $advanced );
@@ -451,7 +468,7 @@ if ( ! class_exists( 'WPSC_MS_Advanced' ) ) :
 		public static function reset_settings() {
 
 			if ( check_ajax_referer( 'wpsc_reset_ms_advanced', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

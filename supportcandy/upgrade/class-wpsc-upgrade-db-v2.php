@@ -184,11 +184,11 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 		public static function authorize() {
 
 			if ( ! wpsc_upgrade_is_site_admin() ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( check_ajax_referer( 'wpsc_authorize_v2_upgrade', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			update_option( 'wpsc_upgrade_permission_v2', 1 );
@@ -207,11 +207,11 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			$upgrade_permission = get_option( 'wpsc_upgrade_permission_v2', 0 );
 
 			if ( ! wpsc_upgrade_is_site_admin() || ! $upgrade_permission ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( check_ajax_referer( 'wpsc_upgrade_v2_check_compatibility', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$errors = array();
@@ -382,7 +382,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 		public static function get_v2_upgrade_cron_status() {
 
 			if ( ! wpsc_upgrade_is_site_admin() ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			// Set transient.
@@ -1242,7 +1242,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 
 			// Change load order of all existing custom fields to higher number.
 			if ( $page == 1 ) {
-				$wpdb->query( 'UPDATE ' . $wpdb->prefix . 'psmsc_custom_fields SET load_order=1000 WHERE id NOT IN(1,2,7)' );
+				$wpdb->query( "UPDATE {$wpdb->prefix}psmsc_custom_fields SET load_order=1000 WHERE slug NOT IN('id','customer','status')" );
 			}
 
 			$offset = ( $page - 1 ) * 10;
@@ -1258,6 +1258,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			$fields = get_terms( $args );
 			$string_translations = get_option( 'wpsc-string-translation' );
 			$installed_addons = get_option( 'wpsc_upgrade_installed_addons' );
+			$custom_fields = $wpdb->get_results( 'SELECT * FROM ' . $wpdb->prefix . 'psmsc_custom_fields', ARRAY_A );
 			$term_id_map = get_option( 'wpsc_upgrade_cf_term_id_map', array() );
 			$slug_map = get_option( 'wpsc_upgrade_cf_slug_map', array() );
 			$load_order = get_option( 'wpsc_upgrade_cf_load_order', 8 );
@@ -1274,16 +1275,22 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 					switch ( $prev->slug ) {
 
 						case 'ticket_id':
-							$term_id_map[ $prev->term_id ] = 1;
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'id' );
+							$cf = reset( $filtered_fields );
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'id';
 							break;
 
 						case 'ticket_status':
-							$term_id_map[ $prev->term_id ] = 7;
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'status' );
+							$cf = reset( $filtered_fields );
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'status';
 							break;
 
 						case 'customer_name':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'name' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
@@ -1291,14 +1298,16 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									'extra_info' => $extra_info,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 3 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 3;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'name';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'customer_email':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'email' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
@@ -1306,14 +1315,16 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									'extra_info' => $extra_info,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 4 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 4;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'email';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'ticket_subject':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'subject' );
+							$cf = reset( $filtered_fields );
 							$default_value = get_term_meta( $prev->term_id, 'wpsc_tf_default_subject', true );
 							$default_value = $default_value ? $default_value : 'Not Applicable';
 							$wpdb->update(
@@ -1326,9 +1337,9 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									'default_value'    => $default_value,
 									'load_order'       => $load_order++,
 								),
-								array( 'id' => 5 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 5;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'subject';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
@@ -1336,6 +1347,8 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 							break;
 
 						case 'ticket_description':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'description' );
+							$cf = reset( $filtered_fields );
 							$default_value = get_term_meta( $prev->term_id, 'wpsc_tf_default_description', true );
 							$default_value = $default_value ? $default_value : 'Not Applicable';
 							$wpdb->update(
@@ -1346,15 +1359,17 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									'default_value' => $default_value,
 									'load_order'    => $load_order++,
 								),
-								array( 'id' => 6 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 6;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'description';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 							break;
 
 						case 'ticket_priority':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'priority' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
@@ -1362,15 +1377,17 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									'extra_info' => $extra_info,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 8 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 8;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'priority';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 							break;
 
 						case 'ticket_category':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'category' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
@@ -1378,189 +1395,209 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									'extra_info' => $extra_info,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 9 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 9;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'category';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 							break;
 
 						case 'assigned_agent':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'assigned_agent' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 10 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 10;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'assigned_agent';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'date_created':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'date_created' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 11 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 11;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'date_created';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'date_updated':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'date_updated' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 12 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 12;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'date_updated';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'agent_created':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'agent_created' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 13 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 13;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'agent_created';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'date_closed':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'date_closed' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 20 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 20;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'date_closed';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'user_type':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'user_type' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 21 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 21;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'user_type';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'last_reply_on':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'last_reply_on' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 22 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 22;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'last_reply_on';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'last_reply_by':
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'last_reply_by' );
+							$cf = reset( $filtered_fields );
 							$wpdb->update(
 								$wpdb->prefix . 'psmsc_custom_fields',
 								array(
 									'name'       => $label,
 									'load_order' => $load_order++,
 								),
-								array( 'id' => 23 )
+								array( 'id' => $cf['id'] )
 							);
-							$term_id_map[ $prev->term_id ] = 23;
+							$term_id_map[ $prev->term_id ] = $cf['id'];
 							$slug_map[ $prev->slug ] = 'last_reply_by';
 							$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							break;
 
 						case 'sf_rating':
-							$id = $wpdb->get_var( "SELECT id from {$wpdb->prefix}psmsc_custom_fields WHERE slug = 'rating'" );
-							if ( $id ) {
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'rating' );
+							$cf = reset( $filtered_fields );
+							if ( ! empty( $cf ) ) {
 								$wpdb->update(
 									$wpdb->prefix . 'psmsc_custom_fields',
 									array(
 										'name'       => $label,
 										'load_order' => $load_order++,
 									),
-									array( 'id' => $id )
+									array( 'id' => $cf[0]['id'] )
 								);
-								$term_id_map[ $prev->term_id ] = $id;
+								$term_id_map[ $prev->term_id ] = $cf[0]['id'];
 								$slug_map[ $prev->slug ] = 'rating';
 								$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							}
 							break;
 
 						case 'sla':
-							$id = $wpdb->get_var( "SELECT id from {$wpdb->prefix}psmsc_custom_fields WHERE slug = 'sla'" );
-							if ( $id ) {
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'sla' );
+							$cf = reset( $filtered_fields );
+							if ( ! empty( $cf ) ) {
 								$wpdb->update(
 									$wpdb->prefix . 'psmsc_custom_fields',
 									array(
 										'name'       => $label,
 										'load_order' => $load_order++,
 									),
-									array( 'id' => $id )
+									array( 'id' => $cf[0]['id'] )
 								);
-								$term_id_map[ $prev->term_id ] = $id;
+								$term_id_map[ $prev->term_id ] = $cf[0]['id'];
 								$slug_map[ $prev->slug ] = 'sla';
 								$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							}
 							break;
 
 						case 'usergroup':
-							$id = $wpdb->get_var( "SELECT id from {$wpdb->prefix}psmsc_custom_fields WHERE slug = 'usergroups'" );
-							if ( $id ) {
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'usergroups' );
+							$cf = reset( $filtered_fields );
+							if ( ! empty( $cf ) ) {
 								$wpdb->update(
 									$wpdb->prefix . 'psmsc_custom_fields',
 									array(
 										'name'       => $label,
 										'load_order' => $load_order++,
 									),
-									array( 'id' => $id )
+									array( 'id' => $cf[0]['id'] )
 								);
-								$term_id_map[ $prev->term_id ] = $id;
+								$term_id_map[ $prev->term_id ] = $cf[0]['id'];
 								$slug_map[ $prev->slug ] = 'usergroups';
 								$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							}
 							break;
 
 						case 'timer':
-							$id = $wpdb->get_var( "SELECT id from {$wpdb->prefix}psmsc_custom_fields WHERE slug = 'time_spent'" );
-							if ( $id ) {
+							$filtered_fields = array_filter( $custom_fields, fn( $field ) => $field['slug'] == 'time_spent' );
+							$cf = reset( $filtered_fields );
+							if ( ! empty( $cf ) ) {
 								$wpdb->update(
 									$wpdb->prefix . 'psmsc_custom_fields',
 									array(
 										'name'       => $label,
 										'load_order' => $load_order++,
 									),
-									array( 'id' => $id )
+									array( 'id' => $cf[0]['id'] )
 								);
-								$term_id_map[ $prev->term_id ] = $id;
+								$term_id_map[ $prev->term_id ] = $cf[0]['id'];
 								$slug_map[ $prev->slug ] = 'time_spent';
 								$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $label;
 							}
@@ -1587,6 +1624,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1606,6 +1644,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$option_strings = self::import_options( $prev, $response['id'] );
 							$string_translations = array_merge( $string_translations, $option_strings );
 							$term_id_map[ $prev->term_id ] = $response['id'];
@@ -1626,6 +1665,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$option_strings = self::import_options( $prev, $response['id'] );
 							$string_translations = array_merge( $string_translations, $option_strings );
 							$term_id_map[ $prev->term_id ] = $response['id'];
@@ -1646,6 +1686,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$option_strings = self::import_options( $prev, $response['id'] );
 							$string_translations = array_merge( $string_translations, $option_strings );
 							$term_id_map[ $prev->term_id ] = $response['id'];
@@ -1668,6 +1709,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' LONGTEXT NULL DEFAULT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' LONGTEXT NULL DEFAULT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1694,6 +1736,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' DATETIME NULL DEFAULT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' DATETIME NULL DEFAULT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1714,6 +1757,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1734,6 +1778,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1755,6 +1800,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1774,6 +1820,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1793,6 +1840,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									)
 								);
 								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
+								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
 								$term_id_map[ $prev->term_id ] = $response['id'];
 								$slug_map[ $prev->slug ] = $response['slug'];
 								$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1813,6 +1861,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									)
 								);
 								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
+								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
 								$term_id_map[ $prev->term_id ] = $response['id'];
 								$slug_map[ $prev->slug ] = $response['slug'];
 								$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1833,6 +1882,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									)
 								);
 								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
+								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
 								$term_id_map[ $prev->term_id ] = $response['id'];
 								$slug_map[ $prev->slug ] = $response['slug'];
 								$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1853,6 +1903,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 									)
 								);
 								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
+								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
 								$term_id_map[ $prev->term_id ] = $response['id'];
 								$slug_map[ $prev->slug ] = $response['slug'];
 								$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1873,6 +1924,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' DATETIME NULL DEFAULT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' DATETIME NULL DEFAULT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1895,6 +1947,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1915,6 +1968,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TEXT NULL DEFAULT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TEXT NULL DEFAULT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -2035,7 +2089,6 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 						'dt-assigned-others'    => true,
 						'backend-access'        => true, // Dashboard support menu access.
 						'create-as'             => true, // Create ticket on others behalf.
-						'dtt-access'            => true, // Deleted ticket access.
 						'eci-access'            => true, // Edit customer info.
 						'dash-access'           => true, // Dashboard access.
 					),
@@ -2433,13 +2486,14 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			$aview['default-sort-by'] = $orderby->slug;
 			$aview['default-sort-order'] = get_option( 'wpsc_tl_agent_orderby_order' );
 			$aview['number-of-tickets'] = get_option( 'wpsc_tl_agent_no_of_tickets' );
+			$unresolved_statuses = get_option( 'wpsc_tl_agent_unresolve_statuses', array() );
 			$aview['unresolved-ticket-statuses'] = array_filter(
 				array_unique(
 					array_map(
 						function ( $status_id ) use ( $status_map ) {
-							return $status_map[ $status_id ];
+							return isset( $status_map[ $status_id ] ) ? $status_map[ $status_id ] : null;
 						},
-						get_option( 'wpsc_tl_agent_unresolve_statuses', array() )
+						$unresolved_statuses
 					)
 				)
 			);
@@ -2452,13 +2506,14 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			$cview['default-sort-by'] = $orderby->slug;
 			$cview['default-sort-order'] = get_option( 'wpsc_tl_customer_orderby_order' );
 			$cview['number-of-tickets'] = get_option( 'wpsc_tl_customer_no_of_tickets' );
+			$unresolved_statuses = get_option( 'wpsc_tl_customer_unresolve_statuses', array() );
 			$cview['unresolved-ticket-statuses'] = array_filter(
 				array_unique(
 					array_map(
 						function ( $status_id ) use ( $status_map ) {
-							return $status_map[ $status_id ];
+							return isset( $status_map[ $status_id ] ) ? $status_map[ $status_id ] : null;
 						},
-						get_option( 'wpsc_tl_customer_unresolve_statuses', array() )
+						$unresolved_statuses
 					)
 				)
 			);
@@ -2468,7 +2523,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			$setting['closed-ticket-statuses'] = array_unique(
 				array_map(
 					function ( $status_id ) use ( $status_map ) {
-						return $status_map[ $status_id ];
+						return isset( $status_map[ $status_id ] ) ? $status_map[ $status_id ] : null;
 					},
 					get_option( 'wpsc_close_ticket_group', array() )
 				)
@@ -2912,9 +2967,9 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			// Auto delete closed tickets.
 			$wpsc_auto_delete_ticket = get_option( 'wpsc_auto_delete_ticket', 0 );
 			if ( $wpsc_auto_delete_ticket ) {
-				$advanced['auto-delete-tickets-time'] = intval( get_option( 'wpsc_auto_delete_ticket_time', $advanced['auto-delete-tickets-time'] ) );
+				$advanced['auto-archive-tickets-time'] = intval( get_option( 'wpsc_auto_delete_ticket_time', $advanced['auto-archive-tickets-time'] ) );
 			} else {
-				$advanced['auto-delete-tickets-time'] = 0;
+				$advanced['auto-archive-tickets-time'] = 0;
 			}
 			$unit_map = array(
 				'days'   => 'days',
@@ -2922,7 +2977,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 				'years'  => 'year',
 			);
 			$unit = get_option( 'wpsc_auto_delete_ticket_time_period_unit' );
-			$advanced['auto-delete-tickets-unit'] = isset( $unit_map[ $unit ] ) ? $unit_map[ $unit ] : 'days';
+			$advanced['auto-archive-tickets-unit'] = isset( $unit_map[ $unit ] ) ? $unit_map[ $unit ] : 'days';
 			// BCC in reply form.
 			$advanced['allow-bcc'] = intval( get_option( 'wpsc_reply_bcc_visibility', $advanced['allow-bcc'] ) );
 			// New ticket button url.
@@ -5123,7 +5178,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 			}
 
 			// insert sf_date if only rating is available.
-			if ( $ticket->rating && ! isset( $ticket_data['sf_date'] ) ) {
+			if ( isset( $ticket->rating ) && $ticket->rating && ! isset( $ticket_data['sf_date'] ) ) {
 				$date_closed = isset( $ticket->date_closed ) ? $ticket->date_closed : '';
 				$date_closed = ! $date_closed && isset( $ticket_data['date_closed'] ) ? $ticket_data['date_closed'] : $date_closed;
 				if ( $date_closed ) {
@@ -5233,6 +5288,10 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 		public static function import_aar_conditions() {
 
 			$rules_map = get_option( 'wpsc_upgrade_aar_map' );
+			if ( empty( $rules_map ) ) {
+				return;
+			}
+
 			$new_rules = get_option( 'wpsc-aar-rules' );
 			$prev_rules = get_terms(
 				array(
@@ -5269,6 +5328,9 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 
 			$new_policies = get_option( 'wpsc-sla-policies' );
 			$map = get_option( 'wpsc_upgrade_sla_policy_map' );
+			if ( empty( $map ) ) {
+				return;
+			}
 
 			$policies = get_terms(
 				array(

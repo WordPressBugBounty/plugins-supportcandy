@@ -282,27 +282,42 @@ if ( ! class_exists( 'WPSC_DF_Source' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
+
+			$column = 'CONVERT(t.' . $slug . ' USING utf8)';
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					if ( ! is_scalar( $val ) ) {
+						return '1=0';
+					}
+
+					return 't.' . $slug . "='" . esc_sql( (string) $val ) . "'";
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					$values = is_array( $val ) ? $val : array( $val );
+					$clean  = array();
+
+					foreach ( $values as $v ) {
+						if ( is_scalar( $v ) && $v !== '' ) {
+							$clean[] = "'" . esc_sql( (string) $v ) . "'";
+						}
+					}
+
+					if ( empty( $clean ) ) {
+						return '1=0';
+					}
+
+					return $column . ' ' . $compare . ' (' . implode( ', ', $clean ) . ')';
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

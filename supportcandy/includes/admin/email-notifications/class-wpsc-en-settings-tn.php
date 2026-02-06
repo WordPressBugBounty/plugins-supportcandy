@@ -118,17 +118,17 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 										<?php
 										if ( $et['is_enable'] ) {
 											?>
-											<a href="javascript:wpsc_en_enable_disable_template(<?php echo esc_attr( $index ); ?>, '0', '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_enable_disable_template' ) ); ?>')"><?php esc_attr_e( 'Disable', 'supportcandy' ); ?></a> |
+											<span class="wpsc-link" onclick="wpsc_en_enable_disable_template(<?php echo esc_attr( $index ); ?>, '0', '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_enable_disable_template' ) ); ?>')"><?php esc_attr_e( 'Disable', 'supportcandy' ); ?></span> |
 											<?php
 										} else {
 											?>
-											<a href="javascript:wpsc_en_enable_disable_template(<?php echo esc_attr( $index ); ?>, '1', '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_enable_disable_template' ) ); ?>')"><?php esc_attr_e( 'Enable', 'supportcandy' ); ?></a> |
+											<span class="wpsc-link" onclick="wpsc_en_enable_disable_template(<?php echo esc_attr( $index ); ?>, '1', '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_enable_disable_template' ) ); ?>')"><?php esc_attr_e( 'Enable', 'supportcandy' ); ?></span> |
 											<?php
 										}
 										?>
-										<a href="javascript:wpsc_en_get_edit_ticket_notification(<?php echo esc_attr( $index ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_get_edit_ticket_notification' ) ); ?>')"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a> |
-										<a href="javascript:wpsc_en_get_clone_ticket_notification(<?php echo esc_attr( $index ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_get_clone_ticket_notification' ) ); ?>')"><?php esc_attr_e( 'Clone', 'supportcandy' ); ?></a> |
-										<a href="javascript:wpsc_en_delete_ticket_notification(<?php echo esc_attr( $index ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_delete_ticket_notification' ) ); ?>')"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+										<span class="wpsc-link" onclick="wpsc_en_get_edit_ticket_notification(<?php echo esc_attr( $index ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_get_edit_ticket_notification' ) ); ?>')"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
+										<span class="wpsc-link" onclick="wpsc_en_get_clone_ticket_notification(<?php echo esc_attr( $index ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_get_clone_ticket_notification' ) ); ?>')"><?php esc_attr_e( 'Clone', 'supportcandy' ); ?></span> |
+										<span class="wpsc-link" onclick="wpsc_en_delete_ticket_notification(<?php echo esc_attr( $index ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_en_delete_ticket_notification' ) ); ?>')"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 									</td>
 								</tr>
 								<?php
@@ -242,7 +242,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function set_add_ticket_notification() {
 
 			if ( check_ajax_referer( 'wpsc_en_set_add_ticket_notification', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -318,7 +318,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function get_edit_ticket_notification() {
 
 			if ( check_ajax_referer( 'wpsc_en_get_edit_ticket_notification', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -422,7 +422,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 								browser_spellcheck : true,
 								relative_urls : false,
 								remove_script_host : false,
-								convert_urls : true,
+								convert_urls : false,
 								setup: function (editor) {
 								}
 							});
@@ -493,7 +493,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function set_edit_ticket_notification() {
 
 			if ( check_ajax_referer( 'wpsc_en_set_edit_ticket_notification', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -678,7 +678,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function delete_ticket_notification() {
 
 			if ( check_ajax_referer( 'wpsc_en_delete_ticket_notification', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -716,7 +716,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function enable_disable_template() {
 
 			if ( check_ajax_referer( 'wpsc_en_enable_disable_template', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -811,7 +811,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function get_clone_ticket_notification() {
 
 			if ( check_ajax_referer( 'wpsc_en_get_clone_ticket_notification', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -879,7 +879,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 		public static function set_clone_ticket_notification() {
 
 			if ( check_ajax_referer( 'wpsc_en_set_clone_ticket_notification', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

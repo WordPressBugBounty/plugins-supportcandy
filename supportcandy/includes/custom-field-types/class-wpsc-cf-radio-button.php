@@ -171,6 +171,7 @@ if ( ! class_exists( 'WPSC_CF_Radio_Button' ) ) :
 			add_action( 'wpsc_js_validate_ticket_form', array( __CLASS__, 'js_validate_ticket_form' ) );
 			add_filter( 'wpsc_create_ticket_data', array( __CLASS__, 'set_create_ticket_data' ), 10, 3 );
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 			add_action( 'wpsc_js_clear_value_hidden_fields', array( __CLASS__, 'js_clear_value_hidden_fields' ) );
 
 			// create ticket data for rest api.
@@ -178,6 +179,7 @@ if ( ! class_exists( 'WPSC_CF_Radio_Button' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_joins', array( __CLASS__, 'ticket_join' ), 9, 2 );
+			add_filter( 'wpsc_archive_ticket_joins', array( __CLASS__, 'ticket_join' ), 9, 2 );
 		}
 
 		/**
@@ -302,27 +304,33 @@ if ( ! class_exists( 'WPSC_CF_Radio_Button' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
+			global $wpdb;
+			$column = self::get_sql_slug( $cf );
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					return $wpdb->prepare(
+						"{$column} = %s",
+						$val
+					);
 
 				case 'IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$placeholders = implode( ', ', array_fill( 0, count( $val ), '%s' ) );
+					$operator     = ( $compare === 'IN' ) ? 'IN' : 'NOT IN';
+
+					return $wpdb->prepare(
+						"{$column} {$operator} ({$placeholders})",
+						...array_values( $val )
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

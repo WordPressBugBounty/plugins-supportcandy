@@ -52,7 +52,7 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Tickets' ) ) :
 						</span>
 					</div>
 					<div class="wpsc-dash-widget-actions">
-						<a href="javascript:wpsc_get_ticket_list();"><?php echo esc_attr__( 'View All', 'supportcandy' ); ?></a>
+						<span class="wpsc-link" onclick="wpsc_get_ticket_list();"><?php echo esc_attr__( 'View All', 'supportcandy' ); ?></span>
 					</div>
 				</div>
 				<div class="wpsc-dash-widget-content wpsc-dbw-info" id="wpsc-recent-ticket"></div>
@@ -82,7 +82,7 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Tickets' ) ) :
 		public static function recent_tickets_list() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$view = isset( $_POST['view'] ) ? sanitize_text_field( wp_unslash( $_POST['view'] ) ) : '0';
@@ -92,7 +92,7 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Tickets' ) ) :
 			if ( $current_user->is_guest ||
 				! ( $current_user->is_agent && in_array( $current_user->agent->role, $widgets[ self::$widget ]['allowed-agent-roles'] ) )
 			) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$filters = array();

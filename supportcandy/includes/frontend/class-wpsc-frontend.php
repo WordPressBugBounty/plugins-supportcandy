@@ -278,13 +278,13 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 						}
 						if ( $otp_login && $page_settings['otp-login'] && in_array( 'guest', $gs['allow-create-ticket'] ) ) :
 							?>
-							<a class="wpsc-link wpsc-otp-signin" href="javascript:wpsc_get_guest_sign_in();"><?php esc_attr_e( 'Sign-in using one time password', 'supportcandy' ); ?></a>
+							<span class="wpsc-link wpsc-otp-signin" onclick="wpsc_get_guest_sign_in();"><?php esc_attr_e( 'Sign-in using one time password', 'supportcandy' ); ?></span>
 							<?php
 						endif;
 
 						if ( $additional_links && in_array( 'guest', $gs['allow-create-ticket'] ) ) :
 							?>
-							<a class="wpsc-link wpsc-guest-create-ticket" href="javascript:wpsc_get_guest_ticket_form();"><?php esc_attr_e( 'Create new ticket as guest', 'supportcandy' ); ?></a>
+							<span class="wpsc-link wpsc-guest-create-ticket" onclick="wpsc_get_guest_ticket_form();"><?php esc_attr_e( 'Create new ticket as guest', 'supportcandy' ); ?></span>
 							<?php
 						endif;
 
@@ -350,9 +350,32 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 							processData: false,
 							contentType: false
 						}).done(function (response) {
-							if (response.success != 1) alert(supportcandy.translations.incorrect_login);
-						}).fail(function (res) {
-							alert(supportcandy.translations.something_wrong);
+							if (response.success) {
+								window.location.reload();
+								return;
+							}
+							
+							if (response.data) {
+								if (typeof response.data === 'string') {
+									message = response.data;
+								} else if (response.data.message) {
+									message = response.data.message;
+								}
+							}
+							alert(message);
+						}).fail(function (xhr, status, error) {
+							let message = supportcandy.translations.something_wrong;
+
+							// Handle WP JSON errors (401, 403, 400)
+							if (xhr.responseJSON && xhr.responseJSON.data) {
+								if (typeof xhr.responseJSON.data === 'string') {
+									message = xhr.responseJSON.data;
+								} else if (xhr.responseJSON.data.message) {
+									message = xhr.responseJSON.data.message;
+								}
+							}
+
+							alert(message);
 						}).always(function () {
 							window.location.reload();
 						});
@@ -392,6 +415,7 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 						var password = dataform.get('password').trim();
 						var confirm_password = dataform.get('confirm_password').trim();
 						var isUsername = dataform.get('is_username').trim();
+						var isEmail = dataform.get('is_email').trim();
 
 						<?php
 						if ( $tc['allow-term-and-conditions-reg-user'] ) {
@@ -426,6 +450,11 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 
 						if (isUsername != 1) {
 							alert(supportcandy.translations.unsername_unavailable);
+							return;
+						}
+
+						if (isEmail != 1) {
+							alert(supportcandy.translations.email_unavailable);
 							return;
 						}
 

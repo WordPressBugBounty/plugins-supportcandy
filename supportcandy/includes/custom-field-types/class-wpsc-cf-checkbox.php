@@ -177,6 +177,7 @@ if ( ! class_exists( 'WPSC_CF_Checkbox' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -315,37 +316,47 @@ if ( ! class_exists( 'WPSC_CF_Checkbox' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
+			global $wpdb;
+			$column = self::get_sql_slug( $cf );
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . ' RLIKE \'(^|[|])' . esc_sql( $val ) . '($|[|])\'';
-					break;
+					if ( $val === '' ) {
+						$pattern = '(^|[|])^$($|[|])';
+					} else {
+						$pattern = '(^|[|])' . preg_quote( (string) $val, '/' ) . '($|[|])';
+					}
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						$pattern
+					);
 
 				case 'IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' ) {
-							$val[ $index ] = '^$';
-						}
-					}
-					$str = self::get_sql_slug( $cf ) . ' RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
-
 				case 'NOT IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' ) {
-							$val[ $index ] = '^$';
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$patterns = array();
+					foreach ( $val as $value ) {
+						if ( $value === '' ) {
+							$patterns[] = '^$';
+						} else {
+							$patterns[] = preg_quote( (string) $value, '/' );
 						}
 					}
-					$str = self::get_sql_slug( $cf ) . ' NOT RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
+
+					$pattern = '(^|[|])(' . implode( '|', $patterns ) . ')($|[|])';
+					$operator = ( $compare === 'IN' ) ? 'RLIKE' : 'NOT RLIKE';
+					return $wpdb->prepare(
+						"{$column} {$operator} %s",
+						$pattern
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

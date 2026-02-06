@@ -177,6 +177,7 @@ if ( ! class_exists( 'WPSC_CF_Text_Field' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -328,37 +329,61 @@ if ( ! class_exists( 'WPSC_CF_Text_Field' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+
+			$column = self::get_sql_slug( $cf );
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					return $wpdb->prepare(
+						"{$column} = %s",
+						(string) $val
+					);
 
 				case 'IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$placeholders = array_fill( 0, count( $val ), '%s' );
+
+					return $wpdb->prepare(
+						"CONVERT({$column} USING utf8) {$compare} (" . implode( ',', $placeholders ) . ')',
+						$val
+					);
 
 				case 'LIKE':
-					$arr = array();
-					$val = explode( PHP_EOL, $val );
-					foreach ( $val as $term ) {
-						$term  = str_replace( '*', '%', trim( $term ) );
-						$arr[] = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) LIKE \'%' . esc_sql( $term ) . '%\'';
+					$terms = explode( PHP_EOL, (string) $val );
+					$sql   = array();
+					$args  = array();
+
+					foreach ( $terms as $term ) {
+						$term = trim( $term );
+						if ( $term === '' ) {
+							continue;
+						}
+
+						$term = str_replace( '*', '%', $term );
+						$term = '%' . $wpdb->esc_like( $term ) . '%';
+
+						$sql[]  = "CONVERT({$column} USING utf8) LIKE %s";
+						$args[] = $term;
 					}
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
+
+					if ( empty( $sql ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						'(' . implode( ' OR ', $sql ) . ')',
+						$args
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

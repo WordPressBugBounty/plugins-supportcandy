@@ -153,7 +153,7 @@ if ( ! class_exists( 'WPSC_Appearence_Ticket_List' ) ) :
 		public static function save_settings() {
 
 			if ( check_ajax_referer( 'wpsc_set_ap_ticket_list', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -225,7 +225,7 @@ if ( ! class_exists( 'WPSC_Appearence_Ticket_List' ) ) :
 		public static function reset_settings() {
 
 			if ( check_ajax_referer( 'wpsc_reset_ap_ticket_list', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

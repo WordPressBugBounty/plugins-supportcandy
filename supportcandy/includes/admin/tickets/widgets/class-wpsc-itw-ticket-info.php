@@ -34,16 +34,46 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Info' ) ) :
 				in_array( $current_user->agent->role, $settings['allowed-agent-roles'] )
 			) ) {
 				return;
-			}?>
+			}
+			self::render_widget( $ticket, $settings, true, false );
+		}
 
+		/**
+		 * Prints body of current widget
+		 *
+		 * @param WPSC_Ticket $ticket - ticket object.
+		 * @param array       $settings - widget settings.
+		 * @return void
+		 */
+		public static function print_archive_widget( $ticket, $settings ) {
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! (
+				WPSC_Individual_Archive_Ticket::$view_profile == 'agent' &&
+				in_array( $current_user->agent->role, $settings['allowed-agent-roles'] )
+			) ) {
+				return;
+			}
+			self::render_widget( $ticket, $settings, false, true );
+		}
+
+		/**
+		 * Render widget
+		 *
+		 * @param WPSC_Ticket|WPSC_Archive_Ticket $ticket - ticket object.
+		 * @param array                           $settings - widget settings.
+		 * @param bool                            $show_edit - show edit button.
+		 * @param bool                            $is_archive - is archive ticket.
+		 * @return void
+		 */
+		private static function render_widget( $ticket, $settings, $show_edit, $is_archive ) {
+			$title = $settings['title']
+					? WPSC_Translations::get( 'wpsc-twt-ticket-info', stripslashes( $settings['title'] ) )
+					: stripslashes( $settings['title'] );
+			?>
 			<div class="wpsc-it-widget wpsc-itw-ticket-info">
 				<div class="wpsc-widget-header">
-					<h2>
-						<?php
-						$settings_title = $settings['title'] ? WPSC_Translations::get( 'wpsc-twt-ticket-info', stripslashes( $settings['title'] ) ) : stripslashes( $settings['title'] );
-						echo esc_attr( $settings_title )
-						?>
-					</h2>
+					<h2><?php echo esc_attr( $title ); ?></h2>
 					<span class="wpsc-itw-toggle" data-widget="wpsc-itw-ticket-info"><?php WPSC_Icons::get( 'chevron-up' ); ?></span>
 				</div>
 				<div class="wpsc-widget-body">
@@ -159,7 +189,7 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Info' ) ) :
 		public static function set_tw_ticket_info() {
 
 			if ( check_ajax_referer( 'wpsc_set_tw_ticket_info', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

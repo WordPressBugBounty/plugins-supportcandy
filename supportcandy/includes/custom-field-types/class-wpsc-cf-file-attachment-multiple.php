@@ -176,6 +176,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 
 			// Add ticket id to attachmets after create ticket.
 			add_action( 'wpsc_create_new_ticket', array( __CLASS__, 'add_attachment_ticket_id' ), 1 );

@@ -97,12 +97,12 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 								<td><?php echo esc_attr( $cf->name ); ?></td>
 								<td><?php echo esc_attr( $cf->extra_info ); ?></td>
 								<td>
-									<a href="javascript:wpsc_get_edit_custom_field(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_custom_field' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a>
+									<span class="wpsc-link" onclick="wpsc_get_edit_custom_field(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_custom_field' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span>
 									<?php
 									if ( ! $cf->type::$is_default ) {
 										echo esc_attr( ' | ' );
 										?>
-										<a href="javascript:wpsc_delete_custom_field(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_custom_field' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+										<span class="wpsc-link" onclick="wpsc_delete_custom_field(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_custom_field' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 										<?php
 									}
 									?>

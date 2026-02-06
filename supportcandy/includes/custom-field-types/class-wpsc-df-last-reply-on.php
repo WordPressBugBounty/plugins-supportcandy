@@ -264,64 +264,120 @@ if ( ! class_exists( 'WPSC_DF_Last_Reply_On' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
+			$column = 't.' . $cf->slug;
+
+			if ( $compare === 'BETWEEN' ) {
+
+				if ( ! is_array( $val ) ) {
+					return '1=0';
+				}
+
+				$from = WPSC_Functions::normalize_date( $val['operand_val_1'] ?? '', false );
+				$to   = WPSC_Functions::normalize_date( $val['operand_val_2'] ?? '', true );
+
+				if ( ! $from || ! $to ) {
+					return '1=0';
+				}
+
+				return WPSC_Functions::sql_between( $column, $from, $to );
+			}
 
 			switch ( $compare ) {
 
-				case '=':
-					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$str  = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
-
-				case '<':
-					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$str  = 't.' . $cf->slug . $compare . '\'' . esc_sql( $from ) . '\'';
-					break;
-
-				case '>':
-					$to  = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$str = 't.' . $cf->slug . $compare . '\'' . esc_sql( $to ) . '\'';
-					break;
-
-				case '<=':
-					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$arr  = array(
-						't.' . $cf->slug . $compare . '\'' . esc_sql( $from ) . '\'',
-						't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'',
+				case 'today':
+					$dt = new DateTime( 'today' );
+					return WPSC_Functions::sql_between(
+						$column,
+						$dt->format( 'Y-m-d 00:00:00' ),
+						$dt->format( 'Y-m-d 23:59:59' )
 					);
-					$str  = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
-				case '>=':
-					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$arr  = array(
-						't.' . $cf->slug . $compare . '\'' . esc_sql( $to ) . '\'',
-						't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'',
+				case 'yesterday':
+					$dt = ( new DateTime( 'today' ) )->modify( '-1 day' );
+					return WPSC_Functions::sql_between(
+						$column,
+						$dt->format( 'Y-m-d 00:00:00' ),
+						$dt->format( 'Y-m-d 23:59:59' )
 					);
-					$str  = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
-				case 'BETWEEN':
-					$from = $val['operand_val_1'];
-					$to   = $val['operand_val_2'];
-					if ( preg_match( '/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/', $from ) ) {
-						$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] );
-						$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] );
-					} else {
-						$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ' 00:00:00' );
-						$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ' 23:59:59' );
-					}
-					$str = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
+				case 'this-week':
+					return WPSC_Functions::sql_between(
+						$column,
+						( new DateTime( 'monday this week' ) )->format( 'Y-m-d 00:00:00' ),
+						( new DateTime( 'sunday this week' ) )->format( 'Y-m-d 23:59:59' )
+					);
 
-				default:
-					$str = '1=1';
+				case 'last-week':
+					return WPSC_Functions::sql_between(
+						$column,
+						( new DateTime( 'monday last week' ) )->format( 'Y-m-d 00:00:00' ),
+						( new DateTime( 'sunday last week' ) )->format( 'Y-m-d 23:59:59' )
+					);
+
+				case 'last-7-days':
+					return WPSC_Functions::sql_between(
+						$column,
+						( new DateTime( '-7 days' ) )->format( 'Y-m-d 00:00:00' ),
+						( new DateTime() )->format( 'Y-m-d 23:59:59' )
+					);
+
+				case 'last-30-days':
+					return WPSC_Functions::sql_between(
+						$column,
+						( new DateTime( '-30 days' ) )->format( 'Y-m-d 00:00:00' ),
+						( new DateTime() )->format( 'Y-m-d 23:59:59' )
+					);
+
+				case 'this-month':
+					return WPSC_Functions::sql_between(
+						$column,
+						( new DateTime( 'first day of this month' ) )->format( 'Y-m-d 00:00:00' ),
+						( new DateTime( 'last day of this month' ) )->format( 'Y-m-d 23:59:59' )
+					);
+
+				case 'last-month':
+					return WPSC_Functions::sql_between(
+						$column,
+						( new DateTime( 'first day of last month' ) )->format( 'Y-m-d 00:00:00' ),
+						( new DateTime( 'last day of last month' ) )->format( 'Y-m-d 23:59:59' )
+					);
 			}
 
-			return $str;
+			if ( in_array( $compare, array( '=', '<', '>', '<=', '>=' ), true ) ) {
+
+				$from = WPSC_Functions::normalize_date( $val, false );
+				$to   = WPSC_Functions::normalize_date( $val, true );
+
+				if ( ! $from || ! $to ) {
+					return '1=0';
+				}
+
+				switch ( $compare ) {
+
+					case '=':
+						return WPSC_Functions::sql_between( $column, $from, $to );
+
+					case '<':
+						return "$column < '" . esc_sql( $from ) . "'";
+
+					case '>':
+						return "$column > '" . esc_sql( $to ) . "'";
+
+					case '<=':
+						return "( $column <= '" . esc_sql( $from ) . "' OR " .
+							WPSC_Functions::sql_between( $column, $from, $to ) . ' )';
+
+					case '>=':
+						return "( $column >= '" . esc_sql( $to ) . "' OR " .
+							WPSC_Functions::sql_between( $column, $from, $to ) . ' )';
+				}
+			}
+
+			return '1=1';
 		}
 
 		/**

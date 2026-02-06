@@ -89,7 +89,7 @@ if ( ! class_exists( 'WPSC_Dashboard_Cards_Setting' ) ) :
 		public static function set_dashboard_card_load_order() {
 
 			if ( check_ajax_referer( 'wpsc_set_dashboard_card_load_order', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

@@ -74,11 +74,11 @@ if ( ! class_exists( 'WPSC_Agent' ) ) :
 			// change raised by event to reset unresolved and workload counts of related agents to the ticket.
 			add_action( 'wpsc_change_raised_by', array( __CLASS__, 'change_raised_by' ), 200, 4 );
 
-			// delete ticket event to reset unresolved and workload counts of related agents to the ticket.
-			add_action( 'wpsc_delete_ticket', array( __CLASS__, 'delete_ticket' ), 200, 1 );
-
-			// restore ticket event to reset unresolved and workload counts of related agents to the ticket.
-			add_action( 'wpsc_ticket_restore', array( __CLASS__, 'restore_ticket' ), 200, 1 );
+			// archive/restore/delete ticket event to reset unresolved and workload counts of related agents to the ticket.
+			add_action( 'wpsc_ticket_archive', array( __CLASS__, 'reset_agent_unresolved_count' ), 200 );
+			add_action( 'wpsc_delete_ticket', array( __CLASS__, 'reset_agent_unresolved_count' ), 200 );
+			add_action( 'wpsc_ticket_restore', array( __CLASS__, 'reset_agent_unresolved_count' ), 200 );
+			add_action( 'wpsc_ticket_delete_permanently', array( __CLASS__, 'reset_agent_unresolved_count' ), 200 );
 
 			// agent autocomplete admin access only.
 			add_action( 'wp_ajax_wpsc_agent_autocomplete_admin_access', array( __CLASS__, 'agent_autocomplete_admin_access' ) );
@@ -1032,43 +1032,12 @@ if ( ! class_exists( 'WPSC_Agent' ) ) :
 		}
 
 		/**
-		 * Reset unresolved count and workload after delete ticket
+		 * Reset unresolved count and workload after archive/restore/delete ticket
 		 *
 		 * @param WPSC_Ticket $ticket - ticket object.
 		 * @return void
 		 */
-		public static function delete_ticket( $ticket ) {
-
-			$tl_advanced = get_option( 'wpsc-tl-ms-advanced' );
-			if ( in_array( $ticket->status->id, $tl_advanced['closed-ticket-statuses'] ) ) {
-				return;
-			}
-
-			// reset workload for applicable agents.
-			foreach ( $ticket->assigned_agent as $agent ) {
-				if ( ! $agent->is_active ) {
-					continue;
-				}
-				$agent->reset_workload();
-			}
-
-			// reset unresolved for applicable agents.
-			$agents = $ticket->get_current_read_permission_agents();
-			foreach ( $agents as $agent ) {
-				if ( ! $agent->is_active ) {
-					continue;
-				}
-				$agent->reset_unresolved_count();
-			}
-		}
-
-		/**
-		 * Reset unresolved count and workload after restore ticket
-		 *
-		 * @param WPSC_Ticket $ticket - ticket object.
-		 * @return void
-		 */
-		public static function restore_ticket( $ticket ) {
+		public static function reset_agent_unresolved_count( $ticket ) {
 
 			$tl_advanced = get_option( 'wpsc-tl-ms-advanced' );
 			if ( in_array( $ticket->status->id, $tl_advanced['closed-ticket-statuses'] ) ) {
@@ -1120,7 +1089,7 @@ if ( ! class_exists( 'WPSC_Agent' ) ) :
 		public static function agent_autocomplete_admin_access() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_admin_access', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

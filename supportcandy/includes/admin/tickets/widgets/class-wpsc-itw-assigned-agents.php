@@ -50,22 +50,65 @@ if ( ! class_exists( 'WPSC_ITW_Assigned_Agents' ) ) :
 				( WPSC_Individual_Ticket::$view_profile == 'agent' && in_array( $current_user->agent->role, $settings['allowed-agent-roles'] ) )
 			) ) {
 				return;
-			}?>
+			}
 
+			$show_edit = (
+				$ticket->is_active &&
+				WPSC_Individual_Ticket::$view_profile == 'agent' &&
+				WPSC_Individual_Ticket::has_ticket_cap( 'aa' ) &&
+				! WPSC_Individual_Ticket::$is_restricted
+			);
+			self::render_widget( $ticket, $settings, $show_edit, false );
+		}
+
+		/**
+		 * Prints body of current widget
+		 *
+		 * @param WPSC_Ticket $ticket - ticket object.
+		 * @param array       $settings - widget settings.
+		 * @return void
+		 */
+		public static function print_archive_widget( $ticket, $settings ) {
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! (
+				(
+					(
+						WPSC_Individual_Archive_Ticket::$view_profile == 'customer' ||
+						$ticket->customer->id == $current_user->customer->id
+					) &&
+					$settings['allow-customer']
+				) ||
+				( WPSC_Individual_Archive_Ticket::$view_profile == 'agent' && in_array( $current_user->agent->role, $settings['allowed-agent-roles'] ) )
+			) ) {
+				return;
+			}
+			self::render_widget( $ticket, $settings, false, true );
+		}
+
+		/**
+		 * Render widget
+		 *
+		 * @param WPSC_Ticket|WPSC_Archive_Ticket $ticket - ticket object.
+		 * @param array                           $settings - widget settings.
+		 * @param bool                            $show_edit - show edit button.
+		 * @param bool                            $is_archive - is archive ticket.
+		 * @return void
+		 */
+		private static function render_widget( $ticket, $settings, $show_edit, $is_archive ) {
+			$title = $settings['title']
+							? WPSC_Translations::get( 'wpsc-twt-assignee', stripslashes( $settings['title'] ) )
+							: stripslashes( $settings['title'] );
+			?>
 			<div class="wpsc-it-widget wpsc-itw-assignee">
 				<div class="wpsc-widget-header">
-					<h2>
-						<?php
-						$settings_title = $settings['title'] ? WPSC_Translations::get( 'wpsc-twt-assignee', stripslashes( $settings['title'] ) ) : stripslashes( $settings['title'] );
-						echo esc_attr( $settings_title )
-						?>
-					</h2>
+					<h2><?php echo esc_attr( $title ); ?></h2>
 					<?php
-					if ( $ticket->is_active && WPSC_Individual_Ticket::$view_profile == 'agent' && WPSC_Individual_Ticket::has_ticket_cap( 'aa' ) ) :
+					if ( $show_edit ) :
 						?>
 						<span onclick="wpsc_it_get_edit_assigned_agents(<?php echo esc_attr( $ticket->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_it_get_edit_assigned_agents' ) ); ?>')"><?php WPSC_Icons::get( 'edit' ); ?></span>
 						<?php
-					endif
+					endif;
 					?>
 					<span class="wpsc-itw-toggle" data-widget="wpsc-itw-assignee"><?php WPSC_Icons::get( 'chevron-up' ); ?></span>
 				</div>
@@ -88,10 +131,13 @@ if ( ! class_exists( 'WPSC_ITW_Assigned_Agents' ) ) :
 		public static function it_get_edit_assigned_agents() {
 
 			if ( check_ajax_referer( 'wpsc_it_get_edit_assigned_agents', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			WPSC_Individual_Ticket::load_current_ticket();
+			if ( WPSC_Individual_Ticket::$is_restricted ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'aa' ) ) ) {
@@ -226,10 +272,13 @@ if ( ! class_exists( 'WPSC_ITW_Assigned_Agents' ) ) :
 		public static function set_edit_assigned_agents() {
 
 			if ( check_ajax_referer( 'wpsc_it_set_edit_assigned_agents', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			WPSC_Individual_Ticket::load_current_ticket();
+			if ( WPSC_Individual_Ticket::$is_restricted ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'aa' ) ) ) {
@@ -369,7 +418,7 @@ if ( ! class_exists( 'WPSC_ITW_Assigned_Agents' ) ) :
 		public static function set_tw_agents() {
 
 			if ( check_ajax_referer( 'wpsc_set_tw_agents', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -412,19 +461,19 @@ if ( ! class_exists( 'WPSC_ITW_Assigned_Agents' ) ) :
 		public static function agent_autocomplete_itw_assign() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_itw_assign', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_id = isset( $_GET['ticket_id'] ) ? intval( $_GET['ticket_id'] ) : 0;
 			$ticket    = new WPSC_Ticket( $ticket_id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 			WPSC_Individual_Ticket::$ticket = $ticket;
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'aa' ) ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$filters = array();

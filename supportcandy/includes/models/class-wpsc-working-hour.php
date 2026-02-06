@@ -536,7 +536,7 @@ if ( ! class_exists( 'WPSC_Working_Hour' ) ) :
 		public static function set_working_hrs() {
 
 			if ( check_ajax_referer( 'wpsc_set_working_hrs', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

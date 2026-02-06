@@ -233,37 +233,63 @@ if ( ! class_exists( 'WPSC_DF_OS' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			// Validate slug defensively.
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
+
+			$column = self::get_sql_slug( $cf );
+
+			// Normalize values to array of safe strings.
+			$values = is_array( $val ) ? $val : array( $val );
+			$clean  = array();
+
+			foreach ( $values as $v ) {
+				if ( is_string( $v ) ) {
+					$v = trim( $v );
+					if ( $v !== '' ) {
+						$clean[] = esc_sql( $v );
+					}
+				}
+			}
+
+			if ( empty( $clean ) ) {
+				return '1=0';
+			}
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					return "$column = '{$clean[0]}'";
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					return "CONVERT($column USING utf8) IN ('" . implode( "', '", $clean ) . "')";
 
 				case 'NOT IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					return "CONVERT($column USING utf8) NOT IN ('" . implode( "', '", $clean ) . "')";
 
 				case 'LIKE':
-					$arr = array();
-					$val = explode( PHP_EOL, $val );
-					foreach ( $val as $term ) {
-						$term  = str_replace( '*', '%', trim( $term ) );
-						$arr[] = 'CONVERT(t.' . $cf->slug . ' USING utf8) LIKE \'%' . esc_sql( $term ) . '%\'';
+					$likes = array();
+
+					$lines = is_string( $val ) ? explode( PHP_EOL, $val ) : $values;
+
+					foreach ( $lines as $term ) {
+						if ( is_string( $term ) ) {
+							$term = trim( str_replace( '*', '%', $term ) );
+							if ( $term !== '' ) {
+								$likes[] = "CONVERT($column USING utf8) LIKE '%" . esc_sql( $term ) . "%'";
+							}
+						}
 					}
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
+
+					return empty( $likes )
+						? '1=0'
+						: '(' . implode( ' OR ', $likes ) . ')';
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

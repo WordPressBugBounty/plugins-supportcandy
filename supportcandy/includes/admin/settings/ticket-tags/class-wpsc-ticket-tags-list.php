@@ -66,8 +66,8 @@ if ( ! class_exists( 'WPSC_Ticket_Tags_List' ) ) :
 							<td><?php echo strlen( $tag->description ) > 20 ? esc_attr( substr( $tag->description, 0, 20 ) . '...' ) : esc_attr( $tag->description ); ?></td>
 							<td>
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&wpsc_tag=' . $tag->id ) ); ?>" class="wpsc-link" target="__blank"><?php echo esc_attr( wpsc__( 'View tickets', 'supportcandy' ) ); ?></a> | 
-								<a href="javascript:wpsc_get_edit_ticket_tags(<?php echo esc_attr( $tag->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ticket_tags' ) ); ?>');" class="wpsc-link"><?php echo esc_attr( wpsc__( 'Edit', 'supportcandy' ) ); ?></a> | 
-								<a href="javascript:wpsc_set_delete_ticket_tags(<?php echo esc_attr( $tag->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_delete_ticket_tags' ) ); ?>');" class="wpsc-link"><?php echo esc_attr( wpsc__( 'Delete', 'supportcandy' ) ); ?></a>
+								<span class="wpsc-link" onclick="wpsc_get_edit_ticket_tags(<?php echo esc_attr( $tag->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ticket_tags' ) ); ?>');"><?php echo esc_attr( wpsc__( 'Edit', 'supportcandy' ) ); ?></span> | 
+								<span class="wpsc-link" onclick="wpsc_set_delete_ticket_tags(<?php echo esc_attr( $tag->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_delete_ticket_tags' ) ); ?>');"><?php echo esc_attr( wpsc__( 'Delete', 'supportcandy' ) ); ?></span>
 							</td>
 						</tr>
 						<?php

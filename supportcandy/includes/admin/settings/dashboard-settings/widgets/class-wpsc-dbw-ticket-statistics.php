@@ -205,7 +205,7 @@ if ( ! class_exists( 'WPSC_DBW_Ticket_Statistics' ) ) :
 		public static function run_ts_reports() {
 
 			if ( check_ajax_referer( 'ticket_statistics', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;

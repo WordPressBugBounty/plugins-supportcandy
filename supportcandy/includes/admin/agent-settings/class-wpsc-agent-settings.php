@@ -101,8 +101,8 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 											<td><?php echo esc_attr( $agent->customer->email ); ?></td>
 											<td><?php echo esc_attr( $roles[ $agent->role ]['label'] ); ?></td>
 											<td>
-												<a href="javascript:wpsc_get_edit_agent(<?php echo esc_attr( $agent->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_agent' ) ); ?>')"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a> | 
-												<a href="javascript:wpsc_get_delete_agent(<?php echo esc_attr( $agent->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_agent' ) ); ?>' )"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+												<span class="wpsc-link" onclick="wpsc_get_edit_agent(<?php echo esc_attr( $agent->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_agent' ) ); ?>')"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> | 
+												<span class="wpsc-link" onclick="wpsc_get_delete_agent(<?php echo esc_attr( $agent->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_delete_agent' ) ); ?>' )"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 											</td>
 										</tr>
 										<?php
@@ -258,7 +258,7 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 		public static function set_add_agent() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_agent', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -323,7 +323,7 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 		public static function get_edit_agent() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_agent', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -393,7 +393,7 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 		public static function set_edit_agent() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_agent', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -439,7 +439,7 @@ if ( ! class_exists( 'WPSC_Agent_Settings' ) ) :
 		public static function delete_agent() {
 
 			if ( check_ajax_referer( 'wpsc_get_delete_agent', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

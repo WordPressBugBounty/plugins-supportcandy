@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SupportCandy\n"
 "POT-Creation-Date: 2024-07-01 11:12+0530\n"
-"PO-Revision-Date: 2024-07-01 11:35+0530\n"
+"PO-Revision-Date: 2025-11-23 19:48+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: tr_TR\n"
@@ -10,14 +10,13 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.8\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-Flags-xgettext: --add-comments=translators:\n"
 "X-Poedit-WPHeader: supportcandy.php\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
-"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
-"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-KeywordsList: "
+"__;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: *.min.js\n"
 
@@ -98,7 +97,7 @@ msgstr "Konu"
 
 #: class-wpsc-installation.php:412
 msgid "Short description of the ticket"
-msgstr "Biletin kısa açıklaması"
+msgstr "Talebin kısa açıklaması"
 
 #: class-wpsc-installation.php:429
 #: includes/admin/settings/ticket-tags/class-wpsc-ticket-tags-list.php:56
@@ -220,7 +219,7 @@ msgstr "Son cevap yazan"
 #: class-wpsc-installation.php:712 class-wpsc-installation.php:1529
 #: class-wpsc-installation.php:2155
 msgid "Tags"
-msgstr ""
+msgstr "Etiketler"
 
 #: class-wpsc-installation.php:727 class-wpsc-installation.php:2460
 #, fuzzy
@@ -301,7 +300,7 @@ msgstr "Silindi"
 
 #: class-wpsc-installation.php:1521
 msgid "Ticket status"
-msgstr "Kupon Durumu"
+msgstr "Talep Durumu"
 
 #: class-wpsc-installation.php:1523
 msgid "Ticket info"
@@ -330,27 +329,22 @@ msgstr "Biyografik Bilgi"
 #: includes/admin/settings/text-editor-settings/class-wpsc-te-registered-user.php:34
 #, php-format
 msgid "You can upload files maximum size %1$s mb of types %2$s."
-msgstr "Dosyaları maksimum boyut %1$s mb türleri %2$s yükleyebilirsiniz."
+msgstr ""
+"Dosyaları maksimum boyut %1$s mb olarak %2$s formatlarında yükleyebilirsiniz."
 
 #: class-wpsc-installation.php:1755 class-wpsc-installation.php:2240
-#, fuzzy
-#| msgid "New Ticket"
 msgid "New Tickets"
-msgstr "Yeni Bilet"
+msgstr "Yeni Talepler"
 
 #: class-wpsc-installation.php:1812 class-wpsc-installation.php:2297
-#, fuzzy
-#| msgid "Ticket Statuses"
 msgid "Ticket Statistics"
 msgstr "Talep Durumları"
 
 #: class-wpsc-installation.php:1813 class-wpsc-installation.php:2298
 msgid "Todays Trends"
-msgstr ""
+msgstr "Bugünün Trendleri"
 
 #: class-wpsc-installation.php:1814 class-wpsc-installation.php:2299
-#, fuzzy
-#| msgid "Workload"
 msgid "Agent Workload"
 msgstr "İş yoğunluğu"
 
@@ -358,45 +352,33 @@ msgstr "İş yoğunluğu"
 #: includes/admin/customers/class-wpsc-customers.php:1003
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:38
 msgid "Recent Activities"
-msgstr ""
+msgstr "Son Aktiviteler"
 
 #: class-wpsc-installation.php:1816 class-wpsc-installation.php:2301
-#, fuzzy
-#| msgid "Reply Tickets"
 msgid "Recent Tickets"
 msgstr "Talepleri Yanıtla"
 
 #: class-wpsc-installation.php:1817 class-wpsc-installation.php:2302
-#, fuzzy
-#| msgid "Change ticket category"
 msgid "Unresolved tickets by Category"
-msgstr "Talep kategorisini değiştir"
+msgstr "Kategoriye göre çözülmemiş talepler"
 
 #: class-wpsc-installation.php:1818 class-wpsc-installation.php:2303
-#, fuzzy
-#| msgid "Change ticket priority"
 msgid "Unresolved tickets by Priority"
-msgstr "Talep önceliğini değiştir"
+msgstr "Önceliğe göre çözülmemiş talepler"
 
 #: class-wpsc-installation.php:1819 class-wpsc-installation.php:2304
-#, fuzzy
-#| msgid "Unresolved statuses"
 msgid "Unresolved tickets by Status"
-msgstr "Çözümlenmemiş durumlar"
+msgstr "Duruma göre çözülmemiş talepler"
 
 #: class-wpsc-installation.php:1820 class-wpsc-installation.php:2499
-#, fuzzy
-#| msgid "Ticket Statuses"
 msgid "Ticket statistics by day of week"
-msgstr "Talep Durumları"
+msgstr "Haftanın günlerine göre talep istatistikleri"
 
 #: framework/class-wpsc-framework.php:415
 msgid "Please wait..."
 msgstr "Lütfen Bekleyin..."
 
 #: framework/class-wpsc-framework.php:416
-#, fuzzy
-#| msgid "Requied fields missing!"
 msgid "Required fields missing!"
 msgstr "Gerekli alanlar eksik!"
 
@@ -458,14 +440,16 @@ msgid ""
 "Deleting a customer will permanently remove all associated customer "
 "information and tickets!"
 msgstr ""
+"Bir müşteriyi silmek, ona ait tüm müşteri bilgilerini ve talepleri kalıcı "
+"olarak kaldıracaktır!"
 
 #: framework/class-wpsc-framework.php:429
 msgid "Please accept terms and conditions!"
-msgstr ""
+msgstr "Lütfen şartlar ve koşulları kabul edin!"
 
 #: framework/class-wpsc-framework.php:430
 msgid "Please accept GDPR policy!"
-msgstr ""
+msgstr "Lütfen GDPR sözleşmesini kabul edin!"
 
 #: global-functions.php:31
 msgid "Please activate your license!"
@@ -761,6 +745,7 @@ msgstr "Yetkisiz erişim!"
 #: includes/admin/agent-settings/class-wpsc-agent-leaves.php:42
 #: includes/admin/agent-settings/class-wpsc-support-agents.php:88
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:75
+#, fuzzy
 msgid "Leaves"
 msgstr "Yapraklar"
 
@@ -859,8 +844,6 @@ msgstr ""
 #: includes/models/class-wpsc-holiday.php:415
 #: includes/models/class-wpsc-wh-exception.php:422
 #: includes/models/class-wpsc-working-hour.php:434
-#, fuzzy
-#| msgid "Click Here"
 msgid "Click here"
 msgstr "Buraya Tıklayın"
 
@@ -1112,7 +1095,7 @@ msgstr "Geçersiz istek!"
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:71
 #: includes/admin/agent-settings/class-wpsc-support-agents.php:70
 msgid "Agents"
-msgstr "Danışmanlar"
+msgstr "Temsilci"
 
 #: includes/admin/agent-settings/class-wpsc-agent-leaves.php:240
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:731
@@ -1783,7 +1766,7 @@ msgstr "Etiket"
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:164
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:554
 msgid "Capability"
-msgstr ""
+msgstr "Yetenek"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:166
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:556
@@ -1812,8 +1795,6 @@ msgstr "Özel Notlar"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:194
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:583
-#, fuzzy
-#| msgid "Delete Ticket"
 msgid "Duplicate Ticket"
 msgstr "Talebi Sil"
 
@@ -1871,10 +1852,8 @@ msgstr "Talebi Sil"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:271
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:660
-#, fuzzy
-#| msgid "Copy Tag"
 msgid "Modify Tags"
-msgstr "Etiketi Kopyala"
+msgstr "Etiketi Düzenle"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:283
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:670
@@ -1883,8 +1862,6 @@ msgstr "Diğer izinler"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:288
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:675
-#, fuzzy
-#| msgid "WP dashboard accees"
 msgid "WP dashboard access"
 msgstr "WP Kontrol Paneli Erişimi"
 
@@ -1907,10 +1884,8 @@ msgstr "Müşteri Bilgilerini Düzenle"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:304
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:691
-#, fuzzy
-#| msgid "WP dashboard accees"
 msgid "Dashboard access"
-msgstr "WP Kontrol Paneli Erişimi"
+msgstr "Kontrol Paneli Erişimi"
 
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:89
 msgid "Agent name"
@@ -2042,7 +2017,7 @@ msgstr "Talep Listesi"
 #: includes/admin/customers/class-wpsc-customers.php:821
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:439
 msgid "Tickets"
-msgstr "Biletler"
+msgstr "Talepler"
 
 #: includes/admin/class-wpsc-admin.php:141
 #: includes/admin/class-wpsc-admin.php:142
@@ -2078,7 +2053,7 @@ msgstr "Lisanslar"
 #: includes/admin/class-wpsc-admin.php:206
 #: includes/admin/class-wpsc-admin.php:207
 msgid "Pro Features"
-msgstr ""
+msgstr "Pro Özellikleri"
 
 #: includes/admin/class-wpsc-admin.php:216
 msgid "Task Manager"
@@ -2086,7 +2061,7 @@ msgstr "Görev Yöneticisi"
 
 #: includes/admin/class-wpsc-admin.php:226
 msgid "Recent Activites"
-msgstr ""
+msgstr "Son Aktiviteler"
 
 #: includes/admin/class-wpsc-admin.php:254
 #: includes/frontend/class-wpsc-frontend.php:146
@@ -2094,10 +2069,8 @@ msgid "Required fields can not be empty!"
 msgstr "Gerekli alanlar boş bırakılamaz!"
 
 #: includes/admin/class-wpsc-admin.php:255
-#, fuzzy
-#| msgid "Please sign in"
 msgid "Please submit the option!"
-msgstr "Lütfen Giriş Yapınız"
+msgstr "Lütfen Giriş Yapınız!"
 
 #: includes/admin/class-wpsc-admin.php:257
 #: includes/admin/class-wpsc-admin.php:258
@@ -2337,10 +2310,8 @@ msgid "Visibility conditions"
 msgstr "Görünürlük Koşulları"
 
 #: includes/admin/customers/class-wpsc-customers.php:57
-#, fuzzy
-#| msgid "All Pages"
 msgid "All Users"
-msgstr "Tüm Sayfalar"
+msgstr "Tüm Kullanıcılar"
 
 #: includes/admin/customers/class-wpsc-customers.php:58
 #, fuzzy
@@ -2439,31 +2410,25 @@ msgstr "%1$s değiştirildi"
 
 #: includes/admin/customers/class-wpsc-customers.php:796
 msgid "Back"
-msgstr ""
+msgstr "Geri"
 
 #: includes/admin/customers/class-wpsc-customers.php:822
-#, fuzzy
-#| msgid "Custom Fields"
 msgid "Custom fields"
 msgstr "Özel Alanlar"
 
 #: includes/admin/customers/class-wpsc-customers.php:823
 msgid "Other"
-msgstr ""
+msgstr "Diğer"
 
 #: includes/admin/customers/class-wpsc-customers.php:985
-#, fuzzy
-#| msgid "View Logs"
 msgid "View logs"
 msgstr "Günlükleri Görüntüle"
 
 #: includes/admin/customers/class-wpsc-customers.php:1007
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:59
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:55
-#, fuzzy
-#| msgid "View less!"
 msgid "View All"
-msgstr "Daha Az Göster!"
+msgstr "Hepsini Gör"
 
 #: includes/admin/customers/class-wpsc-customers.php:1080
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:119
@@ -2481,8 +2446,6 @@ msgstr "Destek Talebini Sil"
 
 #: includes/admin/customers/class-wpsc-customers.php:1088
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:131
-#, fuzzy
-#| msgid "added a note"
 msgid "added a note to ticket"
 msgstr "bir not ekledi"
 
@@ -2495,7 +2458,7 @@ msgstr "bir not ekledi"
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:193
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:223
 msgid "Record not found!"
-msgstr ""
+msgstr "Kayıt bulunamadı!"
 
 #: includes/admin/email-notifications/class-wpsc-en-delete-ticket.php:41
 #: includes/class-wpsc-triggers.php:47
@@ -2542,8 +2505,6 @@ msgstr "Metin"
 
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:90
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:90
-#, fuzzy
-#| msgid "Sign-in using one time password"
 msgid "One time password"
 msgstr "Tek kullanımlık şifre kullanarak oturum açın"
 
@@ -2604,10 +2565,8 @@ msgid "Blocked emails (one per line)"
 msgstr "Engellenen e-postalar (her satırda bir tane)"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:100
-#, fuzzy
-#| msgid "Ticket Notifications"
 msgid "Attachments in notifications"
-msgstr "Talep Bildirimleri"
+msgstr "Talep Ekleri"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:103
 #, fuzzy
@@ -2617,7 +2576,7 @@ msgstr "Dosya Ekle"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:104
 msgid "File links"
-msgstr ""
+msgstr "Dosya linkleri"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:105
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:121
@@ -2652,7 +2611,7 @@ msgstr "Talep Bildirimleri"
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:103
 #: includes/class-wpsc-triggers.php:65
 msgid "Trigger"
-msgstr ""
+msgstr "Tetikleyici"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:116
 msgid "Enabled"
@@ -2752,26 +2711,20 @@ msgid "Username"
 msgstr "Kullanıcı Adı"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:92
-#, fuzzy
-#| msgid "First Name"
 msgid "First name"
 msgstr "İsim"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:93
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last name"
-msgstr "Soyadı"
+msgstr "Soyad"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:94
-#, fuzzy
-#| msgid "From name"
 msgid "Full name"
 msgstr "Gönderen Adı"
 
 #: includes/admin/misc/class-wpsc-license.php:32
 msgid "Sync"
-msgstr ""
+msgstr "Eşitle"
 
 #: includes/admin/misc/class-wpsc-license.php:35
 msgid "Activate license keys for add-ons in order to get support and updates."
@@ -2781,7 +2734,7 @@ msgstr ""
 
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:62
 msgid "Start To End"
-msgstr ""
+msgstr "Baştan Sona"
 
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:69
 #: includes/admin/tickets/class-wpsc-ticket-list.php:463
@@ -2795,10 +2748,8 @@ msgid "Reset"
 msgstr "Sıfırla"
 
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:161
-#, fuzzy
-#| msgid "Select fields"
 msgid "Select customers or agents"
-msgstr "Alanları seçin"
+msgstr "Kullanıcıları veya temsilcileri seçin"
 
 #. translators: %1$s: Name
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:412
@@ -2855,7 +2806,7 @@ msgstr "Arka plan rengi"
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:61
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-settings.php:60
 msgid "Cards"
-msgstr ""
+msgstr "Kartlar"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:67
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:85
@@ -2865,10 +2816,8 @@ msgid "Svg color"
 msgstr "Metin rengi"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:79
-#, fuzzy
-#| msgid "Widget body"
 msgid "Widget"
-msgstr "Widget gövdesi"
+msgstr "Widget"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-general.php:59
 #: includes/admin/settings/appearence/class-wpsc-appearence-indidual-ticket.php:79
@@ -2877,10 +2826,8 @@ msgid "Primary color"
 msgstr "Ana renk"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-general.php:66
-#, fuzzy
-#| msgid "Text color"
 msgid "Menu color"
-msgstr "Metin rengi"
+msgstr "Menü rengi"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-general.php:73
 msgid "Main container"
@@ -2941,7 +2888,7 @@ msgstr "Altbilgi arka plan rengi"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-modal-popup.php:102
 msgid "z-index"
-msgstr "z-dizin"
+msgstr "z-index"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:61
 msgid "Individual Ticket"
@@ -2949,7 +2896,7 @@ msgstr "Bireysel Talep"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:66
 msgid "Modal Popup"
-msgstr "Kalıcı Açılır Pencere"
+msgstr "Açılır Pencere"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:71
 #, fuzzy
@@ -3010,18 +2957,14 @@ msgid "Rich Text Editor"
 msgstr "Zengin metin editörü"
 
 #: includes/admin/settings/class-wpsc-settings.php:124
-#, fuzzy
-#| msgid "Appearence"
 msgid "Appearance"
 msgstr "Görünüm"
 
 #: includes/admin/settings/class-wpsc-settings.php:130
 #: includes/admin/settings/ticket-tags/class-wpsc-ticket-tags-settings-general.php:65
 #: includes/admin/settings/ticket-tags/class-wpsc-ticket-tags-settings.php:56
-#, fuzzy
-#| msgid "Tickets"
 msgid "Ticket Tags"
-msgstr "Biletler"
+msgstr "Talep Etiketleri"
 
 #: includes/admin/settings/class-wpsc-ticket-categories.php:435
 msgid "Delete category"
@@ -3059,69 +3002,61 @@ msgid "Save Order"
 msgstr "Siparişi Kaydet"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:125
-#, fuzzy
-#| msgid "Default date format"
 msgid "Default date range"
-msgstr "Varsayılan tarih biçimi"
+msgstr "Varsayılan tarih aralığı"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:128
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:58
 #: includes/custom-field-types/class-wpsc-df-date-created.php:208
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:208
 msgid "Today"
-msgstr ""
+msgstr "Bugün"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:129
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:59
 #: includes/custom-field-types/class-wpsc-df-date-created.php:209
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:209
-#, fuzzy
-#| msgid "Registered"
 msgid "Yesterday"
-msgstr "Kayıtlı"
+msgstr "Dün"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:130
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:60
 #: includes/custom-field-types/class-wpsc-df-date-created.php:210
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:210
 msgid "This week"
-msgstr ""
+msgstr "Bu hafta"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:131
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:61
 #: includes/custom-field-types/class-wpsc-df-date-created.php:211
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:211
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last week"
-msgstr "Soyadı"
+msgstr "Geçen hafta"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:132
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:62
 #: includes/custom-field-types/class-wpsc-df-date-created.php:213
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:213
 msgid "Last 30 days"
-msgstr ""
+msgstr "Son 30 gün"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:133
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:63
 #: includes/custom-field-types/class-wpsc-df-date-created.php:214
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:214
 msgid "This month"
-msgstr ""
+msgstr "Bu ay"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:134
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:64
 #: includes/custom-field-types/class-wpsc-df-date-created.php:215
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:215
-#, fuzzy
-#| msgid "Last note"
 msgid "Last month"
-msgstr "Son not"
+msgstr "Son ay"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:145
 msgid "Allowed recent activity logs"
-msgstr ""
+msgstr "İzin verilen son aktivite kayıtları"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:148
 #, fuzzy
@@ -3136,13 +3071,11 @@ msgstr "Cevapla"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:150
 msgid "Note"
-msgstr ""
+msgstr "Not"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:172
-#, fuzzy
-#| msgid "WP dashboard accees"
 msgid "Dashboard auto refresh"
-msgstr "WP Kontrol Paneli Erişimi"
+msgstr "Otomatik yenileme"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:175
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:616
@@ -3175,25 +3108,21 @@ msgstr "İzin verilen temsilci rolleri"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-widgets-setting.php:82
 #, fuzzy
-#| msgid "Add new field"
 msgid "Add widget"
-msgstr "Yeni Alan Ekle"
+msgstr "Widget Ekle"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-widgets-setting.php:142
 #, fuzzy
-#| msgid "Add new field"
 msgid "Add new widget"
-msgstr "Yeni Alan Ekle"
+msgstr "Yeni Widget Ekle"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-widgets-setting.php:148
-#, fuzzy
-#| msgid "Select fields"
 msgid "Select custom fields"
 msgstr "Alanları seçin"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-agent-list.php:152
 msgid "Total"
-msgstr ""
+msgstr "Toplam"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:55
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:55
@@ -3201,73 +3130,63 @@ msgstr ""
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:55
 #: includes/custom-field-types/class-wpsc-df-date-created.php:212
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:212
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last 7 days"
-msgstr "Soyadı"
+msgstr "SoyadıSon 7 gün"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:56
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:56
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:56
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:56
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last Week"
-msgstr "Soyadı"
+msgstr "Son hafta"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:57
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:57
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:57
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:57
 msgid "Last 30 Days"
-msgstr ""
+msgstr "Son 30 gün"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:58
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:58
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:58
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:59
-#, fuzzy
-#| msgid "Last note"
 msgid "Last Month"
-msgstr "Son not"
+msgstr "Son nay"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:307
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:307
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:320
-#, fuzzy
-#| msgid "User Type"
 msgid "Chart Type"
-msgstr "Kullanıcı Türü"
+msgstr "Grafik Türü"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:310
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:310
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:323
 msgid "Pie"
-msgstr ""
+msgstr "Pasta"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:311
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:311
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:324
 msgid "Doughnut"
-msgstr ""
+msgstr "Halka"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:312
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:312
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:325
 msgid "Horizontal Bar"
-msgstr ""
+msgstr "Yatay Çubuk"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:313
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:313
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:326
 msgid "Vertical Bar"
-msgstr ""
+msgstr "Dşkey Çubuk"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:111
-#, fuzzy
-#| msgid "Tickets"
 msgid "Ticket"
-msgstr "Biletler"
+msgstr "Talep"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:142
 #: includes/custom-field-types/class-wpsc-cf-checkbox.php:1641
@@ -3328,22 +3247,16 @@ msgid "None"
 msgstr "Hiçbiri"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:150
-#, fuzzy
-#| msgid "Reply Tickets"
 msgid "No recent tickets!"
-msgstr "Talepleri Yanıtla"
+msgstr "Talep Yok!"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:55
-#, fuzzy
-#| msgid "Ticket Records"
 msgid "Ticket created"
-msgstr "Talep Kayıtları"
+msgstr "Talep oluşturuldu"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:56
-#, fuzzy
-#| msgid "Ticket list"
 msgid "Ticket closed"
-msgstr "Talep Listesi"
+msgstr "Talep kapatıldı"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:206
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:1512
@@ -3361,10 +3274,8 @@ msgid "Unauthorized"
 msgstr "Yetkisiz"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:58
-#, fuzzy
-#| msgid "Last note"
 msgid "This Month"
-msgstr "Son not"
+msgstr "Bu ay"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:113
 msgid "Monday"
@@ -3481,7 +3392,7 @@ msgstr "Müşterinin talep kapatmasına izin ver"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-general.php:204
 msgid "Allow create new ticket"
-msgstr "Müşterinin Yeni bilet oluşturmasına izin ver"
+msgstr "Müşterinin Yeni talep oluşturmasına izin ver"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-general.php:220
 msgid "Thread email visibility"
@@ -3561,7 +3472,7 @@ msgstr "Tüm Sayfalar"
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:76
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:124
 msgid "Choose action after creating a ticket"
-msgstr ""
+msgstr "Talep oluşturulduktan sonra ne olacağını seçin"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:79
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:96
@@ -3575,7 +3486,7 @@ msgstr "Teşekkür metni"
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:128
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:162
 msgid "Page url"
-msgstr ""
+msgstr "Sayfa adresi"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:81
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:129
@@ -3620,7 +3531,7 @@ msgstr "Genel mod"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:112
 msgid "Allow others to reply to public tickets"
-msgstr "Başkalarının herkese açık biletleri yanıtlamasına izin ver"
+msgstr "Başkalarının herkese açık talepleri yanıtlamasına izin ver"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:121
 msgid "Reply confirmation"
@@ -3748,26 +3659,20 @@ msgstr "Talep URL'si kimlik doğrulaması"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:321
 msgid "REST API"
-msgstr ""
+msgstr "REST API"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:339
-#, fuzzy
-#| msgid "Allow reply to closed tickets"
 msgid "Allow agent to self assign ticket"
-msgstr "Kapatılan taleplerin yanıtlanmasına izin ver"
+msgstr "Temsilcinin talep açmasına izin ver"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:348
-#, fuzzy
-#| msgid "Reply & Close"
 msgid "Reply and Close button"
 msgstr "Yanıtla ve Kapat"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:84
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-tac.php:75
-#, fuzzy
-#| msgid "Create ticket from thread"
 msgid "Create ticket form"
-msgstr "Konudan talep oluştur"
+msgstr "Talep oluşturma formu"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:97
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:127
@@ -3778,10 +3683,8 @@ msgstr "Onay kutusu metni"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:114
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-tac.php:105
-#, fuzzy
-#| msgid "User Registration OTP"
 msgid "Registration form"
-msgstr "Kullanıcı Kaydı OTP"
+msgstr "Kullanıcı Kaydı"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:145
 msgid "Personal data retention"
@@ -3813,7 +3716,7 @@ msgstr "Talep Kayıtları"
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:624
 #, php-format
 msgid "Tickets of customer having email %s has been anonymized."
-msgstr "%s e-posta adresine sahip olan müşterinin biletleri anonimleştirildi."
+msgstr "%s e-posta adresine sahip olan müşterinin talepleri anonimleştirildi."
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-recaptcha.php:82
 msgid "reCaptcha version"
@@ -4122,20 +4025,16 @@ msgid "Saved filters"
 msgstr "Kaydedilen filtreler"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:216
-#, fuzzy
-#| msgid "Default"
 msgid "Default tab"
-msgstr "Varsayılan"
+msgstr "Varsayılan sekme"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:218
 msgid "Select dafault section"
-msgstr ""
+msgstr "Varsayılan bölümü seçin"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:222
-#, fuzzy
-#| msgid "New Ticket"
 msgid "New ticket"
-msgstr "Yeni Bilet"
+msgstr "Yeni talep"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:227
 #: includes/admin/tickets/class-wpsc-current-user-profile.php:79
@@ -4216,7 +4115,7 @@ msgstr "Bu yazışmadan yeni talep oluştur"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:507
 msgid "Ticket Details"
-msgstr "Bilet Detayları"
+msgstr "Talep Detayları"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:538
 msgid "You must sign in to submit a reply"
@@ -4361,10 +4260,8 @@ msgid "Thread log"
 msgstr "Konu günlüğü"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:3317
-#, fuzzy
-#| msgid "Current User"
 msgid "Currently viewing"
-msgstr "Şu anki kullanıcı"
+msgstr "Şuan görüntülenen"
 
 #. translators: %1$s: Name, %2$s: Email Address
 #: includes/admin/tickets/class-wpsc-new-ticket.php:139
@@ -4478,21 +4375,17 @@ msgid "Select agent(s)"
 msgstr "Temsilci(ler) seçin"
 
 #: includes/admin/tickets/class-wpsc-ticket-list.php:1941
-#, fuzzy
-#| msgid "Select agent(s)"
 msgid "Select tag(s)"
-msgstr "Temsilci(ler) seçin"
+msgstr "Etiketleri seçin"
 
 #: includes/admin/tickets/class-wpsc-ticket-list.php:2181
-#, fuzzy
-#| msgid "Assign Agents"
 msgid "Assign Tags"
-msgstr "Temsilci Atayın"
+msgstr "Etiket atayın"
 
 #: includes/admin/tickets/class-wpsc-tickets.php:101
 #: includes/frontend/class-wpsc-shortcode-one.php:223
 msgid "New Ticket"
-msgstr "Yeni Bilet"
+msgstr "Yeni Talep"
 
 #: includes/admin/tickets/class-wpsc-tickets.php:111
 #: includes/frontend/class-wpsc-shortcode-one.php:233
@@ -4590,8 +4483,6 @@ msgstr "Kaydol"
 
 #: includes/class-wpsc-current-user.php:625
 #: includes/class-wpsc-current-user.php:803
-#, fuzzy
-#| msgid "We have sent 6-digit one time password on your given email address."
 msgid ""
 "We have sent a 6-digit one-time pass code to the email address you provided."
 msgstr ""
@@ -4757,7 +4648,7 @@ msgstr "Bilet URL"
 
 #: includes/class-wpsc-macros.php:142
 msgid "Returns the ticket URL without any HTML formatting."
-msgstr ""
+msgstr "HTML formatı olmadan talep URL döndürür."
 
 #: includes/class-wpsc-macros.php:179
 msgid "Insert macro"
@@ -5628,16 +5519,12 @@ msgid "Log out"
 msgstr "Çıkış Yap"
 
 #: includes/frontend/class-wpsc-shortcode-three.php:340
-#, fuzzy
-#| msgid ""
-#| "We have sent 6-digit one time password on your given email address. "
-#| "Please insert it below and submit to open ticket!"
 msgid ""
 "We have sent a 6-digit one-time pass code to the email address you provided. "
 "Please insert it below and submit to open ticket!"
 msgstr ""
 "Verdiğiniz e-posta adresinize 6 haneli tek kullanımlık şifre gönderdik. "
-"Lütfen aşağıya ekleyin ve açık talep için gönderin!"
+"Lütfen aşağıya bu kodu ekleyin ve talep açmak için gönderin!"
 
 #: includes/models/class-wpsc-attachment.php:662
 msgid "Insert/edit image"

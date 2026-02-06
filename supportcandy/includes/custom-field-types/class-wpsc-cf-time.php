@@ -1300,47 +1300,71 @@ if ( ! class_exists( 'WPSC_CF_Time' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+			$column = self::get_sql_slug( $cf );
+
+			// Operators that expect a single time value.
+			if ( in_array( $compare, array( '=', '<', '>', '<=', '>=' ), true ) ) {
+				if ( ! WPSC_Functions::is_valid_time( $val ) ) {
+					return '1=0';
+				}
+			}
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $val ) . '\' AND \'' . esc_sql( $val ) . '\'';
-					break;
+					return $wpdb->prepare(
+						"{$column} BETWEEN %s AND %s",
+						$val,
+						$val
+					);
 
 				case '<':
-					$str = self::get_sql_slug( $cf ) . $compare . '\'' . esc_sql( $val ) . '\' AND ' . self::get_sql_slug( $cf ) . ' !=""';
-					break;
+					return $wpdb->prepare(
+						"({$column} < %s AND {$column} != '')",
+						$val
+					);
 
 				case '>':
-					$str = self::get_sql_slug( $cf ) . $compare . '\'' . esc_sql( $val ) . '\'';
-					break;
+					return $wpdb->prepare(
+						"{$column} > %s",
+						$val
+					);
 
 				case '<=':
-					$arr = array(
-						self::get_sql_slug( $cf ) . $compare . '\'' . esc_sql( $val ) . '\'',
-						self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $val ) . '\' AND \'' . esc_sql( $val ) . '\'',
+					return $wpdb->prepare(
+						"(({$column} <= %s OR {$column} BETWEEN %s AND %s) AND {$column} != '')",
+						$val,
+						$val,
+						$val
 					);
-					$str = '((' . implode( ' OR ', $arr ) . ') AND ' . self::get_sql_slug( $cf ) . ' != "")';
-					break;
 
 				case '>=':
-					$arr = array(
-						self::get_sql_slug( $cf ) . $compare . '\'' . esc_sql( $val ) . '\'',
-						self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $val ) . '\' AND \'' . esc_sql( $val ) . '\'',
+					return $wpdb->prepare(
+						"({$column} >= %s OR {$column} BETWEEN %s AND %s)",
+						$val,
+						$val,
+						$val
 					);
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
 				case 'BETWEEN':
-					$str = self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $val['operand_val_1'] ) . '\' AND \'' . esc_sql( $val['operand_val_2'] ) . '\'';
-					break;
+					if (
+						! is_array( $val ) ||
+						! WPSC_Functions::is_valid_time( $val['operand_val_1'] ?? '' ) ||
+						! WPSC_Functions::is_valid_time( $val['operand_val_2'] ?? '' )
+					) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						"{$column} BETWEEN %s AND %s",
+						$val['operand_val_1'],
+						$val['operand_val_2']
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

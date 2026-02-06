@@ -177,6 +177,7 @@ if ( ! class_exists( 'WPSC_CF_Textarea' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -309,33 +310,73 @@ if ( ! class_exists( 'WPSC_CF_Textarea' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
+			global $wpdb;
+			$column = self::get_sql_slug( $cf );
 			switch ( $compare ) {
 
 				case 'IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$values = array();
+
+					foreach ( $val as $item ) {
+						if ( is_string( $item ) && $item !== '' ) {
+							$values[] = wp_strip_all_tags( $item );
+						}
+					}
+
+					if ( empty( $values ) ) {
+						return '1=0';
+					}
+
+					$placeholders = implode( ', ', array_fill( 0, count( $values ), '%s' ) );
+					$operator     = ( $compare === 'IN' ) ? 'IN' : 'NOT IN';
+
+					return $wpdb->prepare(
+						"CONVERT({$column} USING utf8) {$operator} ({$placeholders})",
+						$values
+					);
 
 				case 'LIKE':
-					$arr = array();
-					$val = explode( PHP_EOL, $val );
-					foreach ( $val as $term ) {
-						$term  = str_replace( '*', '%', trim( $term ) );
-						$arr[] = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) LIKE \'%' . esc_sql( $term ) . '%\'';
+					if ( ! is_string( $val ) ) {
+						return '1=0';
 					}
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
+
+					$terms = array_filter(
+						array_map( 'trim', explode( PHP_EOL, $val ) )
+					);
+
+					$likes = array();
+					$args  = array();
+
+					foreach ( $terms as $term ) {
+
+						$term = str_replace( '*', '%', $term );
+						$term = $wpdb->esc_like( $term );
+
+						if ( $term === '' ) {
+							continue;
+						}
+
+						$likes[] = "CONVERT({$column} USING utf8) LIKE %s";
+						$args[]  = '%' . $term . '%';
+					}
+
+					if ( empty( $likes ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						'(' . implode( ' OR ', $likes ) . ')',
+						$args
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

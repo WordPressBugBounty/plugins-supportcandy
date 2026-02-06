@@ -55,7 +55,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function get_ticket_form() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user  = WPSC_Current_User::$current_user;
@@ -140,7 +140,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 									?>
 								</option>
 							</select>
-							<a class="wpsc-link" href="javascript:wpsc_get_change_create_as('<?php echo esc_attr( wp_create_nonce( 'wpsc_get_change_create_as' ) ); ?>');" style="margin-top:3px; width:fit-content;"><?php esc_attr_e( 'Add new', 'supportcandy' ); ?></a>
+							<span class="wpsc-link" onclick="wpsc_get_change_create_as('<?php echo esc_attr( wp_create_nonce( 'wpsc_get_change_create_as' ) ); ?>');" style="margin-top:3px; width:fit-content;"><?php esc_attr_e( 'Add new', 'supportcandy' ); ?></span>
 						</div>
 						<script>
 							jQuery('select.create-as').selectWoo({
@@ -231,6 +231,16 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 				 */
 				function wpsc_submit_ticket_form(el) {
 
+					if ( ! Array.isArray( supportcandy.checkTffVisibityCallers ) ) {
+						supportcandy.checkTffVisibityCallers = [];
+					}
+
+					if ( supportcandy.checkTffVisibityCallers.length > 0 ) {
+						// loop until all ajax calls are done.
+						setTimeout(() => wpsc_submit_ticket_form(el), 200);
+						return;
+					}
+					
 					if (!wpsc_validate_ticket_form()) return;
 
 					wpsc_clear_hidden_fields();
@@ -396,7 +406,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function set_ticket_form() {
 
 			if ( check_ajax_referer( 'wpsc_set_ticket_form', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			WPSC_MS_Recaptcha::validate( 'submit_ticket' );
@@ -544,7 +554,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function get_change_create_as() {
 
 			if ( check_ajax_referer( 'wpsc_get_change_create_as', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -612,7 +622,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function create_as_autocomplete() {
 
 			if ( check_ajax_referer( 'wpsc_create_as_autocomplete', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -652,7 +662,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function add_new_create_as() {
 
 			if ( check_ajax_referer( 'wpsc_add_new_create_as', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -666,7 +676,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
-			$email = isset( $_POST['email'] ) ? sanitize_text_field( wp_unslash( $_POST['email'] ) ) : '';
+			$email = isset( $_POST['email'] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST['email'] ) ) ) : '';
 			if ( ! $email || ! filter_var( $email, FILTER_VALIDATE_EMAIL ) ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
@@ -763,7 +773,7 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 		public static function get_create_as_customer_fields() {
 
 			if ( check_ajax_referer( 'wpsc_get_create_as_customer_fields', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;

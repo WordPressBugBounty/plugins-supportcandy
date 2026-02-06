@@ -65,11 +65,11 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 		public static function authorize() {
 
 			if ( ! wpsc_upgrade_is_site_admin() ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( check_ajax_referer( 'wpsc_authorize_v1_upgrade', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			update_option( 'wpsc_upgrade_permission_v1', 1 );
@@ -214,11 +214,11 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 			$upgrade_permission = get_option( 'wpsc_upgrade_permission_v1', 0 );
 
 			if ( ! wpsc_upgrade_is_site_admin() || ! $upgrade_permission ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( check_ajax_referer( 'wpsc_upgrade_v1_check_compatibility', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$errors = array();
@@ -389,7 +389,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 		public static function get_v1_upgrade_cron_status() {
 
 			if ( ! wpsc_upgrade_is_site_admin() ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			// Set transient.
@@ -1341,6 +1341,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1359,6 +1360,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$option_strings = self::import_options( $prev, $response['id'] );
 							$string_translations = array_merge( $string_translations, $option_strings );
 							$term_id_map[ $prev->term_id ] = $response['id'];
@@ -1379,6 +1381,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$option_strings = self::import_options( $prev, $response['id'] );
 							$string_translations = array_merge( $string_translations, $option_strings );
 							$term_id_map[ $prev->term_id ] = $response['id'];
@@ -1399,6 +1402,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$option_strings = self::import_options( $prev, $response['id'] );
 							$string_translations = array_merge( $string_translations, $option_strings );
 							$term_id_map[ $prev->term_id ] = $response['id'];
@@ -1419,6 +1423,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' LONGTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' LONGTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1437,6 +1442,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' DATETIME NULL DEFAULT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' DATETIME NULL DEFAULT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1455,6 +1461,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1473,6 +1480,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1491,6 +1499,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1509,6 +1518,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 								)
 							);
 							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
+							$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' TINYTEXT NULL' );
 							$term_id_map[ $prev->term_id ] = $response['id'];
 							$slug_map[ $prev->slug ] = $response['slug'];
 							$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1528,6 +1538,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 									)
 								);
 								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
+								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
 								$term_id_map[ $prev->term_id ] = $response['id'];
 								$slug_map[ $prev->slug ] = $response['slug'];
 								$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1548,6 +1559,7 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 									)
 								);
 								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
+								$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD " . $response['slug'] . ' BIGINT NULL DEFAULT 0' );
 								$term_id_map[ $prev->term_id ] = $response['id'];
 								$slug_map[ $prev->slug ] = $response['slug'];
 								$string_translations[ 'wpsc-cf-name-' . $response['id'] ] = $label;
@@ -1669,7 +1681,6 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V1' ) ) :
 						'dt-assigned-others'    => true,
 						'backend-access'        => true, // Dashboard support menu access.
 						'create-as'             => true, // Create ticket on others behalf.
-						'dtt-access'            => true, // Deleted ticket access.
 						'eci-access'            => true, // Edit customer info.
 						'dash-access'           => true, // Dashboard access.
 					),

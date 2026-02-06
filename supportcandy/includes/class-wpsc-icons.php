@@ -87,7 +87,9 @@ if ( ! class_exists( 'WPSC_Icons' ) ) :
 				'list' 				=> file_get_contents( WPSC_ABSPATH . 'asset/icons/list.svg' ), //phpcs:ignore
 				'pie-chart' 		=> file_get_contents( WPSC_ABSPATH . 'asset/icons/pie-chart.svg' ), //phpcs:ignore
 				'dashboard' 		=> file_get_contents( WPSC_ABSPATH . 'asset/icons/dashboard.svg' ), //phpcs:ignore
-				'wp-logo' 		=> file_get_contents( WPSC_ABSPATH . 'asset/icons/wp-logo.svg' ), //phpcs:ignore
+				'wp-logo' 			=> file_get_contents( WPSC_ABSPATH . 'asset/icons/wp-logo.svg' ), //phpcs:ignore
+				'archive' 			=> file_get_contents( WPSC_ABSPATH . 'asset/icons/archive.svg' ), //phpcs:ignore
+				'archive-restore' 	=> file_get_contents( WPSC_ABSPATH . 'asset/icons/archive-restore.svg' ), //phpcs:ignore
 			);
 			self::$icons = apply_filters( 'wpsc_icons', $icons );
 		}

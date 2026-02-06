@@ -237,6 +237,26 @@ if ( ! class_exists( 'WPSC_DF_Browser' ) ) :
 		}
 
 		/**
+		 * Return allowed browsers
+		 *
+		 * @return array
+		 */
+		private static function allowed_browsers() {
+			return array(
+				'navigator',
+				'firefox',
+				'internet explorer',
+				'google chrome',
+				'maxthon',
+				'opera',
+				'edge',
+				'konqueror',
+				'samsungbrowser',
+				'safari',
+			);
+		}
+
+		/**
 		 * Parse filter and return sql query to be merged in ticket model query builder
 		 *
 		 * @param WPSC_Custom_Field $cf - custom field of this type.
@@ -246,23 +266,50 @@ if ( ! class_exists( 'WPSC_DF_Browser' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			// Safe column name.
+			$column = 't.' . sanitize_key( $cf->slug );
+			$allowed = self::allowed_browsers();
+
+			/**
+			 * Normalize & validate browser values
+			 */
+			$normalize = static function ( $values ) use ( $allowed ) {
+
+				$values = is_array( $values ) ? $values : array( $values );
+				$out    = array();
+
+				foreach ( $values as $v ) {
+					$v = strtolower( trim( $v ) );
+					if ( in_array( $v, $allowed, true ) ) {
+						$out[] = $v;
+					}
+				}
+
+				return array_unique( $out );
+			};
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					$vals = $normalize( $val );
+					if ( empty( $vals ) ) {
+						return '1=0';
+					}
+
+					return $column . " = '" . esc_sql( $vals[0] ) . "'";
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					$vals = $normalize( $val );
+					if ( empty( $vals ) ) {
+						return '1=0';
+					}
+
+					$escaped = array_map( 'esc_sql', $vals );
+					return "CONVERT({$column} USING utf8) IN ('" . implode( "','", $escaped ) . "')";
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

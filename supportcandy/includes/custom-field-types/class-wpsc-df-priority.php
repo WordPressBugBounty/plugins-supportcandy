@@ -174,6 +174,7 @@ if ( ! class_exists( 'WPSC_DF_Priority' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_joins', array( __CLASS__, 'ticket_join' ), 10, 2 );
+			add_filter( 'wpsc_archive_ticket_joins', array( __CLASS__, 'ticket_join' ), 10, 2 );
 
 			// rest api.
 			add_filter( 'wpsc_rest_prevent_ticket_data', array( __CLASS__, 'rest_prevent_ticket_data' ) );
@@ -288,27 +289,68 @@ if ( ! class_exists( 'WPSC_DF_Priority' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+			$column = 't.' . sanitize_key( $cf->slug );
+
+			/**
+			 * Normalize IDs (INT only)
+			 */
+			$normalize_ids = static function ( $values ) {
+
+				$values = is_array( $values ) ? $values : array( $values );
+				$ids    = array();
+
+				foreach ( $values as $v ) {
+					if ( is_numeric( $v ) && (int) $v > 0 ) {
+						$ids[] = (int) $v;
+					}
+				}
+
+				return array_unique( $ids );
+			};
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						'(^|[|])' . $ids[0] . '($|[|])'
+					);
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
+					}
+
+					$regex = '(^|[|])(' . implode( '|', $ids ) . ')($|[|])';
+
+					return $wpdb->prepare(
+						"{$column} RLIKE %s",
+						$regex
+					);
 
 				case 'NOT IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=1';
+					}
+
+					$regex = '(^|[|])(' . implode( '|', $ids ) . ')($|[|])';
+
+					return $wpdb->prepare(
+						"{$column} NOT RLIKE %s",
+						$regex
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

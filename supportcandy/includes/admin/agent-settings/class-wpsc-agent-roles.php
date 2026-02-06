@@ -74,12 +74,12 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 										<tr>
 											<td> <span class="title"><?php echo esc_attr( $role['label'] ); ?></span> </td>
 											<td>
-												<a href="javascript:wpsc_get_edit_agent_role(<?php echo esc_attr( $key ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_agent_role' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a> |
-												<a href="javascript:wpsc_get_clone_agent_role(<?php echo esc_attr( $key ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_clone_agent_role' ) ); ?>');"><?php esc_attr_e( 'Clone', 'supportcandy' ); ?></a> 
+												<span class="wpsc-link" onclick="wpsc_get_edit_agent_role(<?php echo esc_attr( $key ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_agent_role' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
+												<span class="wpsc-link" onclick="wpsc_get_clone_agent_role(<?php echo esc_attr( $key ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_clone_agent_role' ) ); ?>');"><?php esc_attr_e( 'Clone', 'supportcandy' ); ?></span> 
 												<?php
 												if ( intval( $key ) > 2 ) :
 													?>
-													| <a href="javascript:wpsc_delete_agent_role(<?php echo esc_attr( $key ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_agent_role' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+													| <span class="wpsc-link" onclick="wpsc_delete_agent_role(<?php echo esc_attr( $key ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_agent_role' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 													<?php
 												endif
 												?>
@@ -140,7 +140,7 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 		public static function get_add_agent_role() {
 
 			if ( check_ajax_referer( 'wpsc_get_add_agent_role', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -277,6 +277,13 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 							<td><input name="caps[]" type="checkbox" value="tt-assigned-others" class="wpsc-ao"></td>
 						</tr>
 
+						<tr>
+							<td><label for=""><?php esc_attr_e( 'Archive tickets', 'supportcandy' ); ?></label></td>
+							<td><input name="caps[]" type="checkbox" value="at-unassigned" class="wpsc-una"></td>
+							<td><input name="caps[]" type="checkbox" value="at-assigned-me" class="wpsc-ame"></td>
+							<td><input name="caps[]" type="checkbox" value="at-assigned-others" class="wpsc-ao"></td>
+						</tr>
+
 						<?php do_action( 'wpsc_add_agent_role_ticket_permissions' ); ?>
 					</tbody>
 				</table>
@@ -305,6 +312,14 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 						<div>
 							<input name="caps[]" type="checkbox" value="dash-access">
 							<span><?php esc_attr_e( 'Dashboard access', 'supportcandy' ); ?></span>
+						</div>
+						<div>
+							<input name="caps[]" type="checkbox" value="at-access">
+							<span><?php esc_attr_e( 'Archive ticket access', 'supportcandy' ); ?></span>
+						</div>
+						<div>
+							<input name="caps[]" type="checkbox" value="at-delete-access">
+							<span><?php esc_attr_e( 'Archive ticket Permanent delete access', 'supportcandy' ); ?></span>
 						</div>
 						<?php do_action( 'wpsc_add_agent_role_other_permissions' ); ?>
 					</div>
@@ -394,7 +409,7 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 		public static function set_add_agent_role() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_agent_role', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -468,6 +483,11 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 						'tt-unassigned'         => in_array( 'tt-unassigned', $caps ) ? true : false,
 						'tt-assigned-me'        => in_array( 'tt-assigned-me', $caps ) ? true : false,
 						'tt-assigned-others'    => in_array( 'tt-assigned-others', $caps ) ? true : false,
+						'at-unassigned'         => in_array( 'at-unassigned', $caps ) ? true : false,
+						'at-assigned-me'        => in_array( 'at-assigned-me', $caps ) ? true : false,
+						'at-assigned-others'    => in_array( 'at-assigned-others', $caps ) ? true : false,
+						'at-access'             => in_array( 'at-access', $caps ) ? true : false,
+						'at-delete-access'      => in_array( 'at-delete-access', $caps ) ? true : false,
 
 					),
 				),
@@ -519,7 +539,7 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 		public static function get_edit_agent_role() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_agent_role', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -664,6 +684,13 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 							<td><input name="caps[]" type="checkbox" <?php checked( $role['caps']['tt-assigned-me'], 1 ); ?> value="tt-assigned-me" class="wpsc-ame"></td>
 							<td><input name="caps[]" type="checkbox" <?php checked( $role['caps']['tt-assigned-others'], 1 ); ?> value="tt-assigned-others" class="wpsc-ao"></td>
 						</tr>
+
+						<tr>
+							<td><label for=""><?php esc_attr_e( 'Archive ticket', 'supportcandy' ); ?></label></td>
+							<td><input name="caps[]" type="checkbox" <?php checked( $role['caps']['at-unassigned'], 1 ); ?> value="at-unassigned" class="wpsc-una"></td>
+							<td><input name="caps[]" type="checkbox" <?php checked( $role['caps']['at-assigned-me'], 1 ); ?> value="at-assigned-me" class="wpsc-ame"></td>
+							<td><input name="caps[]" type="checkbox" <?php checked( $role['caps']['at-assigned-others'], 1 ); ?> value="at-assigned-others" class="wpsc-ao"></td>
+						</tr>
 						<?php do_action( 'wpsc_edit_agent_role_ticket_permissions', $role ); ?>
 					</tbody>
 				</table>
@@ -691,6 +718,14 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 						<div>
 							<input name="caps[]" type="checkbox" <?php checked( $role['caps']['dash-access'], 1 ); ?> value="dash-access">
 							<span><?php esc_attr_e( 'Dashboard access', 'supportcandy' ); ?></span>
+						</div>
+						<div>
+							<input name="caps[]" type="checkbox" <?php checked( $role['caps']['at-access'], 1 ); ?> value="at-access">
+							<span><?php esc_attr_e( 'Archive ticket access', 'supportcandy' ); ?></span>
+						</div>
+						<div>
+							<input name="caps[]" type="checkbox" <?php checked( $role['caps']['at-delete-access'], 1 ); ?> value="at-delete-access">
+							<span><?php esc_attr_e( 'Archive ticket Permanent delete access', 'supportcandy' ); ?></span>
 						</div>
 						<?php do_action( 'wpsc_edit_agent_role_other_permissions', $role ); ?>
 					</div>
@@ -783,7 +818,7 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 		public static function set_edit_agent_role() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_agent_role', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -866,6 +901,11 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 						'tt-unassigned'         => in_array( 'tt-unassigned', $caps ) ? true : false,
 						'tt-assigned-me'        => in_array( 'tt-assigned-me', $caps ) ? true : false,
 						'tt-assigned-others'    => in_array( 'tt-assigned-others', $caps ) ? true : false,
+						'at-unassigned'         => in_array( 'at-unassigned', $caps ) ? true : false,
+						'at-assigned-me'        => in_array( 'at-assigned-me', $caps ) ? true : false,
+						'at-assigned-others'    => in_array( 'at-assigned-others', $caps ) ? true : false,
+						'at-access'             => in_array( 'at-access', $caps ) ? true : false,
+						'at-delete-access'      => in_array( 'at-delete-access', $caps ) ? true : false,
 					),
 				),
 				$role,
@@ -916,7 +956,7 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 		public static function delete_agent_role() {
 
 			if ( check_ajax_referer( 'wpsc_delete_agent_role', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

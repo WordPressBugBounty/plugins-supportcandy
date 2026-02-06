@@ -476,6 +476,119 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 		}
 
 		/**
+		 * Check whether given date is valid or not
+		 *
+		 * @param string $date - date string.
+		 * @param string $format - date format.
+		 * @return boolean
+		 */
+		public static function is_valid_date( $date, $format = 'Y-m-d' ) {
+			$d = DateTime::createFromFormat( $format, $date );
+			return $d && $d->format( $format ) === $date;
+		}
+
+		/**
+		 * Check whether given datetime is valid or not
+		 *
+		 * @param string $datetime - datetime string.
+		 * @return boolean
+		 */
+		public static function is_valid_datetime( $datetime ) {
+
+			if ( ! is_string( $datetime ) ) {
+				return false;
+			}
+			$datetime = trim( $datetime );
+			$formats = array(
+				'Y-m-d H:i',
+				'Y-m-d H:i:s',
+			);
+
+			foreach ( $formats as $format ) {
+				$dt = DateTime::createFromFormat( $format, $datetime );
+				if (
+					$dt !== false &&
+					$dt->format( $format ) === $datetime
+				) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Check whether given time is valid or not
+		 *
+		 * @param string $time - time string.
+		 * @return boolean
+		 */
+		public static function is_valid_time( $time ) {
+			if ( ! is_string( $time ) ) {
+				return false;
+			}
+
+			// Accept HH:MM or HH:MM:SS (24-hour).
+			return (bool) preg_match(
+				'/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/',
+				$time
+			);
+		}
+
+		/**
+		 * Normalize date string to UTC date string
+		 *
+		 * @param string  $date - date string.
+		 * @param boolean $end_of_day - end of day flag.
+		 * @return string|false
+		 */
+		public static function normalize_date( $date, $end_of_day = false ) {
+			if ( ! is_string( $date ) ) {
+				return false;
+			}
+
+			$date = trim( $date );
+
+			$formats = array(
+				'Y-m-d H:i:s',
+				'Y-m-d',
+			);
+
+			foreach ( $formats as $format ) {
+				$dt = DateTime::createFromFormat( $format, $date );
+				if ( $dt instanceof DateTime ) {
+					if ( $format === 'Y-m-d' ) {
+						$dt->setTime(
+							$end_of_day ? 23 : 0,
+							$end_of_day ? 59 : 0,
+							$end_of_day ? 59 : 0
+						);
+					}
+					return self::get_utc_date_str( $dt->format( 'Y-m-d H:i:s' ) );
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Return SQL BETWEEN string
+		 *
+		 * @param string $column - column name.
+		 * @param string $from - from value.
+		 * @param string $to - to value.
+		 * @return string
+		 */
+		public static function sql_between( $column, $from, $to ) {
+			return sprintf(
+				"%s BETWEEN '%s' AND '%s'",
+				$column,
+				esc_sql( $from ),
+				esc_sql( $to )
+			);
+		}
+
+
+		/**
 		 * Get new ticket url
 		 *
 		 * @return string
@@ -1133,7 +1246,8 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 
 			$url = '';
 			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			if ( $view === '0' ) {
+			$view = (int) $view;
+			if ( $view === 0 ) {
 				$url = admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . $ticket_id );
 			} elseif ( $page_settings['ticket-url-page'] == 'support-page' && $page_settings['support-page'] ) {
 				$url = get_permalink( $page_settings['support-page'] );

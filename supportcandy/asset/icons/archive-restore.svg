@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+	<g id="archive" fill="currentColor" fill-rule="nonzero">
+		<path d="M0 2a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5A2.5 2.5 0 0 1 12.5 15h-9A2.5 2.5 0 0 1 1 12.5V5a1 1 0 0 1-1-1zM2 5v7.5A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5V5zm13-3H1v2h14z"/>
+		<path d="M8 12a.5.5 0 0 0 .5-.5V7.5l2 2a.5.5 0 1 0 .7-.7L8.35 6.15a.5.5 0 0 0-.7 0L4.8 8.8a.5.5 0 1 0 .7.7l2-2v4A.5.5 0 0 0 8 12"/>
+	</g>
+</svg>

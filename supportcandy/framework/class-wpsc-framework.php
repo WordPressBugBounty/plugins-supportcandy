@@ -422,12 +422,14 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 			$localizations['translations']['incorrect_login']       = esc_attr__( 'Incorrect username or password!', 'supportcandy' );
 			$localizations['translations']['incorrect_password']    = esc_attr__( 'Incorrect password!', 'supportcandy' );
 			$localizations['translations']['unsername_unavailable'] = esc_attr__( 'Username is already taken!', 'supportcandy' );
+			$localizations['translations']['email_unavailable']    = esc_attr__( 'Email is already taken!', 'supportcandy' );
 			$localizations['translations']['incorrect_email']       = esc_attr__( 'Incorrect email address!', 'supportcandy' );
 			$localizations['translations']['copy_url']              = esc_attr__( 'Ticket URL copied!', 'supportcandy' );
 			$localizations['translations']['invalidEmail']          = esc_attr__( 'Invalid email address!', 'supportcandy' );
 			$localizations['translations']['customer_delete_warn'] = esc_attr__( 'Deleting a customer will permanently remove all associated customer information and tickets!', 'supportcandy' );
 			$localizations['translations']['req_term_cond']           = esc_attr__( 'Please accept terms and conditions!', 'supportcandy' );
 			$localizations['translations']['req_gdpr']           = esc_attr__( 'Please accept GDPR policy!', 'supportcandy' );
+			$localizations['translations']['delete_permanently'] = esc_attr__( 'Deleting a ticket will permanently remove all associated information and cannot be undone!', 'supportcandy' );
 			return $localizations;
 		}
 

@@ -806,7 +806,10 @@ if ( ! class_exists( 'WPSC_Customer' ) ) :
 		public function update_ticket_count() {
 
 			global $wpdb;
-			$count = $wpdb->get_var( "SELECT count(id) from {$wpdb->prefix}psmsc_tickets WHERE is_active=1 AND customer=" . $this->id );
+			if ( ! is_numeric( $this->id ) || (int) $this->id <= 0 ) {
+				return;
+			}
+			$count = $wpdb->get_var( $wpdb->prepare( "SELECT count(id) FROM {$wpdb->prefix}psmsc_tickets WHERE is_active=1 AND customer=%d", $this->id ) );
 			$this->ticket_count = $count;
 			$this->save();
 		}

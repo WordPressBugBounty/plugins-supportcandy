@@ -180,6 +180,7 @@ if ( ! class_exists( 'WPSC_CF_Number' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -358,8 +359,10 @@ if ( ! class_exists( 'WPSC_CF_Number' ) ) :
 		 * @return string
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
+			global $wpdb;
 
-			$str = '';
+			$column = self::get_sql_slug( $cf );
+
 			switch ( $compare ) {
 
 				case '=':
@@ -367,22 +370,42 @@ if ( ! class_exists( 'WPSC_CF_Number' ) ) :
 				case '>':
 				case '<=':
 				case '>=':
-					$str = self::get_sql_slug( $cf ) . $compare . esc_sql( $val );
-					break;
+					// STRICT numeric enforcement.
+					if ( ! is_numeric( $val ) ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						"{$column} {$compare} %f",
+						(float) $val
+					);
 
 				case 'IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) IN(' . implode( ', ', esc_sql( $val ) ) . ')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) NOT IN(' . implode( ', ', esc_sql( $val ) ) . ')';
-					break;
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return '1=0';
+					}
+
+					$placeholders = array();
+					$values       = array();
+
+					foreach ( $val as $number ) {
+						if ( ! is_numeric( $number ) ) {
+							return '1=0';
+						}
+						$placeholders[] = '%f';
+						$values[]       = (float) $number;
+					}
+
+					$placeholder_sql = implode( ',', $placeholders );
+					return $wpdb->prepare(
+						"CONVERT({$column} USING utf8) {$compare} ({$placeholder_sql})",
+						$values
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

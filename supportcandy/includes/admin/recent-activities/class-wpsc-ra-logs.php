@@ -389,7 +389,7 @@ if ( ! class_exists( 'WPSC_RA_Logs' ) ) :
 		public static function ra_agents_autocomplete() {
 
 			if ( check_ajax_referer( 'wpsc_ra_agents_autocomplete', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;

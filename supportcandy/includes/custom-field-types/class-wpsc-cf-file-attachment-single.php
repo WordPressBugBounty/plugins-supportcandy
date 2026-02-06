@@ -179,6 +179,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 
 			// ticket search query.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**

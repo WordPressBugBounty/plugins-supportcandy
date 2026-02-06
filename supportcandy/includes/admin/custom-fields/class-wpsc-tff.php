@@ -85,12 +85,12 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 							<tr>
 								<td><?php echo esc_attr( $cf->name ); ?></td>
 								<td>
-									<a href="javascript:wpsc_get_edit_tff(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_tff' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a>
+									<span class="wpsc-link" onclick="wpsc_get_edit_tff(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_tff' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span>
 									<?php
 									if ( ! ( $cf->slug == 'name' || $cf->slug == 'email' ) ) :
 										echo esc_attr( ' | ' );
 										?>
-										<a href="javascript:wpsc_delete_tff(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_tff' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+										<span class="wpsc-link" onclick="wpsc_delete_tff(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_tff' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 										<?php
 									endif;
 									?>
@@ -288,7 +288,7 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 		public static function set_add_new_tff() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_new_tff', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -373,7 +373,7 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 		public static function get_edit_tff() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_tff', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -496,7 +496,7 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 		public static function set_edit_tff() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_tff', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -573,7 +573,7 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 		public static function delete_tff() {
 
 			if ( check_ajax_referer( 'wpsc_delete_tff', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -582,14 +582,14 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 			if ( ! $id ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$tff = get_option( 'wpsc-tff', array() );
 
 			$cf = new WPSC_Custom_Field( $id );
 			if ( ! $cf->id || ! $cf->type::$is_ctf || ! in_array( $cf->field, array( 'customer', 'ticket' ) ) || ! isset( $tff[ $cf->slug ] ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			unset( $tff[ $cf->slug ] );

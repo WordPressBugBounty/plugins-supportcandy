@@ -136,6 +136,17 @@ if ( ! class_exists( 'WPSC_Admin' ) ) :
 				array( 'WPSC_Tickets', 'layout' )
 			);
 
+			if ( $current_user->is_agent && $current_user->agent->has_cap( 'at-access' ) ) {
+				add_submenu_page(
+					'wpsc-tickets',
+					esc_attr__( 'Archived', 'supportcandy' ),
+					esc_attr__( 'Archived', 'supportcandy' ),
+					'wpsc_agent',
+					'wpsc-archive-tickets',
+					array( 'WPSC_Archive_Ticket_List', 'layout' )
+				);
+			}
+
 			add_submenu_page(
 				'wpsc-tickets',
 				esc_attr__( 'Customers', 'supportcandy' ),

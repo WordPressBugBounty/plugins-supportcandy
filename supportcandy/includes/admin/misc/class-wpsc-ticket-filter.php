@@ -27,12 +27,12 @@ if ( ! class_exists( 'WPSC_Ticket_Filter' ) ) :
 		public static function get_operators() {
 
 			if ( check_ajax_referer( 'wpsc_get_ticket_filter_operators', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! $current_user->is_customer ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$slug = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
@@ -54,7 +54,7 @@ if ( ! class_exists( 'WPSC_Ticket_Filter' ) ) :
 				( $current_user->is_agent && in_array( $slug, $atl_filters ) ) ||
 				( ! $current_user->is_agent && in_array( $slug, $ctl_filters ) )
 			) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$cf->type::get_operators( $cf );
@@ -69,12 +69,12 @@ if ( ! class_exists( 'WPSC_Ticket_Filter' ) ) :
 		public static function get_operands() {
 
 			if ( check_ajax_referer( 'wpsc_get_ticket_filter_operands', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! $current_user->is_customer ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
@@ -114,7 +114,7 @@ if ( ! class_exists( 'WPSC_Ticket_Filter' ) ) :
 				( $current_user->is_agent && in_array( $cf->id, $atl_filter_ids ) ) ||
 				( ! $current_user->is_agent && in_array( $cf->id, $ctl_filter_ids ) )
 			) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$cf->type::get_operands( $operator, $cf );

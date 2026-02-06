@@ -241,19 +241,22 @@ if ( ! class_exists( 'WPSC_DF_User_Type' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					if ( is_array( $val ) || is_object( $val ) ) {
+						return '1=0';
+					}
+					return 't.' . $slug . " = '" . esc_sql( (string) $val ) . "'";
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

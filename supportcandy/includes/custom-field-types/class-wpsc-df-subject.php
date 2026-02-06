@@ -180,6 +180,7 @@ if ( ! class_exists( 'WPSC_DF_Subject' ) ) :
 
 			// ticket search query.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -268,25 +269,40 @@ if ( ! class_exists( 'WPSC_DF_Subject' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
 
+			$column = 'CONVERT(t.' . $slug . ' USING utf8)';
 			switch ( $compare ) {
 
 				case 'LIKE':
-					$arr = array();
-					$val = explode( PHP_EOL, $val );
-					foreach ( $val as $term ) {
-						$term  = str_replace( '*', '%', trim( $term ) );
-						$arr[] = 'CONVERT(t.' . $cf->slug . ' USING utf8) LIKE \'%' . $term . '%\'';
+					if ( ! is_string( $val ) || trim( $val ) === '' ) {
+						return '1=0';
 					}
-					$str = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
+					$terms = preg_split( "/\r\n|\n|\r/", $val );
+					$likes = array();
+
+					foreach ( $terms as $term ) {
+						$term = trim( $term );
+
+						if ( $term === '' ) {
+							continue;
+						}
+						$term = str_replace( '*', '%', $term );
+						$term = esc_sql( $term );
+						$likes[] = $column . " LIKE '%" . $term . "%'";
+					}
+
+					if ( empty( $likes ) ) {
+						return '1=0';
+					}
+					return '(' . implode( ' OR ', $likes ) . ')';
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
@@ -571,7 +587,7 @@ if ( ! class_exists( 'WPSC_DF_Subject' ) ) :
 		public static function it_set_edit_subject() {
 
 			if ( check_ajax_referer( 'wpsc_it_set_edit_subject', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			WPSC_Individual_Ticket::load_current_ticket();

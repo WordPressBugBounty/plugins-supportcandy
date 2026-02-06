@@ -65,6 +65,13 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static $url_auth = false;
 
 		/**
+		 * Set whether ticket action is restricted or not.
+		 *
+		 * @var boolean
+		 */
+		public static $is_restricted = false;
+
+		/**
 		 * Initialize the class
 		 *
 		 * @return void
@@ -95,6 +102,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			// Delete ticket.
 			add_action( 'wp_ajax_wpsc_it_delete_ticket', array( __CLASS__, 'set_delete_ticket' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_it_delete_ticket', array( __CLASS__, 'set_delete_ticket' ) );
+			add_action( 'wp_ajax_wpsc_it_archive_ticket', array( __CLASS__, 'set_archive_ticket' ) );
+			add_action( 'wp_ajax_nopriv_wpsc_it_archive_ticket', array( __CLASS__, 'set_archive_ticket' ) );
 			add_action( 'wp_ajax_wpsc_it_ticket_restore', array( __CLASS__, 'ticket_restore' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_it_ticket_restore', array( __CLASS__, 'ticket_restore' ) );
 			add_action( 'wp_ajax_wpsc_it_delete_permanently', array( __CLASS__, 'set_delete_ticket_permanently' ) );
@@ -221,7 +230,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function load_current_ticket() {
 
 			$current_user = WPSC_Current_User::$current_user;
-
 			$id = isset( $_POST['ticket_id'] ) ? intval( $_POST['ticket_id'] ) : 0; // phpcs:ignore
 			if ( ! $id ) {
 				wp_send_json_error( new WP_Error( '001', 'Unauthorized!' ), 401 );
@@ -229,9 +237,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			$ticket = new WPSC_Ticket( $id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( new WP_Error( '002', 'Something went wrong!' ), 400 );
+				$ticket = new WPSC_Archive_Ticket( $id );
+				if ( $ticket->id ) {
+					?>
+					<div style="align-item:center;" ><h6><?php esc_attr_e( 'Unauthorized access!', 'supportcandy' ); ?></h6></div>
+					<?php
+					wp_die();
+				} else {
+					wp_send_json_error( new WP_Error( '002', 'Something went wrong!' ), 400 );
+				}
 			}
 			self::$ticket = $ticket;
+			self::$is_restricted = WPSC_Ticket_Restrictions_Manager::is_restricted( $ticket );
 
 			// url authentication.
 			$auth_code = isset( $_REQUEST['auth-code'] ) ? sanitize_text_field( $_REQUEST['auth-code'] ) : ''; // phpcs:ignore
@@ -260,8 +277,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			endif;
 
 			// Check if ticket is deleted and whether current user has access to deleted tickets.
-			if ( ! self::$ticket->is_active && ! ( self::$view_profile == 'agent' && $current_user->agent->has_cap( 'dtt-access' ) ) ) {
-				wp_send_json_error( new WP_Error( '003', 'Unauthorized!' ), 401 );
+			if ( ! self::$ticket->is_active && ! ( self::$view_profile == 'agent' ) ) {
+				?>
+				<div style="align-item:center;" ><h6><?php esc_attr_e( 'Unauthorized access!', 'supportcandy' ); ?></h6></div>
+				<?php
+				wp_die();
 			}
 		}
 
@@ -284,72 +304,75 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			$tl_advanced = get_option( 'wpsc-tl-ms-advanced' );
 			$ms_advanced = get_option( 'wpsc-ms-advanced-settings' );
 
-			if ( self::$ticket->is_active ) {
+			$close_flag = false;
+			if ( $current_user->is_customer &&
+				(
+					( $current_user->customer->id == self::$ticket->customer->id && in_array( 'customer', $gs['allow-close-ticket'] ) ) ||
+					( $current_user->is_agent && self::has_ticket_cap( 'cs' ) && in_array( $current_user->agent->role, $gs['allow-close-ticket'] ) )
+				)
+			) {
+				$close_flag = true;
+			}
 
-				$close_flag = false;
-				if ( $current_user->is_customer &&
-					(
-						( $current_user->customer->id == self::$ticket->customer->id && in_array( 'customer', $gs['allow-close-ticket'] ) ) ||
-						( $current_user->is_agent && self::has_ticket_cap( 'cs' ) && in_array( $current_user->agent->role, $gs['allow-close-ticket'] ) )
-					)
-				) {
-					$close_flag = true;
-				}
+			$close_flag = apply_filters( 'wpsc_it_action_close_flag', $close_flag, self::$ticket );
 
-				$close_flag = apply_filters( 'wpsc_it_action_close_flag', $close_flag, self::$ticket );
-
-				if (
-					$close_flag &&
-					! (
-						self::$ticket->status->id == $gs['close-ticket-status'] ||
-						in_array( self::$ticket->status->id, $tl_advanced['closed-ticket-statuses'] )
-					)
-				) {
-					$actions['close'] = array(
-						'label'    => esc_attr__( 'Close', 'supportcandy' ),
-						'callback' => 'wpsc_it_close_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_close_ticket' ) ) . '\');',
-					);
-				}
-
-				// Duplicate.
-				if ( self::$view_profile == 'agent' && self::has_ticket_cap( 'dt' ) ) {
-					$actions['duplicate'] = array(
-						'label'    => esc_attr__( 'Duplicate', 'supportcandy' ),
-						'callback' => 'wpsc_it_get_duplicate_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_get_duplicate_ticket' ) ) . '\');',
-					);
-				}
-
-				// Delete.
-				if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
-					$actions['delete'] = array(
-						'label'    => esc_attr__( 'Delete', 'supportcandy' ),
-						'callback' => 'wpsc_it_delete_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_delete_ticket' ) ) . '\');',
-					);
-				}
-
-				// Copy url.
-				$actions['copy'] = array(
-					'label'    => esc_attr__( 'Copy URL', 'supportcandy' ),
-					'callback' => 'wpsc_it_copy_url(' . self::$ticket->id . ');',
+			if (
+				$close_flag &&
+				! (
+					self::$ticket->status->id == $gs['close-ticket-status'] ||
+					in_array( self::$ticket->status->id, $tl_advanced['closed-ticket-statuses'] )
+				)
+			) {
+				$actions['close'] = array(
+					'label'    => esc_attr__( 'Close', 'supportcandy' ),
+					'callback' => 'wpsc_it_close_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_close_ticket' ) ) . '\');',
 				);
+			}
 
-			} else {
+			// Duplicate.
+			if ( self::$view_profile == 'agent' && self::has_ticket_cap( 'dt' ) ) {
+				$actions['duplicate'] = array(
+					'label'    => esc_attr__( 'Duplicate', 'supportcandy' ),
+					'callback' => 'wpsc_it_get_duplicate_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_get_duplicate_ticket' ) ) . '\');',
+				);
+			}
 
-				// Restore && permenently delete.
-				if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
-					$actions['restore'] = array(
-						'label'    => esc_attr__( 'Restore', 'supportcandy' ),
-						'callback' => 'wpsc_it_ticket_restore(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_ticket_restore' ) ) . '\');',
-					);
-				}
+			// Copy url.
+			$actions['copy'] = array(
+				'label'    => esc_attr__( 'Copy URL', 'supportcandy' ),
+				'callback' => 'wpsc_it_copy_url(' . self::$ticket->id . ');',
+			);
 
-				// Permanently delete.
-				if ( $current_user->is_agent && $current_user->user->has_cap( 'manage_options' ) ) {
-					$actions['delete-permanently'] = array(
-						'label'    => esc_attr__( 'Delete Permanently', 'supportcandy' ),
-						'callback' => 'wpsc_it_delete_permanently(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_delete_permanently' ) ) . '\');',
-					);
-				}
+			// Archive.
+			if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) ) {
+				$actions['archive'] = array(
+					'label'    => esc_attr__( 'Archive', 'supportcandy' ),
+					'callback' => 'wpsc_it_archive_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_archive_ticket' ) ) . '\');',
+				);
+			}
+
+			// Restore permanently delete.
+			if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
+				$actions['restore'] = array(
+					'label'    => esc_attr__( 'Restore', 'supportcandy' ),
+					'callback' => 'wpsc_it_ticket_restore(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_ticket_restore' ) ) . '\');',
+				);
+			}
+
+			// Delete.
+			if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
+				$actions['delete'] = array(
+					'label'    => esc_attr__( 'Delete', 'supportcandy' ),
+					'callback' => 'wpsc_it_delete_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_delete_ticket' ) ) . '\');',
+				);
+			}
+
+			// Permanently delete.
+			if ( $current_user->is_agent && WPSC_Functions::is_site_admin() ) {
+				$actions['delete-permanently'] = array(
+					'label'    => esc_attr__( 'Delete permanently', 'supportcandy' ),
+					'callback' => 'wpsc_it_delete_permanently(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_delete_permanently' ) ) . '\');',
+				);
 			}
 
 			self::$actions = apply_filters( 'wpsc_individual_ticket_actions', $actions, self::$ticket );
@@ -401,7 +424,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					),
 				);
 
-				if ( self::$ticket->is_active && self::has_ticket_cap( 'eth' ) ) {
+				if ( self::has_ticket_cap( 'eth' ) ) {
 					$thread_actions['edit'] = array(
 						'icon'     => 'edit',
 						'label'    => esc_attr__( 'Edit', 'supportcandy' ),
@@ -409,14 +432,14 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					);
 				}
 
-				if ( self::$ticket->is_active && self::has_ticket_cap( 'dth' ) ) {
+				if ( self::has_ticket_cap( 'dth' ) ) {
 					$thread_actions['delete'] = array(
 						'icon'     => 'trash-alt',
 						'label'    => esc_attr__( 'Delete', 'supportcandy' ),
 						'callback' => 'wpsc_it_thread_delete',
 					);
 				}
-				self::$thread_actions = apply_filters( 'wpsc_it_thead_actions', $thread_actions );
+				self::$thread_actions = apply_filters( 'wpsc_it_thread_actions', $thread_actions, self::$ticket );
 			}
 		}
 
@@ -526,7 +549,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function get_reply_section() {
 
 			// Return if ticket is not active (deleted).
-			if ( ! self::$ticket->is_active ) {
+			if ( self::$is_restricted ) {
 				return;
 			}
 
@@ -544,7 +567,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 							printf(
 								/* translators: %s: Sign in */
 								esc_attr__( '%s using email and password (registered user)', 'supportcandy' ),
-								'<a class="wpsc-link" href="javascript:wpsc_user_sign_in();">' . esc_attr__( 'Sign in', 'supportcandy' ) . '</a>'
+								'<span class="wpsc-link" onclick="wpsc_user_sign_in();">' . esc_attr__( 'Sign in', 'supportcandy' ) . '</span>'
 							);
 						?>
 					</p>
@@ -556,7 +579,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 								printf(
 									/* translators: %s: Sign in */
 									esc_attr__( '%s using email and one time password (guest user)', 'supportcandy' ),
-									'<a class="wpsc-link" href="javascript:wpsc_get_guest_sign_in();">' . esc_attr__( 'Sign in', 'supportcandy' ) . '</a>'
+									'<span class="wpsc-link" onclick="wpsc_get_guest_sign_in();">' . esc_attr__( 'Sign in', 'supportcandy' ) . '</span>'
 								);
 							?>
 						</p>
@@ -1232,9 +1255,9 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 									esc_attr( $logs[0]->date_created->setTimezone( wp_timezone() )->format( $advanced['thread-date-format'] ) )
 								);
 								?>
-								<a href="javascript:wpsc_it_view_deleted_thread(<?php echo intval( self::$ticket->id ); ?>, <?php echo intval( $thread->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_it_view_deleted_thread' ) ); ?>')">
+								<span class="wpsc-link" onclick="wpsc_it_view_deleted_thread(<?php echo intval( self::$ticket->id ); ?>, <?php echo intval( $thread->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_it_view_deleted_thread' ) ); ?>')">
 									<?php esc_attr_e( 'View thread!', 'supportcandy' ); ?>
-								</a>
+								</span>
 							</i>
 							<?php
 						}
@@ -1294,9 +1317,9 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 												esc_attr( $log->date_created->setTimezone( wp_timezone() )->format( $advanced['thread-date-format'] ) )
 											);
 											?>
-											<a href="javascript:wpsc_it_view_thread_log(<?php echo intval( self::$ticket->id ); ?>, <?php echo intval( $thread->id ); ?>, <?php echo intval( $log->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_it_view_thread_log' ) ); ?>');" class="wpsc-link">
+											<span class="wpsc-link" onclick="wpsc_it_view_thread_log(<?php echo intval( self::$ticket->id ); ?>, <?php echo intval( $thread->id ); ?>, <?php echo intval( $log->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_it_view_thread_log' ) ); ?>');">
 												<?php esc_attr_e( 'View change', 'supportcandy' ); ?>
-											</a>
+											</span>
 											<?php
 											break;
 
@@ -1506,7 +1529,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function add_reply() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$gs           = get_option( 'wpsc-gs-general' );
@@ -1578,6 +1601,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			// description attachments.
 			$attachments = isset( $_POST['description_attachments'] ) ? array_filter( array_map( 'intval', $_POST['description_attachments'] ) ) : array();
+			$validated_attachments = array();
+			foreach ( $attachments as $id ) {
+
+				$attachment = new WPSC_Attachment( $id );
+				if ( ! $attachment->id ||
+					( $attachment->ticket_id && $attachment->is_active ) ) {
+					continue;
+				}
+
+				$validated_attachments[] = $id;
+			}
+			$attachments = $validated_attachments;
 
 			// submit reply.
 			$thread = WPSC_Thread::insert(
@@ -1634,7 +1669,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function add_note() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$gs           = get_option( 'wpsc-gs-general' );
@@ -1683,6 +1718,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			// description attachments.
 			$attachments = isset( $_POST['description_attachments'] ) ? array_filter( array_map( 'intval', $_POST['description_attachments'] ) ) : array();
+			$validated_attachments = array();
+			foreach ( $attachments as $id ) {
+
+				$attachment = new WPSC_Attachment( $id );
+				if ( ! $attachment->id ||
+					( $attachment->ticket_id && $attachment->is_active ) ) {
+					continue;
+				}
+
+				$validated_attachments[] = $id;
+			}
+			$attachments = $validated_attachments;
 
 			// submit note.
 			$thread = WPSC_Thread::insert(
@@ -1736,7 +1783,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function it_reply_and_close() {
 
 			if ( check_ajax_referer( 'wpsc_it_reply_and_close', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$gs             = get_option( 'wpsc-gs-general' );
@@ -2009,10 +2056,15 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function get_duplicate_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_it_get_duplicate_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
+
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
 			$current_user = WPSC_Current_User::$current_user;
 			if ( self::$view_profile != 'agent' ) {
 				wp_send_json_error( 'Something went wrong!', 401 );
@@ -2066,7 +2118,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function set_duplicate_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_it_set_duplicate_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2195,18 +2247,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function set_delete_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_it_delete_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! $current_user->is_agent ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
 
-			if ( ! self::$ticket->is_active || ! self::has_ticket_cap( 'dtt' ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+			if ( self::$is_restricted || ! self::has_ticket_cap( 'dtt' ) ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::delete_ticket();
@@ -2234,18 +2286,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function ticket_restore() {
 
 			if ( check_ajax_referer( 'wpsc_it_ticket_restore', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! $current_user->is_agent ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
 
-			if ( self::$ticket->is_active || ! self::has_ticket_cap( 'dtt' ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+			if ( ! self::$is_restricted || ! self::has_ticket_cap( 'dtt' ) ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::restore_ticket();
@@ -2266,6 +2318,49 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		}
 
 		/**
+		 * Archive ticket ajax request
+		 */
+		public static function set_archive_ticket() {
+
+			if ( check_ajax_referer( 'wpsc_it_archive_ticket', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user->is_agent ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			self::load_current_ticket();
+
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			self::archive_ticket();
+			wp_die();
+		}
+
+		/**
+		 * Archive current ticket
+		 *
+		 * @return void
+		 */
+		public static function archive_ticket() {
+
+			self::$ticket->live_agents = '';
+			self::$ticket->date_updated = new DateTime();
+			self::$ticket->save();
+			$id = self::$ticket->id;
+
+			$success = WPSC_Archive_Ticket::set_archive_ticket( self::$ticket );
+			if ( $success ) {
+				$ticket = new WPSC_Archive_Ticket( $id );
+				do_action( 'wpsc_ticket_archive', $ticket );
+			}
+		}
+
+		/**
 		 * Permanently delete ticket ajax request
 		 *
 		 * @return void
@@ -2273,18 +2368,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function set_delete_ticket_permanently() {
 
 			if ( check_ajax_referer( 'wpsc_it_delete_permanently', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! $current_user->is_agent ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
 
-			if ( self::$ticket->is_active || ! self::has_ticket_cap( 'dtt' ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+			if ( ! self::has_ticket_cap( 'dtt' ) ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::delete_permanently();
@@ -2299,7 +2394,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function delete_permanently() {
 
 			WPSC_Ticket::destroy( self::$ticket );
-			do_action( 'wpsc_ticket_delete_permanently', self::$ticket->id );
+			do_action( 'wpsc_ticket_delete_permanently', self::$ticket );
 		}
 
 		/**
@@ -2310,7 +2405,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function it_thread_new_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_it_thread_new_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2373,7 +2472,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function it_thread_info() {
 
 			if ( check_ajax_referer( 'wpsc_it_thread_info', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2488,7 +2587,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function it_set_thread_new_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_it_set_thread_new_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			global $wpdb;
@@ -2658,7 +2761,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function get_edit_thread() {
 
 			if ( check_ajax_referer( 'wpsc_it_get_edit_thread', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2748,7 +2855,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function set_edit_thread() {
 
 			if ( check_ajax_referer( 'wpsc_it_set_edit_thread', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2788,7 +2895,23 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			}
 
 			$thread_attachments = isset( $_POST['thread_attachments'] ) ? array_filter( array_map( 'intval', $_POST['thread_attachments'] ) ) : array();
-			$new_attachments    = array();
+			$validated_attachments = array();
+			foreach ( $thread_attachments as $id ) {
+
+				$attachment = new WPSC_Attachment( $id );
+				if (
+				! $attachment->id ||
+				( $attachment->ticket_id && $attachment->ticket_id != self::$ticket->id ) ||
+				( $attachment->source_id && $attachment->source_id != $thread->id )
+				) {
+					continue;
+				}
+
+				$validated_attachments[] = $id;
+			}
+			$thread_attachments = $validated_attachments;
+
+			$new_attachments = array();
 			foreach ( $thread_attachments as $id ) {
 				$attachment            = new WPSC_Attachment( $id );
 				$attachment->is_active = 1;
@@ -2878,7 +3001,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function get_thread_html() {
 
 			if ( check_ajax_referer( 'wpsc_it_get_thread', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2908,7 +3031,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function delete_thread() {
 
 			if ( check_ajax_referer( 'wpsc_it_thread_delete', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -2960,7 +3087,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function view_thread_log() {
 
 			if ( check_ajax_referer( 'wpsc_it_view_thread_log', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -3102,7 +3229,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function view_deleted_thread() {
 
 			if ( check_ajax_referer( 'wpsc_it_view_deleted_thread', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -3199,7 +3326,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function restore_thread() {
 
 			if ( check_ajax_referer( 'wpsc_it_restore_thread', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -3255,7 +3382,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function thread_delete_permanently() {
 
 			if ( check_ajax_referer( 'wpsc_it_thread_delete_permanently', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::load_current_ticket();
@@ -3470,7 +3597,13 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function check_live_agents() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			$ms_advanced = get_option( 'wpsc-ms-advanced-settings' );
+			if ( ! ( $current_user->is_agent && $ms_advanced['agent-collision'] ) ) {
+				wp_send_json_error( new WP_Error( '001', 'Unauthorized!' ), 401 );
 			}
 
 			$id = isset( $_POST['ticket_id'] ) ? intval( $_POST['ticket_id'] ) : 0; // phpcs:ignore
@@ -3481,6 +3614,11 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			$ticket = new WPSC_Ticket( $id );
 			if ( ! $ticket->id ) {
 				wp_send_json_error( new WP_Error( '002', 'Something went wrong!' ), 400 );
+			}
+
+			self::$ticket = $ticket;
+			if ( ! self::has_ticket_cap( 'view' ) ) {
+				wp_send_json_error( new WP_Error( '003', 'Unauthorized!' ), 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0; // phpcs:ignore

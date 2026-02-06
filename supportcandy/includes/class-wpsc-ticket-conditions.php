@@ -274,7 +274,7 @@ if ( ! class_exists( 'WPSC_Ticket_Conditions' ) ) :
 			$current_user = WPSC_Current_User::$current_user;
 
 			if ( check_ajax_referer( 'wpsc_tc_get_operators', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$slug = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
@@ -283,7 +283,7 @@ if ( ! class_exists( 'WPSC_Ticket_Conditions' ) ) :
 			}
 
 			if ( ! in_array( $current_user->level, self::$conditions[ $slug ]['levels'] ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( self::$conditions[ $slug ]['type'] == 'cf' ) {
@@ -349,7 +349,7 @@ if ( ! class_exists( 'WPSC_Ticket_Conditions' ) ) :
 			$current_user = WPSC_Current_User::$current_user;
 
 			if ( check_ajax_referer( 'wpsc_tc_get_operand', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$slug = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
@@ -358,7 +358,7 @@ if ( ! class_exists( 'WPSC_Ticket_Conditions' ) ) :
 			}
 
 			if ( ! in_array( $current_user->level, self::$conditions[ $slug ]['levels'] ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$operator = isset( $_POST['operator'] ) ? sanitize_text_field( wp_unslash( $_POST['operator'] ) ) : '';

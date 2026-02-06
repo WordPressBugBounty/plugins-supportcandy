@@ -209,7 +209,7 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 								printf( esc_attr__( 'Logged-in as %1$s', 'supportcandy' ), '<strong>' . esc_attr( $current_user->customer->name ) . '</strong>' );
 							?>
 							</span>
-							<a class="wpsc-link" href="javascript:wpsc_user_logout(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_user_logout' ) ); ?>');"><?php esc_attr_e( 'Log out', 'supportcandy' ); ?></a>
+							<span class="wpsc-link" onclick="wpsc_user_logout(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_user_logout' ) ); ?>');"><?php esc_attr_e( 'Log out', 'supportcandy' ); ?></span>
 						</div>
 						<?php
 					endif
@@ -276,7 +276,7 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 		public static function get_authenticate_open_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_authenticate_open_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_id     = isset( $_POST['ticket_id'] ) ? intval( $_POST['ticket_id'] ) : 0;
@@ -337,7 +337,7 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 
 			<div class="auth-inner-container">
 				<h2><?php esc_attr_e( 'Open existing ticket', 'supportcandy' ); ?></h2>
-				<small style="margin: 0 0 5px;"><?php esc_attr_e( 'We have sent a 6-digit one-time pass code to the email address you provided. Please insert it below and submit to open ticket!', 'supportcandy' ); ?></small>
+				<small style="margin: 0 0 5px;"><?php esc_attr_e( 'We have sent a one-time verification code to your email address. Please insert it below and submit to open ticket!', 'supportcandy' ); ?></small>
 				<form onsubmit="return false;" class="wpsc-login wpsc-confirm-open-ticket-auth">
 					<input type="text" name="otp" autocomplete="off"/>
 					<button class="wpsc-button normal primary" onclick="wpsc_confirm_open_ticket_auth(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_confirm_open_ticket_auth' ) ); ?>')"><?php esc_attr_e( 'Submit', 'supportcandy' ); ?></button>
@@ -391,7 +391,7 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 		public static function confirm_open_ticket_auth() {
 
 			if ( check_ajax_referer( 'wpsc_confirm_open_ticket_auth', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$page_settings = get_option( 'wpsc-gs-page-settings' );

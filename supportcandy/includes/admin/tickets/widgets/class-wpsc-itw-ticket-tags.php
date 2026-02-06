@@ -57,27 +57,92 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Tags' ) ) :
 				return;
 			}
 
-			?>
+			$title = $settings['title']
+					? WPSC_Translations::get( 'wpsc-twt-tags', stripslashes( $settings['title'] ) )
+					: stripslashes( $settings['title'] );
 
+			$show_edit = (
+				$ticket->is_active &&
+				WPSC_Individual_Ticket::$view_profile == 'agent' &&
+				WPSC_Individual_Ticket::has_ticket_cap( 'tt' ) &&
+				! WPSC_Individual_Ticket::$is_restricted
+			);
+			?>
 			<div class="wpsc-it-widget wpsc-itw-ticket-tags">
 				<div class="wpsc-widget-header">
-					<h2>
-						<?php
-						$settings_title = $settings['title'] ? WPSC_Translations::get( 'wpsc-twt-tags', stripslashes( $settings['title'] ) ) : stripslashes( $settings['title'] );
-						echo esc_attr( $settings_title )
-						?>
-					</h2>
+					<h2><?php echo esc_attr( $title ); ?></h2>
 					<?php
-					if ( $ticket->is_active && WPSC_Individual_Ticket::$view_profile == 'agent' && WPSC_Individual_Ticket::has_ticket_cap( 'tt' ) ) :
+					if ( $show_edit ) :
 						?>
 						<span class="wpsc-add-tag-trigger"><?php WPSC_Icons::get( 'edit' ); ?></span>
 						<?php
-					endif
+					endif;
 					?>
 					<span class="wpsc-itw-toggle" data-widget="wpsc-itw-ticket-tags"><?php WPSC_Icons::get( 'chevron-up' ); ?></span>
 				</div>
 				<div class="wpsc-widget-body">
 					<div class="wpsc-it-tag-body"></div>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Prints body of current widget
+		 *
+		 * @param WPSC_Ticket $ticket - ticket object.
+		 * @param array       $settings - widget settings.
+		 * @return void
+		 */
+		public static function print_archive_widget( $ticket, $settings ) {
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! (
+				(
+					(
+						WPSC_Individual_Archive_Ticket::$view_profile == 'customer' ||
+						$ticket->customer->id == $current_user->customer->id
+					) &&
+					$settings['allow-customer']
+				) ||
+				( WPSC_Individual_Archive_Ticket::$view_profile == 'agent' && in_array( $current_user->agent->role, $settings['allowed-agent-roles'] ) )
+			) ) {
+				return;
+			}
+			$title = $settings['title']
+					? WPSC_Translations::get( 'wpsc-twt-tags', stripslashes( $settings['title'] ) )
+					: stripslashes( $settings['title'] );
+			?>
+			<div class="wpsc-it-widget wpsc-itw-ticket-tags">
+				<div class="wpsc-widget-header">
+					<h2><?php echo esc_attr( $title ); ?></h2>
+					<span class="wpsc-itw-toggle" data-widget="wpsc-itw-ticket-tags"><?php WPSC_Icons::get( 'chevron-up' ); ?></span>
+				</div>
+				<div class="wpsc-widget-body">
+					<?php
+					if ( $ticket->tags ) {
+						?>
+						<div class="wpsc-tag-list wpsc-add-tag-trigger">
+							<?php
+							foreach ( $ticket->tags as $tag ) {
+								if ( ! $tag->id ) {
+									continue;
+								}
+								?>
+								<div class="wpsc-ticket-tag" style="background-color: <?php echo esc_attr( $tag->bg_color ); ?>; color: <?php echo esc_attr( $tag->color ); ?>;">
+									<?php echo esc_attr( $tag->name ); ?>
+								</div>
+								<?php
+							}
+							?>
+						</div>
+						<?php
+					} else {
+						?>
+						<div class="wpsc-widget-default wpsc-add-tag-trigger"><?php esc_attr_e( 'Not Applicable', 'supportcandy' ); ?></div>
+						<?php
+					}
+					?>
 				</div>
 			</div>
 			<?php
@@ -90,6 +155,11 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Tags' ) ) :
 		 * @return void
 		 */
 		public static function print_tags_script( $ticket ) {
+
+			// check if $ticket is an object of WPSC_Ticket.
+			if ( ! is_object( $ticket ) || ! is_a( $ticket, 'WPSC_Ticket' ) || ! $ticket->id ) {
+				return;
+			}
 			?>
 			<script>
 				wpsc_it_refresh_tags(<?php echo esc_attr( $ticket->id ); ?>);
@@ -105,7 +175,7 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Tags' ) ) :
 		public static function tag_autocomplete() {
 
 			if ( check_ajax_referer( 'wpsc_tag_autocomplete', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$term = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
@@ -145,10 +215,13 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Tags' ) ) :
 		public static function update_edit_ticket_tags() {
 
 			if ( check_ajax_referer( 'wpsc_it_set_edit_ticket_tags', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			WPSC_Individual_Ticket::load_current_ticket();
+			if ( WPSC_Individual_Ticket::$is_restricted ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! ( WPSC_Individual_Ticket::$view_profile == 'agent' && WPSC_Individual_Ticket::has_ticket_cap( 'tt' ) ) ) {
@@ -280,7 +353,7 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Tags' ) ) :
 		public static function set_tw_ticket_tags() {
 
 			if ( check_ajax_referer( 'wpsc_set_tw_ticket_tags', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -337,7 +410,7 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Tags' ) ) :
 			ob_start();
 			if ( $ticket->tags ) {
 				?>
-				<div class="wpsc-tag-list wpsc-add-tag-trigger">
+				<div class="wpsc-tag-list <?php echo ! WPSC_Individual_Ticket::$is_restricted ? ' wpsc-add-tag-trigger' : ''; ?>">
 					<?php
 					foreach ( $ticket->tags as $tag ) {
 						if ( ! $tag->id ) {

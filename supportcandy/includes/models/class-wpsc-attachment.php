@@ -544,7 +544,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		public static function file_upload() {
 
 			if ( check_ajax_referer( 'wpsc_file_upload', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Text_Editor::is_allow_attachments() ) {
@@ -631,7 +631,8 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 			} else {
 
-				wp_send_json_error( 'Something went wrong!', 500 );
+				$error_message = isset( $uploaded_file['error'] ) ? $uploaded_file['error'] : 'Something went wrong!';
+				wp_send_json_error( $error_message, 500 );
 			}
 		}
 
@@ -672,7 +673,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		public static function add_custom_image_tinymce() {
 
 			if ( check_ajax_referer( 'wpsc_add_custom_image_tinymce', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$title = esc_attr__( 'Insert/edit image', 'supportcandy' );
@@ -829,7 +830,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		public static function edit_custom_image_tinymce() {
 
 			if ( check_ajax_referer( 'wpsc_edit_custom_image_tinymce', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$title = esc_attr__( 'Edit image', 'supportcandy' );
@@ -1060,7 +1061,10 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 							$ticket = new WPSC_Ticket( $attachment->ticket_id );
 							if ( ! $ticket->id ) {
-								wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+								$ticket = new WPSC_Archive_Ticket( $attachment->ticket_id );
+								if ( ! $ticket->id ) {
+									wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+								}
 							}
 
 							if ( ! $has_auth ) {
@@ -1070,15 +1074,24 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 								}
 							}
 
-							WPSC_Individual_Ticket::$ticket = $ticket;
-							if ( ! (
-								( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'view' ) ) ||
-								WPSC_Individual_Ticket::is_customer() ||
-								( ! $advanced['ticket-url-auth'] && $ticket->auth_code == $auth_code )
-							) ) {
-								wp_send_json_error( 'Unauthorized!', 401 );
-							}
+							if ( is_a( $ticket, 'WPSC_Ticket' ) || is_a( $ticket, 'WPSC_Archive_Ticket' ) ) {
+								// Determine correct class based on ticket type.
+								$ticket_class = is_a( $ticket, 'WPSC_Ticket' )
+									? 'WPSC_Individual_Ticket'
+									: 'WPSC_Individual_Archive_Ticket';
 
+								// Assign current ticket to class static property.
+								$ticket_class::$ticket = $ticket;
+								$has_access = (
+									( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
+									$ticket_class::is_customer() ||
+									( ! $advanced['ticket-url-auth'] && $ticket->auth_code === $auth_code )
+								);
+
+								if ( ! $has_access ) {
+									wp_send_json_error( __( 'Unauthorized!', 'supportcandy' ), 401 );
+								}
+							}
 							self::file_download( $attachment );
 
 						} else { // customer field.
@@ -1103,7 +1116,10 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 					case 'report':
 						$ticket = new WPSC_Ticket( $attachment->ticket_id );
 						if ( ! $ticket->id ) {
-							wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+							$ticket = new WPSC_Archive_Ticket( $attachment->ticket_id );
+							if ( ! $ticket->id ) {
+								wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+							}
 						}
 
 						if ( ! $has_auth ) {
@@ -1113,22 +1129,34 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 							}
 						}
 
-						WPSC_Individual_Ticket::$ticket = $ticket;
-						if ( ! (
-							( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'view' ) ) ||
-							WPSC_Individual_Ticket::is_customer() ||
-							( ! $advanced['ticket-url-auth'] && $ticket->auth_code == $auth_code )
-						) ) {
-							wp_send_json_error( 'Unauthorized!', 401 );
-						}
+						if ( is_a( $ticket, 'WPSC_Ticket' ) || is_a( $ticket, 'WPSC_Archive_Ticket' ) ) {
+							// Determine correct class based on ticket type.
+							$ticket_class = is_a( $ticket, 'WPSC_Ticket' )
+								? 'WPSC_Individual_Ticket'
+								: 'WPSC_Individual_Archive_Ticket';
 
+							// Assign current ticket to class static property.
+							$ticket_class::$ticket = $ticket;
+							$has_access = (
+								( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
+								$ticket_class::is_customer() ||
+								( ! $advanced['ticket-url-auth'] && $ticket->auth_code === $auth_code )
+							);
+
+							if ( ! $has_access ) {
+								wp_send_json_error( __( 'Unauthorized!', 'supportcandy' ), 401 );
+							}
+						}
 						self::file_download( $attachment );
 						break;
 
 					case 'note':
 						$ticket = new WPSC_Ticket( $attachment->ticket_id );
 						if ( ! $ticket->id ) {
-							wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+							$ticket = new WPSC_Archive_Ticket( $attachment->ticket_id );
+							if ( ! $ticket->id ) {
+								wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+							}
 						}
 
 						if ( ! $has_auth ) {
@@ -1138,11 +1166,18 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 							}
 						}
 
-						WPSC_Individual_Ticket::$ticket = $ticket;
-						if ( ! (
-							$current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'pn' )
-						) ) {
-							wp_send_json_error( 'Unauthorized!', 401 );
+						if ( is_a( $ticket, 'WPSC_Ticket' ) || is_a( $ticket, 'WPSC_Archive_Ticket' ) ) {
+
+							// Determine correct handler class dynamically.
+							$ticket_class = is_a( $ticket, 'WPSC_Ticket' )
+								? 'WPSC_Individual_Ticket'
+								: 'WPSC_Individual_Archive_Ticket';
+
+							// Assign the ticket.
+							$ticket_class::$ticket = $ticket;
+							if ( ! ( $current_user->is_agent && $ticket_class::has_ticket_cap( 'pn' ) ) ) {
+								wp_send_json_error( __( 'Unauthorized!', 'supportcandy' ), 401 );
+							}
 						}
 
 						self::file_download( $attachment );
@@ -1151,18 +1186,33 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 					case 'img_editor':
 						$ticket = new WPSC_Ticket( $attachment->ticket_id );
 						if ( ! $ticket->id ) {
-							wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+							$ticket = new WPSC_Archive_Ticket( $attachment->ticket_id );
+							if ( ! $ticket->id ) {
+								wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+							}
 						}
 
-						WPSC_Individual_Ticket::$ticket = $ticket;
-						if ( ! (
-							( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'view' ) ) ||
-							WPSC_Individual_Ticket::is_customer() ||
-							( $ticket->auth_code == $auth_code )
-						) ) {
-							wp_send_json_error( 'Unauthorized!', 401 );
+						if ( is_a( $ticket, 'WPSC_Ticket' ) || is_a( $ticket, 'WPSC_Archive_Ticket' ) ) {
+
+							// Determine class dynamically.
+							$ticket_class = is_a( $ticket, 'WPSC_Ticket' )
+								? 'WPSC_Individual_Ticket'
+								: 'WPSC_Individual_Archive_Ticket';
+
+							$ticket_class::$ticket = $ticket;
+							if (
+								! (
+									( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
+									$ticket_class::is_customer() ||
+									( $ticket->auth_code == $auth_code )
+								)
+							) {
+								wp_send_json_error( 'Unauthorized!', 401 );
+							}
+							self::file_download( $attachment );
+						} else {
+							wp_send_json_error( __( 'Invalid ticket type.', 'supportcandy' ), 400 );
 						}
-						self::file_download( $attachment );
 						break;
 					case 'img_editor_tmp':
 						self::file_download( $attachment );
@@ -1216,7 +1266,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		public static function tinymce_upload_file() {
 
 			if ( check_ajax_referer( 'wpsc_tinymce_upload_file', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$file = isset( $_FILES['file'] ) ? $_FILES['file'] : false; // phpcs:ignore
@@ -1267,20 +1317,21 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 				$pos = strpos( $uploaded_file['file'], '/wpsc/' );
 				if ( $pos === false ) {
-					wp_send_json_error( 'Something went wrong 1!', 500 );
+					wp_send_json_error( 'Something went wrong!', 500 );
 				}
 				$new_path = substr( $uploaded_file['file'], $pos );
 				$data['file_path'] = $new_path;
 				$attachment = self::insert( $data );
 				if ( ! $attachment->id ) {
-					wp_send_json_error( 'Something went wrong 2!', 500 );
+					wp_send_json_error( 'Something went wrong!', 500 );
 				}
 
 				wp_send_json( array( 'imgURL' => home_url( '/' ) . '?wpsc_attachment=' . $attachment->id ) );
 
 			} else {
 
-				wp_send_json_error( 'Something went wrong 3!', 500 );
+				$error_message = isset( $uploaded_file['error'] ) ? $uploaded_file['error'] : 'Something went wrong!';
+				wp_send_json_error( $error_message, 500 );
 			}
 		}
 	}

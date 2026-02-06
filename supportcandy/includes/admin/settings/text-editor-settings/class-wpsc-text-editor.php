@@ -280,7 +280,7 @@ if ( ! class_exists( 'WPSC_Text_Editor' ) ) :
 					browser_spellcheck : true,
 					relative_urls : false,
 					remove_script_host : false,
-					convert_urls : true,
+					convert_urls : false,
 					<?php
 					if ( $allow_paste_img ) {
 						?>

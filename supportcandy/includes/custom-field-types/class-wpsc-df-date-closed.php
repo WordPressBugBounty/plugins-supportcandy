@@ -270,64 +270,99 @@ if ( ! class_exists( 'WPSC_DF_Date_Closed' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
+			$column = 't.' . $cf->slug;
+
+			$is_valid_date = static function ( $date ) {
+				if ( ! is_string( $date ) ) {
+					return false;
+				}
+				$d = DateTime::createFromFormat( 'Y-m-d', $date );
+				return $d && $d->format( 'Y-m-d' ) === $date;
+			};
+
+			if ( in_array( $compare, array( '=', '<', '>', '<=', '>=' ), true ) ) {
+				if ( ! $is_valid_date( $val ) ) {
+					return '1=0';
+				}
+			}
 
 			switch ( $compare ) {
 
 				case '=':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
 					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$str  = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
+
+					return $wpdb->prepare(
+						"{$column} BETWEEN %s AND %s",
+						$from,
+						$to
+					);
 
 				case '<':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$str  = 't.' . $cf->slug . $compare . '\'' . esc_sql( $from ) . '\'';
-					break;
+
+					return $wpdb->prepare(
+						"{$column} < %s",
+						$from
+					);
 
 				case '>':
-					$to  = WPSC_Functions::get_utc_date_str( esc_sql( $val ) . ' 23:59:59' );
-					$str = 't.' . $cf->slug . $compare . '\'' . esc_sql( $to ) . '\'';
-					break;
+					$to = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
+
+					return $wpdb->prepare(
+						"{$column} > %s",
+						$to
+					);
 
 				case '<=':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
 					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$arr  = array(
-						't.' . $cf->slug . $compare . '\'' . esc_sql( $from ) . '\'',
-						't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'',
+
+					return $wpdb->prepare(
+						"({$column} <= %s OR {$column} BETWEEN %s AND %s)",
+						$from,
+						$from,
+						$to
 					);
-					$str  = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
 				case '>=':
-					$from = WPSC_Functions::get_utc_date_str( esc_sql( $val ) . ' 00:00:00' );
-					$to   = WPSC_Functions::get_utc_date_str( esc_sql( $val ) . ' 23:59:59' );
-					$arr  = array(
-						't.' . $cf->slug . $compare . '\'' . esc_sql( $to ) . '\'',
-						't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'',
+					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
+					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
+
+					return $wpdb->prepare(
+						"({$column} >= %s OR {$column} BETWEEN %s AND %s)",
+						$to,
+						$from,
+						$to
 					);
-					$str  = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
 				case 'BETWEEN':
-					$from = $val['operand_val_1'];
-					$to   = $val['operand_val_2'];
-					if ( preg_match( '/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/', $from ) ) {
-						$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] );
-						$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] );
-					} else {
-						$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ' 00:00:00' );
-						$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ' 23:59:59' );
+					if (
+						! is_array( $val ) ||
+						! $is_valid_date( $val['operand_val_1'] ?? '' ) ||
+						! $is_valid_date( $val['operand_val_2'] ?? '' )
+					) {
+						return '1=0';
 					}
-					$str = 't.' . $cf->slug . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
+
+					$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ' 00:00:00' );
+					$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ' 23:59:59' );
+
+					return $wpdb->prepare(
+						"{$column} BETWEEN %s AND %s",
+						$from,
+						$to
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

@@ -342,61 +342,88 @@ if ( ! class_exists( 'WPSC_CF_Date' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+			$column = self::get_sql_slug( $cf );
+
+			// Validate single-date inputs.
+			if ( in_array( $compare, array( '=', '<', '>', '<=', '>=' ), true ) ) {
+				if ( ! WPSC_Functions::is_valid_date( $val ) ) {
+					return '1=0';
+				}
+			}
 
 			switch ( $compare ) {
 
 				case '=':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
 					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$str  = self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
+
+					return $wpdb->prepare(
+						"{$column} BETWEEN %s AND %s",
+						$from,
+						$to
+					);
 
 				case '<':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
-					$arr  = array(
-						self::get_sql_slug( $cf ) . esc_sql( $compare ) . '\'' . esc_sql( $from ) . '\'',
-						self::get_sql_slug( $cf ) . ' != \'0000-00-00 00:00:00\'',
+
+					return $wpdb->prepare(
+						"({$column} < %s AND {$column} != '0000-00-00 00:00:00')",
+						$from
 					);
-					$str  = '(' . implode( ' AND ', $arr ) . ')';
-					break;
 
 				case '>':
-					$to  = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$str = self::get_sql_slug( $cf ) . esc_sql( $compare ) . '\'' . esc_sql( $to ) . '\'';
-					break;
+					$to = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
+
+					return $wpdb->prepare(
+						"{$column} > %s",
+						$to
+					);
 
 				case '<=':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
 					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$arr  = array(
-						self::get_sql_slug( $cf ) . esc_sql( $compare ) . '\'' . esc_sql( $from ) . '\'',
-						self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'',
+
+					return $wpdb->prepare(
+						"(({$column} <= %s OR {$column} BETWEEN %s AND %s)
+						AND {$column} != '0000-00-00 00:00:00')",
+						$from,
+						$from,
+						$to
 					);
-					$str  = '((' . implode( ' OR ', $arr ) . ') AND ' . self::get_sql_slug( $cf ) . ' != \'0000-00-00 00:00:00\')';
-					break;
 
 				case '>=':
 					$from = WPSC_Functions::get_utc_date_str( $val . ' 00:00:00' );
 					$to   = WPSC_Functions::get_utc_date_str( $val . ' 23:59:59' );
-					$arr  = array(
-						self::get_sql_slug( $cf ) . esc_sql( $compare ) . '\'' . esc_sql( $to ) . '\'',
-						self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'',
+
+					return $wpdb->prepare(
+						"({$column} >= %s OR {$column} BETWEEN %s AND %s)",
+						$to,
+						$from,
+						$to
 					);
-					$str  = '(' . implode( ' OR ', $arr ) . ')';
-					break;
 
 				case 'BETWEEN':
+					if (
+						! is_array( $val ) ||
+						! WPSC_Functions::is_valid_date( $val['operand_val_1'] ?? '' ) ||
+						! WPSC_Functions::is_valid_date( $val['operand_val_2'] ?? '' )
+					) {
+						return '1=0';
+					}
+
 					$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ' 00:00:00' );
 					$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ' 23:59:59' );
-					$str  = self::get_sql_slug( $cf ) . ' BETWEEN \'' . esc_sql( $from ) . '\' AND \'' . esc_sql( $to ) . '\'';
-					break;
+
+					return $wpdb->prepare(
+						"{$column} BETWEEN %s AND %s",
+						$from,
+						$to
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

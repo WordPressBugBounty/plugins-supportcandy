@@ -166,6 +166,12 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 			add_action( 'wp_ajax_wpsc_bulk_delete_tickets_permanently', array( __CLASS__, 'bulk_delete_tickets_permanently' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_bulk_delete_tickets_permanently', array( __CLASS__, 'bulk_delete_tickets_permanently' ) );
 
+			add_action( 'wp_ajax_wpsc_bulk_archive_tickets', array( __CLASS__, 'bulk_archive_tickets' ) );
+			add_action( 'wp_ajax_nopriv_wpsc_bulk_archive_tickets', array( __CLASS__, 'bulk_archive_tickets' ) );
+
+			add_action( 'wp_ajax_wpsc_bulk_permanently_delete_tickets', array( __CLASS__, 'bulk_permanently_delete_tickets' ) );
+			add_action( 'wp_ajax_nopriv_wpsc_bulk_permanently_delete_tickets', array( __CLASS__, 'bulk_permanently_delete_tickets' ) );
+
 			// agent autocomplete assign cap access check.
 			add_action( 'wp_ajax_wpsc_agent_autocomplete_bulk_assign', array( __CLASS__, 'agent_autocomplete_bulk_assign' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_agent_autocomplete_bulk_assign', array( __CLASS__, 'agent_autocomplete_bulk_assign' ) );
@@ -203,7 +209,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function get_tickets() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			self::$is_frontend = isset( $_POST['is_frontend'] ) ? sanitize_text_field( wp_unslash( $_POST['is_frontend'] ) ) : '0';
@@ -237,7 +243,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		private static function load_tickets() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -392,13 +398,13 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				<div class="wpsc-search">
 					<div class="search-field">
 						<?php WPSC_Icons::get( 'search' ); ?>
-						<input class="wpsc-search-input" type="text" placeholder="<?php esc_attr_e( 'Search...', 'supportcandy' ); ?>" spellcheck="false" value="<?php echo esc_attr( stripslashes( self::$filters['search'] ) ); ?>" onkeyup="wpsc_tl_search_keyup(event, this);"/>
+						<input class="wpsc-search-input" type="text" placeholder="<?php esc_attr_e( 'Search...', 'supportcandy' ); ?>" spellcheck="false" value="<?php echo esc_attr( stripslashes( self::$filters['search'] ) ); ?>" onkeyup="wpsc_tl_search_keyup(event, this, 'ticket_list');"/>
 					</div>
 				</div>
 				<div class="wpsc-filter-container">
 					<div class="wpsc-filter-item">
 						<label for="wpsc-input-filter"><?php esc_attr_e( 'Filter', 'supportcandy' ); ?></label>
-						<select id="wpsc-input-filter" class="wpsc-input-filter" name="filter" onchange="wpsc_tl_filter_change(this);">
+						<select id="wpsc-input-filter" class="wpsc-input-filter" name="filter" onchange="wpsc_tl_filter_change(this, 'ticket_list');">
 
 							<optgroup label="<?php esc_attr_e( 'Default filters', 'supportcandy' ); ?>">
 								<?php
@@ -471,7 +477,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 						</select>
 					</div>
 					<div class="wpsc-filter-submit">
-						<button class="wpsc-button normal primary margin-right" onclick="wpsc_tl_apply_filter_btn_click();"><?php esc_attr_e( 'Apply', 'supportcandy' ); ?></button>
+						<button class="wpsc-button normal primary margin-right" onclick="wpsc_tl_apply_filter_btn_click( 'ticket_list' );"><?php esc_attr_e( 'Apply', 'supportcandy' ); ?></button>
 						<div class="wpsc-filter-actions">
 							<?php echo self::get_filter_actions(); // phpcs:ignore?> 
 						</div>
@@ -515,7 +521,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				?>
 				<span 
 					class="wpsc-link"
-					onclick="<?php echo esc_attr( $action['callback'] ) . '();'; ?>">
+					onclick="<?php echo esc_attr( $action['callback'] ) . '( \'ticket_list\' );'; ?>">
 					<?php echo esc_attr( $action['label'] ); ?>
 				</span>
 				<?php
@@ -658,7 +664,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 			<span 
 				class="wpsc-pagination-btn wpsc-pagination-first wpsc-link"
 				style="<?php echo esc_attr( $btn_style ); ?>"
-				onclick="wpsc_tl_set_page('first');">
+				onclick="wpsc_tl_set_page('first', 'ticket_list');">
 				<?php esc_attr_e( 'First Page', 'supportcandy' ); ?>
 			</span>
 			<?php
@@ -667,7 +673,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				<span 
 					class="wpsc-pagination-btn wpsc-pagination-next wpsc-link"
 					style="<?php echo esc_attr( $btn_style ); ?>"
-					onclick="wpsc_tl_set_page('next');">
+					onclick="wpsc_tl_set_page('next', 'ticket_list');">
 					<?php WPSC_Icons::get( 'chevron-right' ); ?>
 				</span>
 				<?php
@@ -676,7 +682,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				<span 
 					class="wpsc-pagination-btn wpsc-pagination-prev wpsc-link"
 					style="<?php echo esc_attr( $btn_style ); ?>"
-					onclick="wpsc_tl_set_page('prev');">
+					onclick="wpsc_tl_set_page('prev', 'ticket_list');">
 					<?php WPSC_Icons::get( 'chevron-left' ); ?>
 				</span>
 				<?php
@@ -689,7 +695,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				<span 
 					class="wpsc-pagination-btn wpsc-pagination-prev wpsc-link"
 					style="<?php echo esc_attr( $btn_style ); ?>"
-					onclick="wpsc_tl_set_page('prev');">
+					onclick="wpsc_tl_set_page('prev', 'ticket_list');">
 					<?php WPSC_Icons::get( 'chevron-left' ); ?>
 				</span>
 				<?php
@@ -698,7 +704,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 				<span 
 					class="wpsc-pagination-btn wpsc-pagination-next wpsc-link"
 					style="<?php echo esc_attr( $btn_style ); ?>"
-					onclick="wpsc_tl_set_page('next');">
+					onclick="wpsc_tl_set_page('next', 'ticket_list');">
 					<?php WPSC_Icons::get( 'chevron-right' ); ?>
 				</span>
 				<?php
@@ -707,7 +713,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 			<span 
 				class="wpsc-pagination-btn wpsc-pagination-last wpsc-link"
 				style="<?php echo esc_attr( $btn_style ); ?>"
-				onclick="wpsc_tl_set_page('last');">
+				onclick="wpsc_tl_set_page('last', 'ticket_list');">
 				<?php esc_attr_e( 'Last Page', 'supportcandy' ); ?>
 			</span>
 			<?php
@@ -1089,7 +1095,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function get_tl_custom_filter_ui() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1119,7 +1125,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 					<select name="parent-filter">
 						<?php
 						foreach ( $default_filters as $slug => $filter ) :
-							if ( $slug == 'deleted' && $current_user->is_agent && ! $current_user->agent->has_cap( 'dtt-access' ) ) {
+							if ( $slug === 'deleted' && $current_user->is_agent && ! $current_user->agent->has_cap( 'dtt-access' ) ) {
 								continue;
 							}
 							$selected = isset( $filters['parent-filter'] ) && $filters['parent-filter'] == $slug ? 'selected="selected"' : ''
@@ -1176,7 +1182,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 
 			ob_start();
 			?>
-			<button class="wpsc-button small primary" onclick="wpsc_tl_apply_custom_filter(this);">
+			<button class="wpsc-button small primary" onclick="wpsc_tl_apply_custom_filter(this, 'ticket_list');">
 				<?php esc_attr_e( 'Apply', 'supportcandy' ); ?>
 			</button>
 			<?php
@@ -1259,7 +1265,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function set_add_saved_filter() {
 
 			if ( check_ajax_referer( 'wpsc_tl_set_add_saved_filter', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1319,7 +1325,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function get_edit_saved_filter_ui() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1451,7 +1457,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function set_edit_saved_filter() {
 
 			if ( check_ajax_referer( 'wpsc_tl_set_edit_saved_filter', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1515,7 +1521,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function delete_saved_filter() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1554,7 +1560,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function bulk_change_status() {
 
 			if ( check_ajax_referer( 'wpsc_bulk_change_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
@@ -1686,7 +1692,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function set_bulk_change_status() {
 
 			if ( check_ajax_referer( 'wpsc_set_bulk_change_status', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', explode( ',', sanitize_text_field( wp_unslash( $_POST['ticket_ids'] ) ) ) ) ) : array();
@@ -1750,7 +1756,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function bulk_assign_agents() {
 
 			if ( check_ajax_referer( 'wpsc_bulk_assign_agents', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
@@ -1874,7 +1880,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function set_bulk_assign_agent() {
 
 			if ( check_ajax_referer( 'wpsc_set_bulk_assign_agent', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', explode( ',', sanitize_text_field( wp_unslash( $_POST['ticket_ids'] ) ) ) ) ) : array();
@@ -1940,7 +1946,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function bulk_assign_tags() {
 
 			if ( check_ajax_referer( 'wpsc_bulk_assign_tags', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
@@ -2037,7 +2043,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function set_bulk_assign_tag() {
 
 			if ( check_ajax_referer( 'wpsc_set_bulk_assign_tag', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', explode( ',', sanitize_text_field( wp_unslash( $_POST['ticket_ids'] ) ) ) ) ) : array();
@@ -2097,11 +2103,43 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		}
 
 		/**
-		 * Delete ticket ajax request
+		 * Archive ticket ajax request
 		 */
-		public static function bulk_delete_tickets() {
+		public static function bulk_archive_tickets() {
 
-			if ( check_ajax_referer( 'wpsc_bulk_delete_tickets', '_ajax_nonce', false ) != 1 ) {
+			if ( check_ajax_referer( 'wpsc_bulk_archive_tickets', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user->is_agent ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
+			if ( ! $ticket_ids ) {
+				wp_send_json_error( 'Something went wrong!', 400 );
+			}
+
+			foreach ( $ticket_ids as $ticket_id ) {
+
+				$ticket = new WPSC_Ticket( $ticket_id );
+				WPSC_Individual_Ticket::$ticket = $ticket;
+				if ( ! $ticket->id || ! $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'at' ) ) {
+					continue;
+				}
+
+				WPSC_Individual_Ticket::archive_ticket();
+			}
+			wp_die();
+		}
+
+		/**
+		 * Permanently delete ticket ajax request
+		 */
+		public static function bulk_permanently_delete_tickets() {
+
+			if ( check_ajax_referer( 'wpsc_bulk_permanently_delete_tickets', '_ajax_nonce', false ) != 1 ) {
 				wp_send_json_error( 'Unauthorised request!', 401 );
 			}
 
@@ -2119,11 +2157,10 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 
 				$ticket = new WPSC_Ticket( $ticket_id );
 				WPSC_Individual_Ticket::$ticket = $ticket;
-				if ( ! $ticket->id || ! $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
+				if ( ! $ticket->id || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
 					continue;
 				}
-
-				WPSC_Individual_Ticket::delete_ticket();
+				WPSC_Ticket::destroy( $ticket );
 			}
 			wp_die();
 		}
@@ -2179,7 +2216,6 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 			$bulk_actions = array();
 
 			if ( ! $is_deleted ) {
-
 				if ( $current_user->is_agent && self::has_ticket_cap( 'cs' ) ) {
 					$bulk_actions['change-status'] = array(
 						'icon'     => 'gps-navigation',
@@ -2204,6 +2240,14 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 					);
 				}
 
+				if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) ) {
+					$bulk_actions['archive'] = array(
+						'icon'     => 'archive',
+						'label'    => esc_attr__( 'Archive', 'supportcandy' ),
+						'callback' => 'wpsc_bulk_archive_tickets',
+					);
+				}
+
 				if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
 					$bulk_actions['delete'] = array(
 						'icon'     => 'trash-alt',
@@ -2211,9 +2255,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 						'callback' => 'wpsc_bulk_delete_tickets',
 					);
 				}
-
 				$bulk_actions = apply_filters( 'wpsc_tl_bulk_actions', $bulk_actions );
-
 			} else {
 
 				if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
@@ -2224,16 +2266,16 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 					);
 				}
 
-				if ( $current_user->is_agent && $current_user->user->has_cap( 'manage_options' ) ) {
-					$bulk_actions['delete_permanently'] = array(
+				if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
+					$bulk_actions['permanently_delete'] = array(
 						'icon'     => 'trash-alt',
 						'label'    => esc_attr__( 'Delete Permanently', 'supportcandy' ),
-						'callback' => 'wpsc_bulk_delete_tickets_permanently',
+						'callback' => 'wpsc_bulk_permanently_delete_tickets',
 					);
 				}
-
-				$bulk_actions = apply_filters( 'wpsc_tl_deleted_bulk_actions', $bulk_actions );
 			}
+
+			$bulk_actions = apply_filters( 'wpsc_tl_bulk_actions', $bulk_actions );
 
 			self::$bulk_actions = $bulk_actions;
 		}
@@ -2259,74 +2301,6 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 			endforeach;
 
 			return implode( '', $actions_arr );
-		}
-
-		/**
-		 * Restore bulk tickets
-		 *
-		 * @return void
-		 */
-		public static function bulk_restore_tickets() {
-
-			if ( check_ajax_referer( 'wpsc_bulk_restore_tickets', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
-			}
-
-			$current_user = WPSC_Current_User::$current_user;
-			if ( ! $current_user->is_agent ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
-			}
-
-			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
-			if ( ! $ticket_ids ) {
-				wp_send_json_error( 'Something went wrong!', 400 );
-			}
-
-			foreach ( $ticket_ids as $ticket_id ) {
-
-				$ticket = new WPSC_Ticket( $ticket_id );
-				WPSC_Individual_Ticket::$ticket = $ticket;
-				if ( ! $ticket->id || $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
-					continue;
-				}
-
-				WPSC_Individual_Ticket::restore_ticket();
-			}
-			wp_die();
-		}
-
-		/**
-		 * Delete bulk tickets permanently
-		 *
-		 * @return void
-		 */
-		public static function bulk_delete_tickets_permanently() {
-
-			if ( check_ajax_referer( 'wpsc_bulk_delete_tickets_permanently', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
-			}
-
-			$current_user = WPSC_Current_User::$current_user;
-			if ( ! $current_user->is_agent ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
-			}
-
-			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
-			if ( ! $ticket_ids ) {
-				wp_send_json_error( 'Something went wrong!', 400 );
-			}
-
-			foreach ( $ticket_ids as $ticket_id ) {
-
-				$ticket = new WPSC_Ticket( $ticket_id );
-				WPSC_Individual_Ticket::$ticket = $ticket;
-				if ( ! $ticket->id || $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
-					continue;
-				}
-
-				WPSC_Individual_Ticket::delete_permanently();
-			}
-			wp_die();
 		}
 
 		/**
@@ -2358,12 +2332,12 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 		public static function agent_autocomplete_bulk_assign() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_bulk_assign', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
 			if ( ! ( $current_user->is_agent && self::has_ticket_cap( 'aa' ) ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$filters = array();
@@ -2521,6 +2495,106 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 
 			$response['general'] = wp_create_nonce( 'general' );
 			return $response;
+		}
+
+		/**
+		 * Delete ticket ajax request
+		 */
+		public static function bulk_delete_tickets() {
+
+			if ( check_ajax_referer( 'wpsc_bulk_delete_tickets', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user->is_agent ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
+			if ( ! $ticket_ids ) {
+				wp_send_json_error( 'Something went wrong!', 400 );
+			}
+
+			foreach ( $ticket_ids as $ticket_id ) {
+
+				$ticket = new WPSC_Ticket( $ticket_id );
+				WPSC_Individual_Ticket::$ticket = $ticket;
+				if ( ! $ticket->id || ! $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
+					continue;
+				}
+
+				WPSC_Individual_Ticket::delete_ticket();
+			}
+			wp_die();
+		}
+
+		/**
+		 * Restore bulk tickets
+		 *
+		 * @return void
+		 */
+		public static function bulk_restore_tickets() {
+
+			if ( check_ajax_referer( 'wpsc_bulk_restore_tickets', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user->is_agent ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
+			if ( ! $ticket_ids ) {
+				wp_send_json_error( 'Something went wrong!', 400 );
+			}
+
+			foreach ( $ticket_ids as $ticket_id ) {
+
+				$ticket = new WPSC_Ticket( $ticket_id );
+				WPSC_Individual_Ticket::$ticket = $ticket;
+				if ( ! $ticket->id || $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
+					continue;
+				}
+
+				WPSC_Individual_Ticket::restore_ticket();
+			}
+			wp_die();
+		}
+
+		/**
+		 * Delete bulk tickets permanently
+		 *
+		 * @return void
+		 */
+		public static function bulk_delete_tickets_permanently() {
+
+			if ( check_ajax_referer( 'wpsc_bulk_delete_tickets_permanently', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user->is_agent ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
+			$ticket_ids = isset( $_POST['ticket_ids'] ) ? array_filter( array_map( 'intval', $_POST['ticket_ids'] ) ) : array();
+			if ( ! $ticket_ids ) {
+				wp_send_json_error( 'Something went wrong!', 400 );
+			}
+
+			foreach ( $ticket_ids as $ticket_id ) {
+
+				$ticket = new WPSC_Ticket( $ticket_id );
+				WPSC_Individual_Ticket::$ticket = $ticket;
+				if ( ! $ticket->id || $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'dtt' ) ) {
+					continue;
+				}
+
+				WPSC_Individual_Ticket::delete_permanently();
+			}
+			wp_die();
 		}
 	}
 endif;

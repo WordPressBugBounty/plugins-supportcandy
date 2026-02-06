@@ -26,7 +26,7 @@ if ( ! class_exists( 'WPSC_Dashboard_Action' ) ) :
 		public static function set_filter() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$card = isset( $_POST['card'] ) ? sanitize_text_field( wp_unslash( $_POST['card'] ) ) : '';

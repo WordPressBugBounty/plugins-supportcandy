@@ -323,27 +323,43 @@ if ( ! class_exists( 'WPSC_DF_Agent_Created' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
-
+			global $wpdb;
+			$column = 't.' . sanitize_key( $cf->slug );
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					$val = absint( $val );
+					if ( ! $val ) {
+						return '1=0';
+					}
+
+					return $wpdb->prepare(
+						"{$column} = %d",
+						$val
+					);
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					if ( ! is_array( $val ) ) {
+						return '1=0';
+					}
+
+					$ids = array_filter( array_map( 'absint', $val ) );
+					if ( empty( $ids ) ) {
+						return '1=0';
+					}
+
+					$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+					$operator     = ( $compare === 'IN' ) ? 'IN' : 'NOT IN';
+
+					return $wpdb->prepare(
+						"{$column} {$operator} ({$placeholders})",
+						$ids
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
@@ -597,7 +613,7 @@ if ( ! class_exists( 'WPSC_DF_Agent_Created' ) ) :
 		public static function agent_autocomplete_agent_created() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_agent_created', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;

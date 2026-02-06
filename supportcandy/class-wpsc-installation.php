@@ -326,6 +326,16 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			";
 
 			dbDelta( $tables );
+
+			// Copy structure of psmsc_ticket table to psmsc_archived_tickets table.
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}psmsc_archived_tickets'" ) !== "{$wpdb->prefix}psmsc_archived_tickets" ) {
+				$wpdb->query( "CREATE TABLE {$wpdb->prefix}psmsc_archived_tickets LIKE {$wpdb->prefix}psmsc_tickets" );
+			}
+
+			// Copy structure of psmsc_thread table to psmsc_archived_threads table.
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}psmsc_archived_threads'" ) !== "{$wpdb->prefix}psmsc_archived_threads" ) {
+				$wpdb->query( "CREATE TABLE {$wpdb->prefix}psmsc_archived_threads LIKE {$wpdb->prefix}psmsc_threads" );
+			}
 		}
 
 		/**
@@ -335,14 +345,11 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			global $wpdb;
 
-			$wpdb->query( 'SET auto_increment_increment = 1' );
-			$wpdb->query( 'SET auto_increment_offset = 1' );
-
 			// string translations.
 			$string_translations = array();
 
 			// Insert default custom fields.
-			$name = esc_attr__( 'ID', 'supportcandy' );
+			$name = __( 'ID', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -356,8 +363,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Customer', 'supportcandy' );
-			$extra_info = esc_attr__( 'Select customer for whom you wish to create a ticket', 'supportcandy' );
+			$name = __( 'Customer', 'supportcandy' );
+			$extra_info = __( 'Select customer for whom you wish to create a ticket', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -372,8 +379,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Name', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please insert your name', 'supportcandy' );
+			$name = __( 'Name', 'supportcandy' );
+			$extra_info = __( 'Please insert your name', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -390,8 +397,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Email Address', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please insert your email address', 'supportcandy' );
+			$name = __( 'Email Address', 'supportcandy' );
+			$extra_info = __( 'Please insert your email address', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -408,8 +415,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Subject', 'supportcandy' );
-			$extra_info = esc_attr__( 'Short description of the ticket', 'supportcandy' );
+			$name = __( 'Subject', 'supportcandy' );
+			$extra_info = __( 'Short description of the ticket', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -426,8 +433,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Description', 'supportcandy' );
-			$extra_info = esc_attr__( 'Detailed description of the ticket', 'supportcandy' );
+			$name = __( 'Description', 'supportcandy' );
+			$extra_info = __( 'Detailed description of the ticket', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -443,8 +450,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Status', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please select status', 'supportcandy' );
+			$name = __( 'Status', 'supportcandy' );
+			$extra_info = __( 'Please select status', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -461,8 +468,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Priority', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please select priority', 'supportcandy' );
+			$name = __( 'Priority', 'supportcandy' );
+			$extra_info = __( 'Please select priority', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -479,8 +486,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Category', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please select category', 'supportcandy' );
+			$name = __( 'Category', 'supportcandy' );
+			$extra_info = __( 'Please select category', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -497,8 +504,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Assignee', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please select an agent', 'supportcandy' );
+			$name = __( 'Assignee', 'supportcandy' );
+			$extra_info = __( 'Please select an agent', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -514,7 +521,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Date Created', 'supportcandy' );
+			$name = __( 'Date Created', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -529,7 +536,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Date Updated', 'supportcandy' );
+			$name = __( 'Date Updated', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -544,7 +551,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Agent Created', 'supportcandy' );
+			$name = __( 'Agent Created', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -558,7 +565,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'IP Address', 'supportcandy' );
+			$name = __( 'IP Address', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -573,7 +580,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Source', 'supportcandy' );
+			$name = __( 'Source', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -587,7 +594,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Browser', 'supportcandy' );
+			$name = __( 'Browser', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -601,7 +608,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Operating System', 'supportcandy' );
+			$name = __( 'Operating System', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -615,8 +622,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Additional Recipients', 'supportcandy' );
-			$extra_info = esc_attr__( 'Please insert email addresses (one per line)', 'supportcandy' );
+			$name = __( 'Additional Recipients', 'supportcandy' );
+			$extra_info = __( 'Please insert email addresses (one per line)', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -632,7 +639,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 			$string_translations[ 'wpsc-cf-exi-' . $wpdb->insert_id ] = $extra_info;
 
-			$name = esc_attr__( 'Previous Assignee', 'supportcandy' );
+			$name = __( 'Previous Assignee', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -647,7 +654,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Date Closed', 'supportcandy' );
+			$name = __( 'Date Closed', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -663,7 +670,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'User Type', 'supportcandy' );
+			$name = __( 'User Type', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -678,7 +685,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Last Reply On', 'supportcandy' );
+			$name = __( 'Last Reply On', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -694,7 +701,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Last Reply By', 'supportcandy' );
+			$name = __( 'Last Reply By', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -709,7 +716,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Tags', 'supportcandy' );
+			$name = __( 'Tags', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -724,7 +731,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Last Reply Source', 'supportcandy' );
+			$name = __( 'Last Reply Source', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_custom_fields',
 				array(
@@ -740,7 +747,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
 			// Insert default category.
-			$name = esc_attr__( 'General', 'supportcandy' );
+			$name = __( 'General', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_categories',
 				array(
@@ -751,7 +758,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-category-' . $wpdb->insert_id ] = $name;
 
 			// Insert default statuses.
-			$name = esc_attr__( 'Open', 'supportcandy' );
+			$name = __( 'Open', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_statuses',
 				array(
@@ -763,7 +770,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Awaiting customer reply', 'supportcandy' );
+			$name = __( 'Awaiting customer reply', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_statuses',
 				array(
@@ -775,7 +782,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Awaiting agent reply', 'supportcandy' );
+			$name = __( 'Awaiting agent reply', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_statuses',
 				array(
@@ -787,7 +794,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Closed', 'supportcandy' );
+			$name = __( 'Closed', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_statuses',
 				array(
@@ -800,7 +807,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
 			// Insert default priorities.
-			$name = esc_attr__( 'Low', 'supportcandy' );
+			$name = __( 'Low', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_priorities',
 				array(
@@ -812,7 +819,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'Medium', 'supportcandy' );
+			$name = __( 'Medium', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_priorities',
 				array(
@@ -824,7 +831,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
 
-			$name = esc_attr__( 'High', 'supportcandy' );
+			$name = __( 'High', 'supportcandy' );
 			$wpdb->insert(
 				$wpdb->prefix . 'psmsc_priorities',
 				array(
@@ -918,10 +925,16 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 							'dtt-access'            => true, // Deleted ticket access.
 							'eci-access'            => true, // Edit customer info.
 							'dash-access'           => true, // Dashboard access.
+							'at-access'             => true, // Archive tickets menu access.
+							'at-delete-access'      => true, // Archive tickets delete access.
 
 							'tt-unassigned'         => true, // Ticket tags.
 							'tt-assigned-me'        => true,
 							'tt-assigned-others'    => true,
+
+							'at-unassigned'         => true, // Archive ticket permissions.
+							'at-assigned-me'        => true,
+							'at-assigned-others'    => true,
 						),
 					),
 					2 => array(
@@ -989,10 +1002,16 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 							'dtt-access'            => false,
 							'eci-access'            => false,
 							'dash-access'           => true, // Dashboard access.
+							'at-access'             => false, // Archive tickets menu access.
+							'at-delete-access'      => false, // Archive tickets delete access.
 
 							'tt-unassigned'         => true, // Ticket tags.
 							'tt-assigned-me'        => true,
 							'tt-assigned-others'    => false,
+
+							'at-unassigned'         => false, // Archive ticket permissions.
+							'at-assigned-me'        => false,
+							'at-assigned-others'    => false,
 						),
 					),
 				)
@@ -1084,12 +1103,12 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				array( 'id', 'status', 'customer', 'subject', 'category', 'priority', 'assigned_agent', 'date_updated', 'date_created' )
 			);
 			$labels = array(
-				'all'        => esc_attr__( 'All', 'supportcandy' ),
-				'unresolved' => esc_attr__( 'Unresolved', 'supportcandy' ),
-				'unassigned' => esc_attr__( 'Unassigned', 'supportcandy' ),
-				'mine'       => esc_attr__( 'Mine', 'supportcandy' ),
-				'closed'     => esc_attr__( 'Closed', 'supportcandy' ),
-				'deleted'    => esc_attr__( 'Deleted', 'supportcandy' ),
+				'all'        => __( 'All', 'supportcandy' ),
+				'unresolved' => __( 'Unresolved', 'supportcandy' ),
+				'unassigned' => __( 'Unassigned', 'supportcandy' ),
+				'mine'       => __( 'Mine', 'supportcandy' ),
+				'closed'     => __( 'Closed', 'supportcandy' ),
+				'deleted'    => __( 'Deleted', 'supportcandy' ),
 			);
 			foreach ( $labels as $key => $string ) {
 				$string_translations[ 'wpsc-atl-' . $key ] = $string;
@@ -1134,9 +1153,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				array( 'id', 'status', 'subject', 'category', 'date_updated', 'date_created' )
 			);
 			$labels = array(
-				'all'        => esc_attr__( 'All', 'supportcandy' ),
-				'unresolved' => esc_attr__( 'Unresolved', 'supportcandy' ),
-				'closed'     => esc_attr__( 'Closed', 'supportcandy' ),
+				'all'        => __( 'All', 'supportcandy' ),
+				'unresolved' => __( 'Unresolved', 'supportcandy' ),
+				'closed'     => __( 'Closed', 'supportcandy' ),
 			);
 			foreach ( $labels as $key => $string ) {
 				$string_translations[ 'wpsc-ctl-' . $key ] = $string;
@@ -1471,35 +1490,35 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			update_option(
 				'wpsc-ms-advanced-settings',
 				array(
-					'public-mode'                   => 0,
-					'public-mode-reply'             => 0,
-					'reply-confirmation'            => 1,
-					'note-confirmation'             => 0,
-					'thread-date-display-as'        => 'diff',
-					'thread-date-format'            => 'F d, Y h:i A',
-					'do-not-notify-owner'           => 1,
-					'do-not-notify-owner-status'    => 1,
-					'ticket-id-format'              => 'sequential',
-					'starting-ticket-id'            => 1,
-					'random-id-length'              => 8,
-					'ticket-history-macro-threads'  => 5,
-					'register-user-if-not-exist'    => 0,
-					'auto-delete-tickets-time'      => 0,
-					'auto-delete-tickets-unit'      => 'days',
-					'permanent-delete-tickets-time' => 0,
-					'permanent-delete-tickets-unit' => 'days',
-					'allow-bcc'                     => 0,
-					'allow-cc'                      => 0,
-					'view-more'                     => 1,
-					'allow-reply-to-close-ticket'   => array( 'customer', 'agent' ),
-					'raised-by-user'                => 'customer',
-					'allow-my-profile'              => 1,
-					'allow-agent-profile'           => 1,
-					'ticket-url-auth'               => 0,
-					'rest-api'                      => 1,
-					'agent-collision'               => 1,
-					'self-assign'                   => 1,
-					'reply-close'                   => 0,
+					'public-mode'                    => 0,
+					'public-mode-reply'              => 0,
+					'reply-confirmation'             => 1,
+					'note-confirmation'              => 0,
+					'thread-date-display-as'         => 'diff',
+					'thread-date-format'             => 'F d, Y h:i A',
+					'do-not-notify-owner'            => 1,
+					'do-not-notify-owner-status'     => 1,
+					'ticket-id-format'               => 'sequential',
+					'starting-ticket-id'             => 1,
+					'random-id-length'               => 8,
+					'ticket-history-macro-threads'   => 5,
+					'register-user-if-not-exist'     => 0,
+					'auto-archive-tickets-time'      => 0,
+					'auto-archive-tickets-unit'      => 'days',
+					'permanent-archive-tickets-time' => 0,
+					'permanent-archive-tickets-unit' => 'days',
+					'allow-bcc'                      => 0,
+					'allow-cc'                       => 0,
+					'view-more'                      => 1,
+					'allow-reply-to-close-ticket'    => array( 'customer', 'agent' ),
+					'raised-by-user'                 => 'customer',
+					'allow-my-profile'               => 1,
+					'allow-agent-profile'            => 1,
+					'ticket-url-auth'                => 0,
+					'rest-api'                       => 1,
+					'agent-collision'                => 1,
+					'self-assign'                    => 1,
+					'reply-close'                    => 0,
 				)
 			);
 
@@ -1520,15 +1539,15 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			// ticket widgets.
 			$labels = array(
-				'change-status'         => esc_attr__( 'Ticket status', 'supportcandy' ),
-				'raised-by'             => esc_attr__( 'Customer', 'supportcandy' ),
-				'ticket-info'           => esc_attr__( 'Ticket info', 'supportcandy' ),
-				'assignee'              => esc_attr__( 'Assignee', 'supportcandy' ),
-				'ticket-fields'         => esc_attr__( 'Ticket fields', 'supportcandy' ),
-				'agentonly-fields'      => esc_attr__( 'Agent only fields', 'supportcandy' ),
-				'additional-recipients' => esc_attr__( 'Additional recipients', 'supportcandy' ),
-				'biographical-info'     => esc_attr__( 'Biographical Info', 'supportcandy' ),
-				'tags'                  => esc_attr__( 'Tags', 'supportcandy' ),
+				'change-status'         => __( 'Ticket status', 'supportcandy' ),
+				'raised-by'             => __( 'Customer', 'supportcandy' ),
+				'ticket-info'           => __( 'Ticket info', 'supportcandy' ),
+				'assignee'              => __( 'Assignee', 'supportcandy' ),
+				'ticket-fields'         => __( 'Ticket fields', 'supportcandy' ),
+				'agentonly-fields'      => __( 'Agent only fields', 'supportcandy' ),
+				'additional-recipients' => __( 'Additional recipients', 'supportcandy' ),
+				'biographical-info'     => __( 'Biographical Info', 'supportcandy' ),
+				'tags'                  => __( 'Tags', 'supportcandy' ),
 			);
 			foreach ( $labels as $key => $string ) {
 				$string_translations[ 'wpsc-twt-' . $key ] = $string;
@@ -1615,7 +1634,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			// Rich text editor.
 			$notice = sprintf(
 				/* translators: %1$s: attachment max file size, %2$s: allowed file extenstions. */
-				esc_attr__( 'You can upload files maximum size %1$s mb of types %2$s.', 'supportcandy' ),
+				__( 'You can upload files maximum size %1$s mb of types %2$s.', 'supportcandy' ),
 				20,
 				'jpg, jpeg, png, gif, pdf, doc, docx, ppt, pptx, pps, ppsx, odt, xls, xlsx, mp3, m4a, ogg, wav, mp4, m4v, mov, wmv, avi, mpg, ogv, 3gp, 3g2, zip, eml'
 			);
@@ -1754,11 +1773,11 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			// Dashboard cards.
 			$labels = array(
-				'new-tickets' => esc_attr__( 'New Tickets', 'supportcandy' ),
-				'unresolved'  => esc_attr__( 'Unresolved', 'supportcandy' ),
-				'unassigned'  => esc_attr__( 'Unassigned', 'supportcandy' ),
-				'closed'      => esc_attr__( 'Closed', 'supportcandy' ),
-				'mine'        => esc_attr__( 'Mine', 'supportcandy' ),
+				'new-tickets' => __( 'New Tickets', 'supportcandy' ),
+				'unresolved'  => __( 'Unresolved', 'supportcandy' ),
+				'unassigned'  => __( 'Unassigned', 'supportcandy' ),
+				'closed'      => __( 'Closed', 'supportcandy' ),
+				'mine'        => __( 'Mine', 'supportcandy' ),
 			);
 			foreach ( $labels as $key => $string ) {
 				$string_translations[ 'wpsc-dashboard-card-' . $key ] = $string;
@@ -1811,15 +1830,15 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			// Dashboard widget.
 			$labels = array(
-				'ticket-statistics'     => esc_attr__( 'Ticket Statistics', 'supportcandy' ),
-				'todays-trends'         => esc_attr__( 'Todays Trends', 'supportcandy' ),
-				'agent-list'            => esc_attr__( 'Agent Workload', 'supportcandy' ),
-				'recent-activities'     => esc_attr__( 'Recent Activities', 'supportcandy' ),
-				'recent-tickets'        => esc_attr__( 'Recent Tickets', 'supportcandy' ),
-				'category-report'       => esc_attr__( 'Tickets by Category', 'supportcandy' ),
-				'unresolved-priorities' => esc_attr__( 'Tickets by Priority', 'supportcandy' ),
-				'unresolved-statuses'   => esc_attr__( 'Tickets by Status', 'supportcandy' ),
-				'week-trends'           => esc_attr__( 'Ticket statistics by day of week', 'supportcandy' ),
+				'ticket-statistics'     => __( 'Ticket Statistics', 'supportcandy' ),
+				'todays-trends'         => __( 'Todays Trends', 'supportcandy' ),
+				'agent-list'            => __( 'Agent Workload', 'supportcandy' ),
+				'recent-activities'     => __( 'Recent Activities', 'supportcandy' ),
+				'recent-tickets'        => __( 'Recent Tickets', 'supportcandy' ),
+				'category-report'       => __( 'Tickets by Category', 'supportcandy' ),
+				'unresolved-priorities' => __( 'Tickets by Priority', 'supportcandy' ),
+				'unresolved-statuses'   => __( 'Tickets by Status', 'supportcandy' ),
+				'week-trends'           => __( 'Ticket statistics by day of week', 'supportcandy' ),
 			);
 			foreach ( $labels as $key => $string ) {
 				$string_translations[ 'wpsc-dashboard-widget-' . $key ] = $string;
@@ -1923,6 +1942,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			self::attachment_security_file();
 
+			// Create required database indexes.
+			self::create_indexing();
+
 			// update string translations.
 			update_option( 'wpsc-string-translation', $string_translations );
 		}
@@ -1933,6 +1955,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 		public static function upgrade() {
 
 			global $wpdb;
+
 			$string_translations = get_option( 'wpsc-string-translation' );
 
 			if ( version_compare( self::$current_version, '3.0.4', '<' ) ) {
@@ -2154,7 +2177,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 				$tag_exists = $wpdb->get_results( "SELECT id from {$wpdb->prefix}psmsc_custom_fields WHERE slug = 'tags'" );
 				if ( empty( $tag_exists ) ) {
-					$name = esc_attr__( 'Tags', 'supportcandy' );
+					$name = __( 'Tags', 'supportcandy' );
 					$wpdb->insert(
 						$wpdb->prefix . 'psmsc_custom_fields',
 						array(
@@ -2239,11 +2262,11 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 				// Dashboard cards.
 				$labels = array(
-					'new-tickets' => esc_attr__( 'New Tickets', 'supportcandy' ),
-					'unresolved'  => esc_attr__( 'Unresolved', 'supportcandy' ),
-					'unassigned'  => esc_attr__( 'Unassigned', 'supportcandy' ),
-					'closed'      => esc_attr__( 'Closed', 'supportcandy' ),
-					'mine'        => esc_attr__( 'Mine', 'supportcandy' ),
+					'new-tickets' => __( 'New Tickets', 'supportcandy' ),
+					'unresolved'  => __( 'Unresolved', 'supportcandy' ),
+					'unassigned'  => __( 'Unassigned', 'supportcandy' ),
+					'closed'      => __( 'Closed', 'supportcandy' ),
+					'mine'        => __( 'Mine', 'supportcandy' ),
 				);
 				foreach ( $labels as $key => $string ) {
 					$string_translations[ 'wpsc-dashboard-card-' . $key ] = $string;
@@ -2296,14 +2319,14 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 				// Dashboard widget.
 				$labels = array(
-					'ticket-statistics'     => esc_attr__( 'Ticket Statistics', 'supportcandy' ),
-					'todays-trends'         => esc_attr__( 'Todays Trends', 'supportcandy' ),
-					'agent-list'            => esc_attr__( 'Agent Workload', 'supportcandy' ),
-					'recent-activities'     => esc_attr__( 'Recent Activities', 'supportcandy' ),
-					'recent-tickets'        => esc_attr__( 'Recent Tickets', 'supportcandy' ),
-					'category-report'       => esc_attr__( 'Unresolved tickets by Category', 'supportcandy' ),
-					'unresolved-priorities' => esc_attr__( 'Unresolved tickets by Priority', 'supportcandy' ),
-					'unresolved-statuses'   => esc_attr__( 'Unresolved tickets by Status', 'supportcandy' ),
+					'ticket-statistics'     => __( 'Ticket Statistics', 'supportcandy' ),
+					'todays-trends'         => __( 'Todays Trends', 'supportcandy' ),
+					'agent-list'            => __( 'Agent Workload', 'supportcandy' ),
+					'recent-activities'     => __( 'Recent Activities', 'supportcandy' ),
+					'recent-tickets'        => __( 'Recent Tickets', 'supportcandy' ),
+					'category-report'       => __( 'Unresolved tickets by Category', 'supportcandy' ),
+					'unresolved-priorities' => __( 'Unresolved tickets by Priority', 'supportcandy' ),
+					'unresolved-statuses'   => __( 'Unresolved tickets by Status', 'supportcandy' ),
 				);
 				foreach ( $labels as $key => $string ) {
 					$string_translations[ 'wpsc-dashboard-widget-' . $key ] = $string;
@@ -2459,7 +2482,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				$lrs_exists = $wpdb->get_results( "SELECT id from {$wpdb->prefix}psmsc_custom_fields WHERE slug = 'last_reply_source'" );
 				if ( empty( $lrs_exists ) ) {
 
-					$name = esc_attr__( 'Last Reply Source', 'supportcandy' );
+					$name = __( 'Last Reply Source', 'supportcandy' );
 					$wpdb->insert(
 						$wpdb->prefix . 'psmsc_custom_fields',
 						array(
@@ -2498,7 +2521,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 				$widgets = get_option( 'wpsc-dashboard-widgets', array() );
 				if ( ! isset( $widgets['week-trends'] ) ) {
-					$label = esc_attr__( 'Ticket statistics by day of week', 'supportcandy' );
+					$label = __( 'Ticket statistics by day of week', 'supportcandy' );
 					$string_translations['wpsc-dashboard-widget-week-trends'] = $label;
 					$widgets['week-trends'] = array(
 						'title'               => $label,
@@ -2560,6 +2583,75 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_email_otp MODIFY otp VARCHAR(10) NOT NULL" );
 			}
 
+			if ( version_compare( self::$current_version, '3.4.0', '<' ) ) {
+				// Create required database indexes.
+				self::create_indexing();
+			}
+
+			if ( version_compare( self::$current_version, '3.4.2', '<' ) ) {
+
+				// add advanced settings for archive tickets.
+				$advanced = get_option( 'wpsc-ms-advanced-settings' );
+				$advanced['auto-archive-tickets-time']      = $advanced['auto-delete-tickets-time'] ?? 0;
+				$advanced['auto-archive-tickets-unit']      = $advanced['auto-delete-tickets-unit'] ?? 'days';
+				$advanced['permanent-archive-tickets-time'] = $advanced['permanent-delete-tickets-time'] ?? 0;
+				$advanced['permanent-archive-tickets-unit'] = $advanced['permanent-delete-tickets-unit'] ?? 'days';
+				unset(
+					$advanced['auto-delete-tickets-time'],
+					$advanced['auto-delete-tickets-unit'],
+				);
+				update_option( 'wpsc-ms-advanced-settings', $advanced );
+
+				// Remove 'dtt-access' and set new capabilities while preserving role keys.
+				$roles = get_option( 'wpsc-agent-roles', array() );
+				if ( ! empty( $roles ) && is_array( $roles ) ) {
+					foreach ( $roles as $key => &$role ) {
+						// Ensure caps array exists.
+						if ( empty( $role['caps'] ) || ! is_array( $role['caps'] ) ) {
+							$role['caps'] = array();
+						}
+						// Bydefault only Admin (1) has access to archive tickets.
+						$is_enabled = ( $key == 1 );
+						// Set new capabilities.
+						$role['caps']['at-unassigned']      = $is_enabled;
+						$role['caps']['at-assigned-me']     = $is_enabled;
+						$role['caps']['at-assigned-others'] = $is_enabled;
+						$role['caps']['at-access']          = $is_enabled;
+						$role['caps']['at-delete-access']   = $is_enabled;
+					}
+					update_option( 'wpsc-agent-roles', $roles );
+				}
+			}
+
+			if ( version_compare( self::$current_version, '3.4.4', '<' ) ) {
+
+				$atl_filters = get_option( 'wpsc-atl-default-filters', array() );
+				$atl_filters['deleted'] = array(
+					'label'     => __( 'Deleted', 'supportcandy' ),
+					'is_enable' => 1,
+				);
+				update_option( 'wpsc-atl-default-filters', $atl_filters );
+
+				// Add capability for delete ticket filter access.
+				$roles = get_option( 'wpsc-agent-roles', array() );
+				foreach ( $roles as $key => &$role ) {
+					$is_enabled = ( $key == 1 );
+					$roles[ $key ]['caps']['dtt-access'] = $is_enabled;
+				}
+				update_option( 'wpsc-agent-roles', $roles );
+
+				// permanently delete tickets.
+				$advanced = get_option( 'wpsc-ms-advanced-settings' );
+				$advanced['permanent-delete-tickets-time'] = $advanced['permanent-archive-tickets-time'] ?? 0;
+				$advanced['permanent-delete-tickets-unit'] = $advanced['permanent-archive-tickets-unit'] ?? 'days';
+				update_option( 'wpsc-ms-advanced-settings', $advanced );
+
+				// clear old scheduled task.
+				wp_clear_scheduled_hook( 'wpsc_permanently_delete_archive_tickets' );
+				wp_clear_scheduled_hook( 'wpsc_permenently_delete_tickets' );
+				wp_clear_scheduled_hook( 'wpsc_auto_archive_closed_tickets' );
+			}
+
 			update_option( 'wpsc-string-translation', $string_translations );
 			self::set_upgrade_complete();
 		}
@@ -2597,6 +2689,75 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$wpsc_dir = $upload_dir['basedir'] . '/wpsc';
 			if ( ! is_file( $wpsc_dir . '/.htaccess' ) ) {
 				@file_put_contents( $wpsc_dir . '/.htaccess', 'deny from all' ); //phpcs:ignore
+			}
+		}
+
+		/**
+		 * Create required database indexes
+		 *
+		 * @return void
+		 */
+		private static function create_indexing() {
+
+			global $wpdb;
+
+			$column_slugs = array( 'status', 'customer', 'category', 'priority', 'date_updated', 'date_created', 'date_closed' );
+			foreach ( $column_slugs as $slug ) {
+				$index_name = "idx_cf_{$slug}";
+
+				// Check if index already exists.
+				$index_exists = $wpdb->get_var(
+					$wpdb->prepare(
+						"SHOW INDEX FROM {$wpdb->prefix}psmsc_tickets WHERE Key_name = %s",
+						$index_name
+					)
+				);
+
+				if ( ! $index_exists ) {
+					$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD INDEX {$index_name} (`{$slug}`)" );
+				}
+			}
+
+			// create index on thread table.
+			$index_name = 'idx_ticket_id';
+			$index_exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SHOW INDEX FROM {$wpdb->prefix}psmsc_threads WHERE Key_name = %s",
+					$index_name
+				)
+			);
+			if ( ! $index_exists ) {
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_threads ADD INDEX {$index_name} (ticket)" );
+			}
+
+			// create index on archive ticket table.
+			$column_slugs = array( 'status', 'customer', 'category', 'priority', 'date_updated', 'date_created', 'date_closed' );
+			foreach ( $column_slugs as $slug ) {
+				$index_name = "idx_cf_{$slug}";
+
+				// Check if index already exists.
+				$index_exists = $wpdb->get_var(
+					$wpdb->prepare(
+						"SHOW INDEX FROM {$wpdb->prefix}psmsc_archived_tickets WHERE Key_name = %s",
+						$index_name
+					)
+				);
+
+				if ( ! $index_exists ) {
+					$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD INDEX {$index_name} (`{$slug}`)" );
+				}
+			}
+
+			// create index on thread table.
+			$index_name = 'idx_ticket_id';
+			$index_exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SHOW INDEX FROM {$wpdb->prefix}psmsc_archived_threads WHERE Key_name = %s",
+					$index_name
+				)
+			);
+			if ( ! $index_exists ) {
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_threads ADD INDEX {$index_name} (ticket)" );
 			}
 		}
 	}

@@ -471,7 +471,7 @@ if ( ! class_exists( 'WPSC_Holiday' ) ) :
 		public static function get_company_holiday_actions() {
 
 			if ( check_ajax_referer( 'wpsc_get_company_holiday_actions', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -554,7 +554,7 @@ if ( ! class_exists( 'WPSC_Holiday' ) ) :
 		public static function set_company_holiday_actions() {
 
 			if ( check_ajax_referer( 'wpsc_set_company_holiday_actions', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			global $wpdb;

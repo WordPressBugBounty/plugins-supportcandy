@@ -474,6 +474,7 @@ if ( ! class_exists( 'WPSC_Custom_Field' ) ) :
 
 			if ( in_array( $cf->field, array( 'ticket', 'agentonly' ) ) && $cf->type::$slug != 'cf_html' ) {
 				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets DROP {$cf->slug}" );
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets DROP {$cf->slug}" );
 			}
 
 			if ( $cf->field === 'customer' ) {
@@ -633,7 +634,15 @@ if ( ! class_exists( 'WPSC_Custom_Field' ) ) :
 		public function create_ticket_tbl_col() {
 
 			global $wpdb;
-			return $wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD {$this->slug} {$this->type::$data_type}" );
+			$result_archived = $wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD {$this->slug} {$this->type::$data_type}" );
+			$result_tickets = $wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD {$this->slug} {$this->type::$data_type}" );
+
+			// Both queries must succeed.
+			if ( $result_archived === false || $result_tickets === false ) {
+				// Optionally, you could log or handle the error here.
+				return false;
+			}
+			return true;
 		}
 
 		/**

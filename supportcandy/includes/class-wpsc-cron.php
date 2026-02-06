@@ -21,8 +21,9 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 			add_action( 'init', array( __CLASS__, 'schedule_events' ) );
 
 			// cron event callbacks.
-			add_action( 'wpsc_auto_delete_closed_tickets', array( __CLASS__, 'auto_delete_closed_tickets' ) );
-			add_action( 'wpsc_permenently_delete_tickets', array( __CLASS__, 'permenently_delete_tickets' ) );
+			add_action( 'wpsc_auto_archive_closed_tickets', array( __CLASS__, 'auto_archive_closed_tickets' ) );
+			add_action( 'wpsc_permanently_delete_archive_tickets', array( __CLASS__, 'permanently_delete_archive_tickets' ) );
+			add_action( 'wpsc_permanently_delete_tickets', array( __CLASS__, 'permanently_delete_tickets' ) );
 
 			// run background processes.
 			add_action( 'wp_ajax_wpsc_run_ajax_background_process', array( __CLASS__, 'run_background_process' ) );
@@ -57,6 +58,8 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 		 */
 		public static function schedule_events() {
 
+			$advanced = get_option( 'wpsc-ms-advanced-settings' );
+
 			// Schedule cron job for every five minute events.
 			if ( ! wp_next_scheduled( 'wpsc_cron_five_minute' ) ) {
 				wp_schedule_event(
@@ -84,22 +87,22 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 				);
 			}
 
-			// Auto-delete closed tickets.
-			if ( ! wp_next_scheduled( 'wpsc_auto_delete_closed_tickets' ) ) {
-				wp_schedule_event(
-					time(),
-					'hourly',
-					'wpsc_auto_delete_closed_tickets'
-				);
+			// Auto-archive closed tickets.
+			$auto_archive_time = isset( $advanced['auto-archive-tickets-time'] ) ? $advanced['auto-archive-tickets-time'] : 0;
+			if ( $auto_archive_time > 0 && ! wp_next_scheduled( 'wpsc_auto_archive_closed_tickets' ) ) {
+				wp_schedule_single_event( time(), 'wpsc_auto_archive_closed_tickets' );
 			}
 
-			// Permenently delete tickets.
-			if ( ! wp_next_scheduled( 'wpsc_permenently_delete_tickets' ) ) {
-				wp_schedule_event(
-					time(),
-					'hourly',
-					'wpsc_permenently_delete_tickets'
-				);
+			// Permanently delete archive tickets.
+			$permanent_archive_time = isset( $advanced['permanent-archive-tickets-time'] ) ? $advanced['permanent-archive-tickets-time'] : 0;
+			if ( $permanent_archive_time > 0 && ! wp_next_scheduled( 'wpsc_permanently_delete_archive_tickets' ) ) {
+				wp_schedule_single_event( time(), 'wpsc_permanently_delete_archive_tickets' );
+			}
+
+			// Permanently delete deleted tickets.
+			$permanent_delete_time = isset( $advanced['permanent-delete-tickets-time'] ) ? $advanced['permanent-delete-tickets-time'] : 0;
+			if ( $permanent_delete_time > 0 && ! wp_next_scheduled( 'wpsc_permanently_delete_tickets' ) ) {
+				wp_schedule_single_event( time(), 'wpsc_permanently_delete_tickets' );
 			}
 
 			// Attachment garbage collector.
@@ -148,48 +151,39 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 		}
 
 		/**
-		 * Auto delete closed ticket after x days/months/years
+		 * Auto archive closed ticket after x days/months/years
 		 *
 		 * @return void
 		 */
-		public static function auto_delete_closed_tickets() {
+		public static function auto_archive_closed_tickets() {
 
 			$tz = wp_timezone();
 			$today = new DateTime( 'now', $tz );
-			$transient_label = 'wpsc_auto_delete_closed_tickets_cron_' . $today->format( 'Y-m-d' );
-			$cron_status = get_transient( $transient_label );
-			if ( false === $cron_status ) {
-				$cron_status = 'active';
-			}
-
-			// return if today's tickets finished checking.
-			if ( $cron_status == 'finished' ) {
-				return;
-			}
-
-			$ad_settings = get_option( 'wpsc-tl-ms-advanced' );
 			$ms_settings = get_option( 'wpsc-ms-advanced-settings' );
-
-			if ( ! $ms_settings['auto-delete-tickets-time'] ) {
+			$ad_settings = get_option( 'wpsc-tl-ms-advanced' );
+			$time = isset( $ms_settings['auto-archive-tickets-time'] ) ? $ms_settings['auto-archive-tickets-time'] : 0;
+			$unit = isset( $ms_settings['auto-archive-tickets-unit'] ) ? $ms_settings['auto-archive-tickets-unit'] : 'days';
+			if ( $time === 0 ) {
 				return;
 			}
 
+			// Find the date after which tickets should be archived.
 			$age = clone $today;
-			switch ( $ms_settings['auto-delete-tickets-unit'] ) {
-
+			switch ( $unit ) {
 				case 'days':
-					$age->sub( new DateInterval( 'P' . $ms_settings['auto-delete-tickets-time'] . 'D' ) );
+					$age->sub( new DateInterval( 'P' . $time . 'D' ) );
 					break;
 
 				case 'month':
-					$age->sub( new DateInterval( 'P' . $ms_settings['auto-delete-tickets-time'] . 'M' ) );
+					$age->sub( new DateInterval( 'P' . $time . 'M' ) );
 					break;
 
 				case 'year':
-					$age->sub( new DateInterval( 'P' . $ms_settings['auto-delete-tickets-time'] . 'Y' ) );
+					$age->sub( new DateInterval( 'P' . $time . 'Y' ) );
 					break;
 			}
 
+			// Get tickets to be archive.
 			$tickets = WPSC_Ticket::find(
 				array(
 					'items_per_page' => 20,
@@ -211,17 +205,19 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 				)
 			);
 
-			// update cron status.
-			delete_transient( $transient_label );
-			$cron_status = $tickets['has_next_page'] ? 'active' : 'finished';
-			set_transient( $transient_label, $cron_status, MINUTE_IN_SECONDS * 60 * 24 );
-
-			// delete applicable tickets.
+			// Archive tickets.
 			if ( $tickets['total_items'] > 0 ) {
 				foreach ( $tickets['results'] as $ticket ) {
 					WPSC_Individual_Ticket::$ticket = $ticket;
-					WPSC_Individual_Ticket::delete_ticket();
+					WPSC_Individual_Ticket::archive_ticket();
 				}
+			}
+
+			// Schedule next run.
+			if ( $tickets['has_next_page'] ) {
+				wp_schedule_single_event( time(), 'wpsc_auto_archive_closed_tickets' );
+			} else {
+				wp_schedule_single_event( time() + DAY_IN_SECONDS, 'wpsc_auto_archive_closed_tickets' );
 			}
 		}
 
@@ -230,46 +226,101 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 		 *
 		 * @return void
 		 */
-		public static function permenently_delete_tickets() {
+		public static function permanently_delete_archive_tickets() {
 
 			$tz = wp_timezone();
 			$today = new DateTime( 'now', $tz );
-			$transient_label = 'wpsc_permenently_delete_tickets_cron_' . $today->format( 'Y-m-d' );
-			$cron_status = get_transient( $transient_label );
-			if ( false === $cron_status ) {
-				$cron_status = 'active';
-			}
-
-			// return if today's tickets finished checking.
-			if ( $cron_status == 'finished' ) {
-				return;
-			}
-
 			$ms_settings = get_option( 'wpsc-ms-advanced-settings' );
-
-			if ( ! $ms_settings['permanent-delete-tickets-time'] ) {
+			$time = isset( $ms_settings['permanent-archive-tickets-time'] ) ? $ms_settings['permanent-archive-tickets-time'] : 0;
+			$unit = isset( $ms_settings['permanent-archive-tickets-unit'] ) ? $ms_settings['permanent-archive-tickets-unit'] : 'days';
+			if ( $time === 0 ) {
 				return;
 			}
 
+			// find the date before which tickets to be deleted.
 			$age = clone $today;
-			switch ( $ms_settings['permanent-delete-tickets-unit'] ) {
-
+			switch ( $unit ) {
 				case 'days':
-					$age->sub( new DateInterval( 'P' . $ms_settings['permanent-delete-tickets-time'] . 'D' ) );
+					$age->sub( new DateInterval( 'P' . $time . 'D' ) );
 					break;
 
 				case 'month':
-					$age->sub( new DateInterval( 'P' . $ms_settings['permanent-delete-tickets-time'] . 'M' ) );
+					$age->sub( new DateInterval( 'P' . $time . 'M' ) );
 					break;
 
 				case 'year':
-					$age->sub( new DateInterval( 'P' . $ms_settings['permanent-delete-tickets-time'] . 'Y' ) );
+					$age->sub( new DateInterval( 'P' . $time . 'Y' ) );
 					break;
 			}
 
+			// get tickets to be deleted.
+			$tickets = WPSC_Archive_Ticket::find(
+				array(
+					'items_per_page' => 25,
+					'orderby'        => 'date_updated',
+					'order'          => 'ASC',
+					'meta_query'     => array(
+						'relation' => 'AND',
+						array(
+							'slug'    => 'date_updated',
+							'compare' => '<',
+							'val'     => $age->format( 'Y-m-d' ),
+						),
+					),
+				)
+			);
+
+			// Delete tickets.
+			if ( $tickets['total_items'] > 0 ) {
+				foreach ( $tickets['results'] as $ticket ) {
+					WPSC_Individual_Archive_Ticket::delete_archive_ticket( $ticket );
+				}
+			}
+
+			// schedule next run.
+			if ( $tickets['has_next_page'] ) {
+				wp_schedule_single_event( time(), 'wpsc_permanently_delete_archive_tickets' );
+			} else {
+				wp_schedule_single_event( time() + DAY_IN_SECONDS, 'wpsc_permanently_delete_archive_tickets' );
+			}
+		}
+
+		/**
+		 * Permenently delete tickets after x days/months/years
+		 *
+		 * @return void
+		 */
+		public static function permanently_delete_tickets() {
+
+			$tz = wp_timezone();
+			$today = new DateTime( 'now', $tz );
+			$ms_settings = get_option( 'wpsc-ms-advanced-settings' );
+			$time = isset( $ms_settings['permanent-delete-tickets-time'] ) ? $ms_settings['permanent-delete-tickets-time'] : 0;
+			$unit = isset( $ms_settings['permanent-delete-tickets-unit'] ) ? $ms_settings['permanent-delete-tickets-unit'] : 'days';
+			if ( $time === 0 ) {
+				return;
+			}
+
+			// find the date before which tickets to be deleted.
+			$age = clone $today;
+			switch ( $unit ) {
+				case 'days':
+					$age->sub( new DateInterval( 'P' . $time . 'D' ) );
+					break;
+
+				case 'month':
+					$age->sub( new DateInterval( 'P' . $time . 'M' ) );
+					break;
+
+				case 'year':
+					$age->sub( new DateInterval( 'P' . $time . 'Y' ) );
+					break;
+			}
+
+			// get tickets to be deleted.
 			$tickets = WPSC_Ticket::find(
 				array(
-					'items_per_page' => 5,
+					'items_per_page' => 2,
 					'orderby'        => 'date_closed',
 					'order'          => 'ASC',
 					'is_active'      => 0,
@@ -284,17 +335,19 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 				)
 			);
 
-			// update cron status.
-			delete_transient( $transient_label );
-			$cron_status = $tickets['has_next_page'] ? 'active' : 'finished';
-			set_transient( $transient_label, $cron_status, MINUTE_IN_SECONDS * 60 * 24 );
-
-			// delete applicable tickets.
+			// Delete tickets.
 			if ( $tickets['total_items'] > 0 ) {
 				foreach ( $tickets['results'] as $ticket ) {
 					WPSC_Individual_Ticket::$ticket = $ticket;
 					WPSC_Individual_Ticket::delete_permanently();
 				}
+			}
+
+			// schedule next run.
+			if ( $tickets['has_next_page'] ) {
+				wp_schedule_single_event( time(), 'wpsc_permanently_delete_tickets' );
+			} else {
+				wp_schedule_single_event( time() + DAY_IN_SECONDS, 'wpsc_permanently_delete_tickets' );
 			}
 		}
 

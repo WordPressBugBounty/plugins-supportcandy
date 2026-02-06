@@ -81,7 +81,7 @@ if ( ! class_exists( 'WPSC_DBC_New_Tickets' ) ) :
 			if ( $current_user->is_guest ||
 			! ( $current_user->is_agent && in_array( $current_user->agent->role, $cards[ self::$card ]['allowed-agent-roles'] ) )
 			) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$cf  = WPSC_Custom_Field::get_cf_by_slug( 'status' );

@@ -200,7 +200,7 @@ if ( ! class_exists( 'WPSC_SC_Upgrade' ) ) :
 		 */
 		public static function upgrade_condition( $conditions, $relation ) {
 
-			if ( ! $conditions || $conditions == '[]' ) {
+			if ( ! $conditions || $conditions == '[]' || $conditions == '{}' ) {
 				return '[]';
 			}
 

@@ -387,40 +387,65 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			// Whitelist column.
+			$column = 't.' . sanitize_key( $cf->slug );
+
+			/**
+			 * Normalize agent IDs:
+			 * - Empty / 0 => '^$'
+			 * - Force integers
+			 */
+			$normalize_ids = static function ( $values ) {
+				$values = is_array( $values ) ? $values : array( $values );
+				$ids = array();
+				foreach ( $values as $id ) {
+					if ( $id === '' || $id === '0' || $id === 0 ) {
+						$ids[] = '^$';
+					} else {
+						$id = absint( $id );
+						if ( $id ) {
+							$ids[] = (string) $id;
+						}
+					}
+				}
+				return array_unique( $ids );
+			};
 
 			switch ( $compare ) {
 
 				case '=':
-					if ( $val == '' || $val == '0' ) {
-						$val = '^$';
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
 					}
-					$str = 't.' . $cf->slug . ' RLIKE \'(^|[|])' . esc_sql( $val ) . '($|[|])\'';
-					break;
+
+					$pattern = count( $ids ) === 1
+						? $ids[0]
+						: '(' . implode( '|', $ids ) . ')';
+
+					return "{$column} RLIKE '(^|[|]){$pattern}($|[|])'";
 
 				case 'IN':
-					foreach ( $val as $index => $value ) {
-						if ( $value == '' || $value == '0' ) {
-							$val[ $index ] = '^$';
-						}
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=0';
 					}
-					$str = 't.' . $cf->slug . ' RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
+
+					$pattern = '(' . implode( '|', $ids ) . ')';
+					return "{$column} RLIKE '(^|[|]){$pattern}($|[|])'";
 
 				case 'NOT IN':
-					foreach ( esc_sql( $val ) as $index => $value ) {
-						if ( $value == '' || $value == '0' ) {
-							$val[ $index ] = '^$';
-						}
+					$ids = $normalize_ids( $val );
+					if ( empty( $ids ) ) {
+						return '1=1';
 					}
-					$str = 't.' . $cf->slug . ' NOT RLIKE \'(^|[|])(' . implode( '|', esc_sql( $val ) ) . ')($|[|])\'';
-					break;
+
+					$pattern = '(' . implode( '|', $ids ) . ')';
+					return "{$column} NOT RLIKE '(^|[|]){$pattern}($|[|])'";
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
@@ -1181,7 +1206,13 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 
 			} else {
 
-				if ( $ms_advanced['self-assign'] && $ticket->is_active && WPSC_Individual_Ticket::$view_profile == 'agent' && $current_user->agent->has_cap( 'aa-unassigned' ) ) {
+				if (
+					$ms_advanced['self-assign'] &&
+					$ticket->is_active &&
+					WPSC_Individual_Ticket::$view_profile == 'agent' &&
+					$current_user->agent->has_cap( 'aa-unassigned' ) &&
+					! WPSC_Individual_Ticket::$is_restricted
+				) {
 					?>
 					<a class="wpsc-widget-default wpsc-link" onclick="wpsc_self_assign_ticket(<?php echo esc_attr( $ticket->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_self_assign_ticket' ) ); ?>')"><?php esc_attr_e( 'Assign to me', 'supportcandy' ); ?></a>
 					<?php
@@ -1203,7 +1234,7 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 		public static function self_assign_ticket() {
 
 			if ( check_ajax_referer( 'wpsc_self_assign_ticket', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1295,7 +1326,7 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 		public static function agent_autocomplete_assigned_agent() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_assigned_agent', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$current_user = WPSC_Current_User::$current_user;
@@ -1333,7 +1364,7 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 		public static function agent_autocomplete_df_aa() {
 
 			if ( check_ajax_referer( 'wpsc_agent_autocomplete_df_aa', '_ajax_nonce', false ) !== 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$tff = get_option( 'wpsc-tff', array() );

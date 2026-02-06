@@ -96,7 +96,7 @@ if ( ! class_exists( 'WPSC_DBW_Week_Trend_Tickets' ) ) :
 		public static function avg_tickets_bar_chart() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$range = isset( $_POST['date_range'] ) ? sanitize_text_field( wp_unslash( $_POST['date_range'] ) ) : '';
@@ -109,7 +109,7 @@ if ( ! class_exists( 'WPSC_DBW_Week_Trend_Tickets' ) ) :
 			if ( $current_user->is_guest ||
 				! ( $current_user->is_agent && in_array( $current_user->agent->role, $widgets[ self::$widget ]['allowed-agent-roles'] ) )
 			) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$tl_agent_setting = get_option( 'wpsc-tl-ms-agent-view', array() );

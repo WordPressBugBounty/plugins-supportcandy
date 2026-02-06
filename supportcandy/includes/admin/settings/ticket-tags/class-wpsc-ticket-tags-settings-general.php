@@ -133,7 +133,7 @@ if ( ! class_exists( 'WPSC_Ticket_Tags_Settings_General' ) ) :
 		public static function reset_general_settings() {
 
 			if ( check_ajax_referer( 'wpsc_ticket_tags_reset_general_settings', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

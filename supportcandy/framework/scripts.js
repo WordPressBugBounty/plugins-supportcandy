@@ -337,9 +337,9 @@ function wpsc_it_delete_ticket(ticket_id, nonce) {
         tinyMCE.activeEditor &&
         !tinyMCE.activeEditor.isHidden();
       if (is_tinymce && tinymce.get("description")) {
-        var description = tinyMCE.get("description").setContent("");
+        tinyMCE.get("description").setContent("");
       } else {
-        var description = jQuery("#description").val("");
+        jQuery("#description").val("");
       }
       wpsc_clear_saved_draft_reply(ticket_id);
     }
@@ -377,10 +377,43 @@ function wpsc_it_ticket_restore(ticket_id, nonce) {
 }
 
 /**
+ * Get delete ticket
+ */
+function wpsc_it_archive_ticket(ticket_id, nonce) {
+  if (wpsc_is_description_text()) {
+    if (!confirm(supportcandy.translations.warning_message)) {
+      return;
+    } else {
+      var is_tinymce =
+        typeof tinyMCE != "undefined" &&
+        tinyMCE.activeEditor &&
+        !tinyMCE.activeEditor.isHidden();
+      if (is_tinymce && tinymce.get("description")) {
+        var description = tinyMCE.get("description").setContent("");
+      } else {
+        var description = jQuery("#description").val("");
+      }
+      wpsc_clear_saved_draft_reply(ticket_id);
+    }
+  }
+
+  var flag = confirm(supportcandy.translations.confirm);
+  if (!flag) {
+    return;
+  }
+
+  var data = { action: "wpsc_it_archive_ticket", ticket_id, _ajax_nonce: nonce };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    wpsc_get_ticket_list();
+    wpsc_run_ajax_background_process();
+  });
+}
+
+/**
  * Delete permanently
  */
 function wpsc_it_delete_permanently(ticket_id, nonce) {
-  var flag = confirm(supportcandy.translations.confirm);
+  var flag = confirm(supportcandy.translations.delete_permanently);
   if (!flag) {
     return;
   }
@@ -1240,9 +1273,13 @@ function wpsc_check_tff_visibility() {
     return;
   }
 
-  jQuery('#wpsc-ct-submit').attr( 'disabled', true );
-  jQuery('.wpsc-ct-loader').html( supportcandy.inline_loader );
-  jQuery("select.create-as").attr( "disabled", true );
+  const callerId = Math.floor(Math.random() * 100000);
+  supportcandy.checkTffVisibityCallers =
+    supportcandy.checkTffVisibityCallers || [];
+  supportcandy.checkTffVisibityCallers.push(callerId);
+
+  jQuery(".wpsc-ct-loader").html(supportcandy.inline_loader);
+  jQuery("select.create-as").attr("disabled", true);
 
   var form = jQuery("form.wpsc-create-ticket")[0];
   var dataform = new FormData(form);
@@ -1277,14 +1314,20 @@ function wpsc_check_tff_visibility() {
           jQuery(".wpsc-tff." + key).addClass("wpsc-visible");
         }
       });
-      jQuery('#wpsc-ct-submit').removeAttr("disabled");
-      jQuery('.wpsc-ct-loader').html('');
-      jQuery("select.create-as").removeAttr( "disabled" );
-    }).fail(function(xhr, status, error) {
-      console.error('AJAX request failed:', status, error);  
-      jQuery('#wpsc-ct-submit').removeAttr("disabled");
-      jQuery('.wpsc-ct-loader').html('');
-      jQuery("select.create-as").removeAttr( "disabled" );
+      jQuery(".wpsc-ct-loader").html("");
+      jQuery("select.create-as").removeAttr("disabled");
+    })
+    .fail(function (xhr, status, error) {
+      console.error("AJAX request failed:", status, error);
+      jQuery(".wpsc-ct-loader").html("");
+      jQuery("select.create-as").removeAttr("disabled");
+    })
+    .always(function () {
+      // remove callerId from supportcandy.checkTffVisibityCallers array
+      supportcandy.checkTffVisibityCallers =
+        supportcandy.checkTffVisibityCallers.filter(function (id) {
+          return id !== callerId;
+        });
     });
 }
 
@@ -1317,22 +1360,24 @@ function validateNumber(number) {
 /**
  * Change event for filter
  */
-function wpsc_tl_filter_change(el) {
+function wpsc_tl_filter_change(el, type) {
+  const filterSlug = jQuery(el).val()?.trim();
+  const isTicketList = type === 'ticket_list';
   supportcandy.prevFilter = supportcandy.ticketList.filters.filterSlug;
-  var filterSlug = jQuery(el).val().trim();
-  if (filterSlug != "custom") {
-    var filters = { filterSlug };
-    supportcandy.ticketList.filters = filters;
-    wpsc_get_tickets();
-  } else {
-    wpsc_tl_get_custom_filter();
+
+  if (filterSlug === 'custom') {
+    wpsc_tl_get_custom_filter( type );
+    return;
   }
+
+  supportcandy.ticketList.filters = { filterSlug };
+  isTicketList ? wpsc_get_tickets() : wpsc_get_archive_tickets();
 }
 
 /**
  * Change ticket list page
  */
-function wpsc_tl_set_page(page) {
+function wpsc_tl_set_page(page, type) {
   switch (page) {
     case "first":
       if (supportcandy.ticketList.pagination.current_page == 1) {
@@ -1368,35 +1413,35 @@ function wpsc_tl_set_page(page) {
         supportcandy.ticketList.pagination.total_pages;
       break;
   }
-  wpsc_get_tickets();
+  type === 'ticket_list' ? wpsc_get_tickets() : wpsc_get_archive_tickets();
 }
 
 /**
  * Reset ticket list filters
  */
-function wpsc_tl_reset_filter() {
+function wpsc_tl_reset_filter( type ) {
   var filters = { filterSlug: "" };
   supportcandy.ticketList.filters = filters;
-  wpsc_get_tickets();
+  type === 'ticket_list' ? wpsc_get_tickets() : wpsc_get_archive_tickets();
 }
 
 /**
  * Search input keyup
  */
-function wpsc_tl_search_keyup(e, el) {
+function wpsc_tl_search_keyup(e, el, type) {
   if (e.keyCode !== 13) {
     return;
   }
   var search = jQuery(el).val().trim();
   supportcandy.ticketList.filters.search = search;
   supportcandy.ticketList.filters.page_no = 1;
-  wpsc_get_tickets();
+  type === 'ticket_list' ? wpsc_get_tickets() : wpsc_get_archive_tickets();
 }
 
 /**
  * Apply filters
  */
-function wpsc_tl_apply_filter_btn_click() {
+function wpsc_tl_apply_filter_btn_click( type ) {
   supportcandy.ticketList.filters.search = jQuery("input.wpsc-search-input")
     .val()
     .trim();
@@ -1407,27 +1452,29 @@ function wpsc_tl_apply_filter_btn_click() {
     "select.wpsc-input-sort-order"
   ).val();
   supportcandy.ticketList.filters.page_no = 1;
-  wpsc_get_tickets();
+  type === 'ticket_list' ? wpsc_get_tickets() : wpsc_get_archive_tickets();
 }
 
 /**
  * Get custom filter UI
  */
-function wpsc_tl_get_custom_filter() {
+function wpsc_tl_get_custom_filter( type ) {
   wpsc_show_modal();
-  var data = {
-    action: "wpsc_get_tl_custom_filter",
+  
+  const isTicketList = type === 'ticket_list';
+  const action = isTicketList ? 'wpsc_get_tl_custom_filter' : 'wpsc_get_atl_custom_filter';
+
+  const data = {
+    action,
     _ajax_nonce: supportcandy.nonce,
   };
-  if (supportcandy.ticketList.filters.filterSlug == "custom") {
+  if (supportcandy.ticketList.filters.filterSlug === 'custom') {
     data.filters = supportcandy.ticketList.filters;
   }
   jQuery.post(supportcandy.ajax_url, data, function (response) {
-    // Set to modal.
-    jQuery(".wpsc-modal-header").text(response.title);
-    jQuery(".wpsc-modal-body").html(response.body);
-    jQuery(".wpsc-modal-footer").html(response.footer);
-    // Display modal.
+    jQuery('.wpsc-modal-header').text(response.title);
+    jQuery('.wpsc-modal-body').html(response.body);
+    jQuery('.wpsc-modal-footer').html(response.footer);
     wpsc_show_modal_inner_container();
   });
 }
@@ -1435,7 +1482,8 @@ function wpsc_tl_get_custom_filter() {
 /**
  * Apply custom filter
  */
-function wpsc_tl_apply_custom_filter(el) {
+function wpsc_tl_apply_custom_filter(el, type) {
+
   var filters = wpsc_get_condition_json("custom_filters");
   if (
     filters.length === 0 ||
@@ -1444,31 +1492,32 @@ function wpsc_tl_apply_custom_filter(el) {
     alert(supportcandy.translations.req_fields_missing);
     return;
   }
-
+  
+  const cust_filter = type === "ticket_list" ? "wpsc-tl-custom-filter" : "wpsc-atl-custom-filter";
   filters = {
     filterSlug: "custom",
     "parent-filter": jQuery(
-      ".wpsc-tl-custom-filter select[name=parent-filter]"
+      "." + cust_filter + " select[name=parent-filter]"
     ).val(),
     filters: JSON.stringify(filters),
-    orderby: jQuery(".wpsc-tl-custom-filter select[name=sort-by]").val(),
-    order: jQuery(".wpsc-tl-custom-filter select[name=sort-order]").val(),
+    orderby: jQuery("." + cust_filter + " select[name=sort-by]").val(),
+    order: jQuery("." + cust_filter + " select[name=sort-order]").val(),
     page_no: 1,
   };
-
   supportcandy.ticketList.filters = filters;
+
   wpsc_close_modal();
-  wpsc_get_tickets();
+  type === "ticket_list" ? wpsc_get_tickets() : wpsc_get_archive_tickets();
 }
 
 /**
  * Edit ticket list filter
  */
-function wpsc_tl_edit_filter() {
+function wpsc_tl_edit_filter( type ) {
   if (supportcandy.ticketList.filters.filterSlug == "custom") {
-    wpsc_tl_get_custom_filter();
+    wpsc_tl_get_custom_filter( type );
   } else {
-    wpsc_tl_get_edit_saved_filter();
+    type === "ticket_list" ? wpsc_tl_get_edit_saved_filter() : wpsc_atl_get_edit_saved_filter();
   }
 }
 
@@ -1607,7 +1656,7 @@ function wpsc_tl_set_edit_saved_filter(el) {
 /**
  * Delete saved filter
  */
-function wpsc_tl_delete_saved_filter() {
+function wpsc_tl_delete_saved_filter( type ) {
   var flag = confirm(supportcandy.translations.confirm);
   if (!flag) {
     return;
@@ -1822,10 +1871,10 @@ function wpsc_it_thread_new_ticket(el, ticket_id, thread_id, nonce) {
  *
  * @param {*} thread_id
  */
-function wpsc_it_thread_info(el, ticket_id, thread_id, nonce) {
+function wpsc_it_thread_info(el, ticket_id, thread_id, nonce, type = 'ticket_list') {
   wpsc_show_modal();
   var data = {
-    action: "wpsc_it_thread_info",
+    action: type === 'ticket_list' ? "wpsc_it_thread_info" : "wpsc_it_archive_thread_info",
     thread_id,
     ticket_id,
     _ajax_nonce: nonce,
@@ -2114,9 +2163,9 @@ function wpsc_set_bulk_assign_tag(el) {
 }
 
 /**
- * Get bulk delete ticket
+ * Get bulk archive ticket
  */
-function wpsc_bulk_delete_tickets(nonce) {
+function wpsc_bulk_archive_tickets(nonce) {
   var items = jQuery(".wpsc-bulk-select:checked");
   var checked = items.length === 0 ? false : true;
   jQuery(".wpsc-bulk-selector").prop("checked", checked);
@@ -2132,7 +2181,37 @@ function wpsc_bulk_delete_tickets(nonce) {
     }
 
     var data = {
-      action: "wpsc_bulk_delete_tickets",
+      action: "wpsc_bulk_archive_tickets",
+      ticket_ids,
+      _ajax_nonce: nonce,
+    };
+    jQuery.post(supportcandy.ajax_url, data, function (response) {
+      wpsc_get_ticket_list();
+      wpsc_run_ajax_background_process();
+    });
+  }
+}
+
+/**
+ * Get bulk permanently delete ticket
+ */
+function wpsc_bulk_permanently_delete_tickets(nonce) {
+  var items = jQuery(".wpsc-bulk-select:checked");
+  var checked = items.length === 0 ? false : true;
+  jQuery(".wpsc-bulk-selector").prop("checked", checked);
+  if (items.length != 0) {
+    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
+      .map(function () {
+        return this.value;
+      })
+      .get();
+    var flag = confirm(supportcandy.translations.delete_permanently);
+    if (!flag) {
+      return;
+    }
+
+    var data = {
+      action: "wpsc_bulk_permanently_delete_tickets",
       ticket_ids,
       _ajax_nonce: nonce,
     };
@@ -2160,7 +2239,7 @@ function wpsc_set_agent_wh_hrs(el) {
       contentType: false,
     })
     .done(function (res) {
-		window.location.reload();
+      window.location.reload();
     });
 }
 
@@ -2186,7 +2265,7 @@ function wpsc_set_add_agent_wh_exception(el) {
       contentType: false,
     })
     .done(function (res) {
-		window.location.reload();
+      window.location.reload();
     });
 }
 
@@ -2213,7 +2292,7 @@ function wpsc_set_edit_agent_wh_exception(el) {
       contentType: false,
     })
     .done(function (res) {
-		window.location.reload();
+      window.location.reload();
     });
 }
 
@@ -2273,63 +2352,6 @@ function wpsc_set_ap_leaves_actions(el) {
       supportcandy.temp.holidayList = response.holidayList;
       wpsc_close_modal();
     });
-}
-
-/**
- * Restore bulk tickets
- */
-function wpsc_bulk_restore_tickets(nonce) {
-  var items = jQuery(".wpsc-bulk-select:checked");
-  var checked = items.length === 0 ? false : true;
-  jQuery(".wpsc-bulk-selector").prop("checked", checked);
-  if (items.length != 0) {
-    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
-      .map(function () {
-        return this.value;
-      })
-      .get();
-    var flag = confirm(supportcandy.translations.confirm);
-    if (!flag) {
-      return;
-    }
-    var data = {
-      action: "wpsc_bulk_restore_tickets",
-      ticket_ids,
-      _ajax_nonce: nonce,
-    };
-    jQuery.post(supportcandy.ajax_url, data, function (response) {
-      wpsc_get_ticket_list();
-    });
-  }
-}
-
-/**
- * Deletes bulk ticket permanentaly
- */
-function wpsc_bulk_delete_tickets_permanently(nonce) {
-  var items = jQuery(".wpsc-bulk-select:checked");
-  var checked = items.length === 0 ? false : true;
-  jQuery(".wpsc-bulk-selector").prop("checked", checked);
-  if (items.length != 0) {
-    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
-      .map(function () {
-        return this.value;
-      })
-      .get();
-    var flag = confirm(supportcandy.translations.confirm);
-    if (!flag) {
-      return;
-    }
-
-    var data = {
-      action: "wpsc_bulk_delete_tickets_permanently",
-      ticket_ids,
-      _ajax_nonce: nonce,
-    };
-    jQuery.post(supportcandy.ajax_url, data, function (response) {
-      wpsc_get_ticket_list();
-    });
-  }
 }
 
 /**
@@ -2412,6 +2434,46 @@ function wpsc_set_edit_rb_info(el, ticket_id, nonce) {
 /**
  * Get tickets based on filter set
  */
+function wpsc_get_archive_tickets() {
+  jQuery(".wpsc-bulk-selector").prop("checked", false);
+  jQuery(".wpsc-ticket-list").html(supportcandy.loader_html);
+
+  var data = {
+    action: "wpsc_get_archive_tickets",
+    _ajax_nonce: supportcandy.nonce,
+    is_frontend : supportcandy.is_frontend
+  };
+  if (
+    typeof supportcandy.ticketList != "undefined" &&
+    typeof supportcandy.ticketList.filters != "undefined"
+  ) {
+    data.filters = supportcandy.ticketList.filters;
+  }
+
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    jQuery(".wpsc-filter-actions").html(response.filter_actions);
+    jQuery(".wpsc-ticket-bulk-actions").html(response.bulk_actions);
+    jQuery(".wpsc-ticket-list").html(response.tickets);
+    jQuery(".wpsc-pagination-txt").text(response.pagination_str);
+    jQuery("select.wpsc-input-filter").val(response.filters.filterSlug);
+    jQuery("select.wpsc-input-sort-by").val(response.filters.orderby);
+    jQuery("select.wpsc-input-sort-order").val(response.filters.order);
+    jQuery("input.wpsc-search-input").val(response.filters.search);
+    if (response.pagination.total_pages > 1) {
+      jQuery(".wpsc-pagination-btn").show();
+    } else {
+      jQuery(".wpsc-pagination-btn").hide();
+    }
+    supportcandy.ticketList = {
+      filters: response.filters,
+      pagination: response.pagination,
+    };
+  });
+}
+
+/**
+ * Get tickets based on filter set
+ */
 function wpsc_get_tickets() {
   jQuery(".wpsc-bulk-selector").prop("checked", false);
   jQuery(".wpsc-ticket-list").html(supportcandy.loader_html);
@@ -2419,7 +2481,7 @@ function wpsc_get_tickets() {
   var data = {
     action: "wpsc_get_tickets",
     _ajax_nonce: supportcandy.nonce,
-    is_frontend : supportcandy.is_frontend
+    is_frontend: supportcandy.is_frontend,
   };
   if (
     typeof supportcandy.ticketList != "undefined" &&
@@ -2595,23 +2657,23 @@ function wpsc_get_edit_customer_info(customer_id, _ajax_nonce) {
  * Set edit customer info
  */
 function wpsc_set_edit_customer_info(el, id, nonce) {
-  	var form = jQuery("form.frm-edit-customer-info")[0];
-  	var dataform = new FormData(form);
-    jQuery(".wpsc-modal-footer button").attr("disabled", true);
-  	jQuery(el).text(supportcandy.translations.please_wait);
+  var form = jQuery("form.frm-edit-customer-info")[0];
+  var dataform = new FormData(form);
+  jQuery(".wpsc-modal-footer button").attr("disabled", true);
+  jQuery(el).text(supportcandy.translations.please_wait);
 
-  	jQuery.ajax(
-		{
-			url: supportcandy.ajax_url,
-			type: "POST",
-			data: dataform,
-			processData: false,
-			contentType: false,
-		}
-	).done(function (res) {
-    wpsc_close_modal();
-		wpsc_scroll_top();
-		wpsc_view_customer_detailed_info( res.customer_id, res.nonce );
+  jQuery
+    .ajax({
+      url: supportcandy.ajax_url,
+      type: "POST",
+      data: dataform,
+      processData: false,
+      contentType: false,
+    })
+    .done(function (res) {
+      wpsc_close_modal();
+      wpsc_scroll_top();
+      wpsc_view_customer_detailed_info(res.customer_id, res.nonce);
     });
 }
 
@@ -2717,354 +2779,410 @@ function wpsc_delete_customer(customer_id, nonce) {
  * Dashboard - Get filter from and to dates based on duration slug
  */
 function wpsc_db_set_filter_duration_dates(duration) {
+  let dateStr = "";
+  let date = new Date();
+  let from_date, to_date;
 
-  let dateStr = '';
-	let date = new Date();
-	let from_date, to_date;
-
-	switch (duration) {
-
-    case 'today':
-      dateStr = date.toISOString().split('T')[0];
+  switch (duration) {
+    case "today":
+      dateStr = date.toISOString().split("T")[0];
       date_from_to = {
-        'from': dateStr,
-        'to': dateStr
+        from: dateStr,
+        to: dateStr,
       };
       break;
-    
-    case 'yesterday':
+
+    case "yesterday":
       date.setDate(date.getDate() - 1);
-      dateStr = date.toISOString().split('T')[0];
+      dateStr = date.toISOString().split("T")[0];
       date_from_to = {
-        'from': dateStr,
-        'to': dateStr
+        from: dateStr,
+        to: dateStr,
       };
       break;
-    
-    case 'this-week':
+
+    case "this-week":
       let firstDayOfWeek = date.getDay() === 0 ? 6 : date.getDay() - 1;
       date.setDate(date.getDate() - firstDayOfWeek);
-      from_date = date.toISOString().split('T')[0];
+      from_date = date.toISOString().split("T")[0];
       date.setDate(date.getDate() + 6);
-      to_date = date.toISOString().split('T')[0];
+      to_date = date.toISOString().split("T")[0];
       date_from_to = {
-        'from': from_date,
-        'to': to_date
+        from: from_date,
+        to: to_date,
       };
       break;
-    
-    case 'last-week':
+
+    case "last-week":
       let firstDayOfLastWeek = date.getDay() === 0 ? 7 : date.getDay();
       date.setDate(date.getDate() - firstDayOfLastWeek - 6);
-      from_date = date.toISOString().split('T')[0];
+      from_date = date.toISOString().split("T")[0];
       date.setDate(date.getDate() + 6);
-      to_date = date.toISOString().split('T')[0];
+      to_date = date.toISOString().split("T")[0];
       date_from_to = {
-        'from': from_date,
-        'to': to_date
-      };
-      break;
-    
-    case 'last-7':
-      date.setDate(date.getDate() - 1); // Exclude today
-      to_date = date.toISOString().split('T')[0];
-      date.setDate(date.getDate() - 6); // Last 7 days from yesterday
-      from_date = date.toISOString().split('T')[0];
-      date_from_to = {
-        'from': from_date,
-        'to': to_date
-      };
-      break;
-    
-    case 'last-30-days':
-      date.setDate(date.getDate() - 1); // Exclude today
-      to_date = date.toISOString().split('T')[0];
-      date.setDate(date.getDate() - 29); // Last 30 days from yesterday
-      from_date = date.toISOString().split('T')[0];
-      date_from_to = {
-        'from': from_date,
-        'to': to_date
-      };
-      break;
-    
-    case 'this-month':
-      let this_month_starts = new Date(date.getFullYear(), date.getMonth(), 1);
-      let this_month_ends = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      date_from_to = {
-        'from': `${this_month_starts.getFullYear()}-${(this_month_starts.getMonth() + 1).toString().padStart(2, '0')}-${this_month_starts.getDate().toString().padStart(2, '0')}`,
-        'to': `${this_month_ends.getFullYear()}-${(this_month_ends.getMonth() + 1).toString().padStart(2, '0')}-${this_month_ends.getDate().toString().padStart(2, '0')}`
+        from: from_date,
+        to: to_date,
       };
       break;
 
-    case 'last-month':
+    case "last-7":
+      date.setDate(date.getDate() - 1); // Exclude today
+      to_date = date.toISOString().split("T")[0];
+      date.setDate(date.getDate() - 6); // Last 7 days from yesterday
+      from_date = date.toISOString().split("T")[0];
+      date_from_to = {
+        from: from_date,
+        to: to_date,
+      };
+      break;
+
+    case "last-30-days":
+      date.setDate(date.getDate() - 1); // Exclude today
+      to_date = date.toISOString().split("T")[0];
+      date.setDate(date.getDate() - 29); // Last 30 days from yesterday
+      from_date = date.toISOString().split("T")[0];
+      date_from_to = {
+        from: from_date,
+        to: to_date,
+      };
+      break;
+
+    case "this-month":
+      let this_month_starts = new Date(date.getFullYear(), date.getMonth(), 1);
+      let this_month_ends = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        0
+      );
+      date_from_to = {
+        from: `${this_month_starts.getFullYear()}-${(
+          this_month_starts.getMonth() + 1
+        )
+          .toString()
+          .padStart(2, "0")}-${this_month_starts
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
+        to: `${this_month_ends.getFullYear()}-${(this_month_ends.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${this_month_ends
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
+      };
+      break;
+
+    case "last-month":
       date.setMonth(date.getMonth() - 1);
       let last_month_starts = new Date(date.getFullYear(), date.getMonth(), 1);
-      let last_month_ends = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      let last_month_ends = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        0
+      );
       date_from_to = {
-        'from': `${last_month_starts.getFullYear()}-${(last_month_starts.getMonth() + 1).toString().padStart(2, '0')}-${last_month_starts.getDate().toString().padStart(2, '0')}`,
-        'to': `${last_month_ends.getFullYear()}-${(last_month_ends.getMonth() + 1).toString().padStart(2, '0')}-${last_month_ends.getDate().toString().padStart(2, '0')}`
+        from: `${last_month_starts.getFullYear()}-${(
+          last_month_starts.getMonth() + 1
+        )
+          .toString()
+          .padStart(2, "0")}-${last_month_starts
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
+        to: `${last_month_ends.getFullYear()}-${(last_month_ends.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${last_month_ends
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
       };
       break;
 
-    case 'this-quarter':
+    case "this-quarter":
       let this_quarter_month_starts = Math.floor(date.getMonth() / 3) * 3;
-      let quarter_start = new Date(date.getFullYear(), this_quarter_month_starts, 1);
-      let quarter_end = new Date(date.getFullYear(), this_quarter_month_starts + 3, 0);
+      let quarter_start = new Date(
+        date.getFullYear(),
+        this_quarter_month_starts,
+        1
+      );
+      let quarter_end = new Date(
+        date.getFullYear(),
+        this_quarter_month_starts + 3,
+        0
+      );
       date_from_to = {
-        'from': `${quarter_start.getFullYear()}-${(quarter_start.getMonth() + 1).toString().padStart(2, '0')}-${quarter_start.getDate().toString().padStart(2, '0')}`,
-        'to': `${quarter_end.getFullYear()}-${(quarter_end.getMonth() + 1).toString().padStart(2, '0')}-${quarter_end.getDate().toString().padStart(2, '0')}`
+        from: `${quarter_start.getFullYear()}-${(quarter_start.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${quarter_start
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
+        to: `${quarter_end.getFullYear()}-${(quarter_end.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${quarter_end
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
       };
       break;
-    
-    case 'last-quarter':
+
+    case "last-quarter":
       let last_quarter_month_ends = Math.floor(date.getMonth() / 3) * 3 - 1; // End month of last quarter
       let last_quarter_month_starts = last_quarter_month_ends - 2; // Start month of last quarter
       if (last_quarter_month_ends < 0) {
         last_quarter_month_ends += 12;
         last_quarter_month_starts += 12;
       }
-      let last_quarter_start = new Date(date.getFullYear(), last_quarter_month_starts, 1);
-      let last_quarter_end = new Date(date.getFullYear(), last_quarter_month_ends + 1, 0);
+      let last_quarter_start = new Date(
+        date.getFullYear(),
+        last_quarter_month_starts,
+        1
+      );
+      let last_quarter_end = new Date(
+        date.getFullYear(),
+        last_quarter_month_ends + 1,
+        0
+      );
       date_from_to = {
-        'from': `${last_quarter_start.getFullYear()}-${(last_quarter_start.getMonth() + 1).toString().padStart(2, '0')}-${last_quarter_start.getDate().toString().padStart(2, '0')}`,
-        'to': `${last_quarter_end.getFullYear()}-${(last_quarter_end.getMonth() + 1).toString().padStart(2, '0')}-${last_quarter_end.getDate().toString().padStart(2, '0')}`
+        from: `${last_quarter_start.getFullYear()}-${(
+          last_quarter_start.getMonth() + 1
+        )
+          .toString()
+          .padStart(2, "0")}-${last_quarter_start
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
+        to: `${last_quarter_end.getFullYear()}-${(
+          last_quarter_end.getMonth() + 1
+        )
+          .toString()
+          .padStart(2, "0")}-${last_quarter_end
+          .getDate()
+          .toString()
+          .padStart(2, "0")}`,
       };
       break;
-    
-    case 'this-year':
+
+    case "this-year":
       date_from_to = {
-        'from': `${date.getFullYear()}-01-01`,
-        'to': `${date.getFullYear()}-12-31`
+        from: `${date.getFullYear()}-01-01`,
+        to: `${date.getFullYear()}-12-31`,
       };
       break;
-    
-    case 'last-year':
+
+    case "last-year":
       date_from_to = {
-        'from': `${date.getFullYear() - 1}-01-01`,
-        'to': `${date.getFullYear() - 1}-12-31`
+        from: `${date.getFullYear() - 1}-01-01`,
+        to: `${date.getFullYear() - 1}-12-31`,
       };
       break;
   }
-	return date_from_to;
+  return date_from_to;
 }
 
 /**
  * Get batches for async report loading
  */
 function wpsc_rp_get_baches(fromDate, toDate) {
+  let diffTime = Math.abs(toDate - fromDate);
+  let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-	let diffTime = Math.abs( toDate - fromDate );
-	let diffDays = Math.ceil( diffTime / (1000 * 60 * 60 * 24) ) + 1;
+  let batches = [];
+  let batchData = [];
 
-	let batches   = [];
-	let batchData = [];
+  if (diffDays == 1) {
+    // one day.
 
-	if (diffDays == 1) { // one day.
+    for (var i = 0; i <= 23; i++) {
+      var hr = String(i);
+      hr = hr.length == 1 ? "0" + hr : hr;
+      batchData.push({
+        fromDate: fromDate.toISOString().split("T")[0] + " " + hr + ":00:00",
+        toDate: fromDate.toISOString().split("T")[0] + " " + hr + ":59:59",
+        durationType: "day",
+      });
+    }
+  } else if (diffDays <= 31) {
+    // days.
 
-		for (var i = 0; i <= 23; i++) {
+    do {
+      batchData.push({
+        fromDate: fromDate.toISOString().split("T")[0] + " 00:00:00",
+        toDate: fromDate.toISOString().split("T")[0] + " 23:59:59",
+        durationType: "days",
+      });
+      fromDate.setDate(fromDate.getDate() + 1);
+    } while (fromDate <= toDate);
+  } else if (diffDays <= 180) {
+    // weeks.
 
-			var hr = String( i );
-			hr     = hr.length == 1 ? '0' + hr : hr;
-			batchData.push(
-				{
-					fromDate: fromDate.toISOString().split('T')[0] + ' ' + hr + ':00:00',
-					toDate: fromDate.toISOString().split('T')[0] + ' ' + hr + ':59:59',
-					durationType: 'day'
-				}
-			);
-		}
+    var from = fromDate.toISOString().split("T")[0];
+    fromDate.setDate(fromDate.getDate() + (7 - fromDate.getDay()));
+    batchData.push({
+      fromDate: from + " 00:00:00",
+      toDate: fromDate.toISOString().split("T")[0] + " 23:59:59",
+      durationType: "weeks",
+    });
+    do {
+      fromDate.setDate(fromDate.getDate() + 1);
+      var from = new Date(fromDate.toLocaleDateString("en-CA"));
+      fromDate.setDate(fromDate.getDate() + 6);
+      var to = new Date(fromDate.toLocaleDateString("en-CA"));
+      to = toDate < to ? new Date(toDate.toLocaleDateString("en-CA")) : to;
+      batchData.push({
+        fromDate: from.toISOString().split("T")[0] + " 00:00:00",
+        toDate: to.toISOString().split("T")[0] + " 23:59:59",
+        durationType: "weeks",
+      });
+    } while (fromDate < toDate);
+  } else if (diffDays <= 720) {
+    // months.
 
-	} else if (diffDays <= 31) { // days.
+    // convert toDate from local to UTC.
+    toDate = new Date(
+      toDate.getFullYear(),
+      toDate.getMonth(),
+      toDate.getDate()
+    );
 
-		do {
-			batchData.push(
-				{
-					fromDate: fromDate.toISOString().split('T')[0] + ' 00:00:00',
-					toDate: fromDate.toISOString().split('T')[0] + ' 23:59:59',
-					durationType: 'days'
-				}
-			);
-			fromDate.setDate( fromDate.getDate() + 1 );
-		} while (fromDate <= toDate);
+    var from = fromDate.toISOString().split("T")[0];
+    if (fromDate.getMonth() == 11) {
+      fromDate = new Date(fromDate.getFullYear(), 11, 31);
+    } else {
+      fromDate = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0);
+    }
+    batchData.push({
+      fromDate: from + " 00:00:00",
+      toDate: fromDate.toISOString().split("T")[0] + " 23:59:59",
+      durationType: "months",
+    });
+    do {
+      fromDate.setDate(fromDate.getDate() + 1);
+      var from = new Date(fromDate.toLocaleDateString("en-CA"));
+      if (fromDate.getMonth() == 11) {
+        fromDate = new Date(fromDate.getFullYear(), 11, 31);
+      } else {
+        fromDate = new Date(fromDate.getFullYear(), fromDate.getMonth() + 1, 0);
+      }
+      var to = new Date(fromDate.toLocaleDateString("en-CA"));
+      to = toDate < to ? new Date(toDate.toLocaleDateString("en-CA")) : to;
+      batchData.push({
+        fromDate: from.toISOString().split("T")[0] + " 00:00:00",
+        toDate: to.toISOString().split("T")[0] + " 23:59:59",
+        durationType: "months",
+      });
+    } while (fromDate < toDate);
+  } else {
+    // years.
 
-	} else if (diffDays <= 180) { // weeks.
+    // convert toDate from local to UTC.
+    toDate = new Date(
+      toDate.getFullYear(),
+      toDate.getMonth(),
+      toDate.getDate()
+    );
 
-		var from = fromDate.toISOString().split('T')[0];
-		fromDate.setDate( fromDate.getDate() + (7 - fromDate.getDay()) );
-		batchData.push(
-			{
-				fromDate: from + ' 00:00:00',
-				toDate: fromDate.toISOString().split('T')[0] + ' 23:59:59',
-				durationType: 'weeks'
-			}
-		);
-		do {
-			fromDate.setDate( fromDate.getDate() + 1 );
-			var from = new Date( fromDate.toLocaleDateString( 'en-CA' ) );
-			fromDate.setDate( fromDate.getDate() + 6 );
-			var to = new Date( fromDate.toLocaleDateString( 'en-CA' ) );
-			to     = toDate < to ? new Date( toDate.toLocaleDateString( 'en-CA' ) ) : to;
-			batchData.push(
-				{
-					fromDate: from.toISOString().split('T')[0] + ' 00:00:00',
-					toDate: to.toISOString().split('T')[0] + ' 23:59:59',
-					durationType: 'weeks'
-				}
-			);
-		} while (fromDate < toDate);
+    var from = fromDate.toISOString().split("T")[0];
+    fromDate = new Date(fromDate.getFullYear(), 11, 31);
+    batchData.push({
+      fromDate: from + " 00:00:00",
+      toDate: fromDate.toISOString().split("T")[0] + " 23:59:59",
+      durationType: "years",
+    });
+    do {
+      fromDate.setDate(fromDate.getDate() + 1);
+      var from = new Date(fromDate.toLocaleDateString("en-CA"));
+      fromDate = new Date(fromDate.getFullYear(), 11, 31);
+      var to = new Date(fromDate.toLocaleDateString("en-CA"));
+      to = toDate < to ? new Date(toDate.toLocaleDateString("en-CA")) : to;
+      batchData.push({
+        fromDate: from.toISOString().split("T")[0] + " 00:00:00",
+        toDate: to.toISOString().split("T")[0] + " 23:59:59",
+        durationType: "years",
+      });
+    } while (fromDate < toDate);
+  }
 
-	} else if (diffDays <= 720) { // months.
+  // devide into batches of 5.
+  var batchLength = batchData.length;
+  for (var i = 0; i < batchLength; i = i + 5) {
+    var batch = [];
+    var counter = 0;
+    do {
+      var index = i + counter;
+      if (index == batchLength) {
+        break;
+      }
+      batch.push(batchData[index]);
+      counter++;
+    } while (counter < 5);
+    batches.push(batch);
+  }
 
-		// convert toDate from local to UTC.
-		toDate = new Date( toDate.getFullYear(), toDate.getMonth(), toDate.getDate() );
-
-		var from = fromDate.toISOString().split('T')[0];
-		if (fromDate.getMonth() == 11) {
-			fromDate = new Date( fromDate.getFullYear(), 11, 31 );
-		} else {
-			fromDate = new Date( fromDate.getFullYear(), fromDate.getMonth() + 1, 0 );
-		}
-		batchData.push(
-			{
-				fromDate: from + ' 00:00:00',
-				toDate: fromDate.toISOString().split('T')[0] + ' 23:59:59',
-				durationType: 'months'
-			}
-		);
-		do {
-			fromDate.setDate( fromDate.getDate() + 1 );
-			var from = new Date( fromDate.toLocaleDateString( 'en-CA' ) );
-			if (fromDate.getMonth() == 11) {
-				fromDate = new Date( fromDate.getFullYear(), 11, 31 );
-			} else {
-				fromDate = new Date( fromDate.getFullYear(), fromDate.getMonth() + 1, 0 );
-			}
-			var to = new Date( fromDate.toLocaleDateString( 'en-CA' ) );
-			to     = toDate < to ? new Date( toDate.toLocaleDateString( 'en-CA' ) ) : to;
-			batchData.push(
-				{
-					fromDate: from.toISOString().split('T')[0] + ' 00:00:00',
-					toDate: to.toISOString().split('T')[0] + ' 23:59:59',
-					durationType: 'months'
-				}
-			);
-		} while (fromDate < toDate);
-
-	} else { // years.
-
-		// convert toDate from local to UTC.
-		toDate = new Date( toDate.getFullYear(), toDate.getMonth(), toDate.getDate() );
-
-		var from = fromDate.toISOString().split('T')[0];
-		fromDate = new Date( fromDate.getFullYear(), 11, 31 );
-		batchData.push(
-			{
-				fromDate: from + ' 00:00:00',
-				toDate: fromDate.toISOString().split('T')[0] + ' 23:59:59',
-				durationType: 'years'
-			}
-		);
-		do {
-			fromDate.setDate( fromDate.getDate() + 1 );
-			var from = new Date( fromDate.toLocaleDateString( 'en-CA' ) );
-			fromDate = new Date( fromDate.getFullYear(), 11, 31 );
-			var to   = new Date( fromDate.toLocaleDateString( 'en-CA' ) );
-			to       = toDate < to ? new Date( toDate.toLocaleDateString( 'en-CA' ) ) : to;
-			batchData.push(
-				{
-					fromDate: from.toISOString().split('T')[0] + ' 00:00:00',
-					toDate: to.toISOString().split('T')[0] + ' 23:59:59',
-					durationType: 'years'
-				}
-			);
-		} while (fromDate < toDate);
-	}
-
-	// devide into batches of 5.
-	var batchLength = batchData.length;
-	for (var i = 0; i < batchLength; i = i + 5) {
-		var batch   = [];
-		var counter = 0;
-		do {
-			var index = i + counter;
-			if (index == batchLength) {
-				break;
-			}
-			batch.push( batchData[index] );
-			counter++;
-		} while (counter < 5);
-		batches.push( batch );
-	}
-
-	return batches;
+  return batches;
 }
 
 function wpsc_generate_random_color() {
   var minLuminance = 0.7;
 
   do {
-      var color = Math.floor(Math.random() * 16777216); // 0x000000 to 0xFFFFFF
-      var red = (color >> 16) & 0xFF;
-      var green = (color >> 8) & 0xFF;
-      var blue = color & 0xFF;
+    var color = Math.floor(Math.random() * 16777216); // 0x000000 to 0xFFFFFF
+    var red = (color >> 16) & 0xff;
+    var green = (color >> 8) & 0xff;
+    var blue = color & 0xff;
 
-      // Calculate luminance (brightness).
-      var luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-
+    // Calculate luminance (brightness).
+    var luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
   } while (luminance < minLuminance);
 
-  return '#' + color.toString(16).toUpperCase();
+  return "#" + color.toString(16).toUpperCase();
 }
 
 // onclick load respective card ticket list
 function wpsc_get_dbc_ticket_list(element, card) {
-	
-	var count = parseInt( jQuery( element ).find('.wpsc-dbc-count').text(), 10);
-	if ( count === 0 ) {
-		return;
-	}
-	var data = { action: 'wpsc_dash_card_count_filter', card : card, view: supportcandy.is_frontend, _ajax_nonce: supportcandy.nonce };
-	jQuery.post(
-		supportcandy.ajax_url,
-		data,
-		function (response) {
-			if( response.url ) {
-				window.location = response.url;
-			}
-		}
-	);
+  var count = parseInt(jQuery(element).find(".wpsc-dbc-count").text(), 10);
+  if (count === 0) {
+    return;
+  }
+  var data = {
+    action: "wpsc_dash_card_count_filter",
+    card: card,
+    view: supportcandy.is_frontend,
+    _ajax_nonce: supportcandy.nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    if (response.url) {
+      window.location = response.url;
+    }
+  });
 }
 
 // onclick load respective card ticket list
 function wpsc_get_agent_status_ticket_list(agent_id, status_id, nonce) {
-
-	var data = { action: 'wpsc_get_agent_status_ticket_list', agent_id : agent_id, status_id : status_id, view: supportcandy.is_frontend, _ajax_nonce: nonce };
-	jQuery.post(
-		supportcandy.ajax_url,
-		data,
-		function (response) {
-			if( response.url ) {
-				window.location = response.url;
-			}
-		}
-	);
+  var data = {
+    action: "wpsc_get_agent_status_ticket_list",
+    agent_id: agent_id,
+    status_id: status_id,
+    view: supportcandy.is_frontend,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    if (response.url) {
+      window.location = response.url;
+    }
+  });
 }
 
 /**
  * Refresh tags list
  */
 function wpsc_it_refresh_tags(ticket_id) {
+  jQuery(".wpsc-it-tag-body").html(supportcandy.loader_html);
 
-	jQuery( '.wpsc-it-tag-body' ).html( supportcandy.loader_html );
-
-	var data = { action: 'wpsc_it_refresh_tags', ticket_id };
-	jQuery.post(
-		supportcandy.ajax_url,
-		data,
-		function (res) {
-			jQuery( '.wpsc-it-tag-body' ).html( res );
-		}
-	);
+  var data = { action: "wpsc_it_refresh_tags", ticket_id };
+  jQuery.post(supportcandy.ajax_url, data, function (res) {
+    jQuery(".wpsc-it-tag-body").html(res);
+  });
 }
 
 /**
@@ -3074,15 +3192,257 @@ function wpsc_wp_user_profile(el, ticket_id, nonce) {
   var data = {
     action: "wpsc_wp_user_profile",
     ticket_id,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    if (response.url) {
+      window.open(response.url, "_blank");
+    }
+  });
+}
+
+/**
+ * Restore archived ticket
+ */
+function wpsc_it_restore_archived(ticket_id, nonce) {
+
+  if (!confirm(supportcandy.translations.confirm)){
+    return;
+  }
+
+  var data = {
+    action: "wpsc_it_restore_archived",
+    ticket_id,
     _ajax_nonce: nonce
   };
+
   jQuery.post(
     supportcandy.ajax_url,
     data,
     function (response) {
-      if (response.url) {
-        window.open(response.url, "_blank");
-      }
+      wpsc_get_archive_ticket_list();
     }
   );
+}
+
+/**
+ *  Get refresh current ticket
+ */
+function wpsc_it_archive_ab_refresh(ticket_id) {
+  if (wpsc_is_description_text()) {
+    if (confirm(supportcandy.translations.confirm)) {
+      wpsc_clear_saved_draft_reply(ticket_id);
+    } else {
+      return;
+    }
+  }
+
+  wpsc_get_individual_archive_ticket(ticket_id);
+}
+
+/**
+ * Load older threads
+ */
+function wpsc_load_older_archive_threads(el, ticket_id) {
+  if (supportcandy.reply_form_position === "top") {
+    jQuery(".wpsc-it-thread-section-container").append(
+      supportcandy.loader_html
+    );
+  } else {
+    jQuery(".wpsc-it-thread-section-container").prepend(
+      supportcandy.loader_html
+    );
+  }
+
+  var oldBtnContainer = jQuery(el).parent();
+  oldBtnContainer.hide();
+
+  var data = {
+    action: "wpsc_load_older_archive_threads",
+    ticket_id,
+    last_thread: supportcandy.threads.last_thread,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    jQuery(".wpsc-it-thread-section-container").find(".wpsc-loader").remove();
+    // add threads.
+    if (supportcandy.reply_form_position === "top") {
+      jQuery(".wpsc-it-thread-section-container").append(response.threads);
+    } else {
+      var scrollHeightBody = jQuery("body").prop("scrollHeight");
+      var windowScrollTop = jQuery(window).scrollTop();
+      jQuery(".wpsc-it-thread-section-container").prepend(response.threads);
+      var scrollDiff = jQuery("body").prop("scrollHeight") - scrollHeightBody;
+      jQuery(window).scrollTop(windowScrollTop + scrollDiff);
+    }
+    // show btn if there are more threads available.
+    if (response.has_next_page) {
+      supportcandy.threads.last_thread = response.last_thread;
+      oldBtnContainer.show();
+    }
+  });
+}
+
+
+/**
+ * Delete permanently
+ */
+function wpsc_iat_delete_permanently(ticket_id, nonce) {
+  var flag = confirm(supportcandy.translations.delete_permanently);
+  if (!flag) {
+    return;
+  }
+
+  var data = {
+    action: "wpsc_iat_delete_permanently",
+    ticket_id,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    wpsc_get_archive_ticket_list();
+  });
+}
+
+/**
+ * Get bulk delete archive ticket
+ */
+function wpsc_bulk_delete_archive_tickets(nonce) {
+  var items = jQuery(".wpsc-bulk-select:checked");
+  var checked = items.length === 0 ? false : true;
+  jQuery(".wpsc-bulk-selector").prop("checked", checked);
+  if (items.length != 0) {
+    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
+      .map(function () {
+        return this.value;
+      })
+      .get();
+    var flag = confirm(supportcandy.translations.delete_permanently);
+    if (!flag) {
+      return;
+    }
+
+    var data = {
+      action: "wpsc_bulk_delete_archive_tickets",
+      ticket_ids,
+      _ajax_nonce: nonce,
+    };
+    jQuery.post(supportcandy.ajax_url, data, function (response) {
+      wpsc_get_archive_ticket_list();
+      wpsc_run_ajax_background_process();
+    });
+  }
+}
+
+/**
+ * Restore bulk archive tickets
+ */
+function wpsc_bulk_restore_archive_tickets(nonce) {
+  var items = jQuery(".wpsc-bulk-select:checked");
+  var checked = items.length === 0 ? false : true;
+  jQuery(".wpsc-bulk-selector").prop("checked", checked);
+  if (items.length != 0) {
+    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
+      .map(function () {
+        return this.value;
+      })
+      .get();
+    var flag = confirm(supportcandy.translations.confirm);
+    if (!flag) {
+      return;
+    }
+    var data = {
+      action: "wpsc_bulk_restore_archive_tickets",
+      ticket_ids,
+      _ajax_nonce: nonce,
+    };
+    jQuery.post(supportcandy.ajax_url, data, function (response) {
+      wpsc_get_archive_ticket_list();
+    });
+  }
+}
+
+/**
+ * Get bulk archive ticket
+ */
+function wpsc_bulk_delete_tickets(nonce) {
+  var items = jQuery(".wpsc-bulk-select:checked");
+  var checked = items.length === 0 ? false : true;
+  jQuery(".wpsc-bulk-selector").prop("checked", checked);
+  if (items.length != 0) {
+    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
+      .map(function () {
+        return this.value;
+      })
+      .get();
+    var flag = confirm(supportcandy.translations.confirm);
+    if (!flag) {
+      return;
+    }
+
+    var data = {
+      action: "wpsc_bulk_delete_tickets",
+      ticket_ids,
+      _ajax_nonce: nonce,
+    };
+    jQuery.post(supportcandy.ajax_url, data, function (response) {
+      wpsc_get_ticket_list();
+      wpsc_run_ajax_background_process();
+    });
+  }
+}
+
+/**
+ * Restore bulk tickets
+ */
+function wpsc_bulk_restore_tickets(nonce) {
+  var items = jQuery(".wpsc-bulk-select:checked");
+  var checked = items.length === 0 ? false : true;
+  jQuery(".wpsc-bulk-selector").prop("checked", checked);
+  if (items.length != 0) {
+    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
+      .map(function () {
+        return this.value;
+      })
+      .get();
+    var flag = confirm(supportcandy.translations.confirm);
+    if (!flag) {
+      return;
+    }
+    var data = {
+      action: "wpsc_bulk_restore_tickets",
+      ticket_ids,
+      _ajax_nonce: nonce,
+    };
+    jQuery.post(supportcandy.ajax_url, data, function (response) {
+      wpsc_get_ticket_list();
+    });
+  }
+}
+
+/**
+ * Deletes bulk ticket permanentaly
+ */
+function wpsc_bulk_delete_tickets_permanently(nonce) {
+  var items = jQuery(".wpsc-bulk-select:checked");
+  var checked = items.length === 0 ? false : true;
+  jQuery(".wpsc-bulk-selector").prop("checked", checked);
+  if (items.length != 0) {
+    var ticket_ids = jQuery(".wpsc-bulk-select:checked")
+      .map(function () {
+        return this.value;
+      })
+      .get();
+    var flag = confirm(supportcandy.translations.confirm);
+    if (!flag) {
+      return;
+    }
+
+    var data = {
+      action: "wpsc_bulk_delete_tickets_permanently",
+      ticket_ids,
+      _ajax_nonce: nonce,
+    };
+    jQuery.post(supportcandy.ajax_url, data, function (response) {
+      wpsc_get_ticket_list();
+    });
+  }
 }

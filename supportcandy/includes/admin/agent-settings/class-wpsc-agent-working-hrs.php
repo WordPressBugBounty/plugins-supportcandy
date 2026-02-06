@@ -147,7 +147,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function get_agents_wh_hrs() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -290,7 +290,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function get_agents_wh_exceptions() {
 
 			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -469,7 +469,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function set_agent_wh_hrs() {
 
 			if ( check_ajax_referer( 'wpsc_set_agent_wh_hrs', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -515,7 +515,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function get_add_agent_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_get_add_agent_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -654,7 +654,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function set_add_agent_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_agent_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -761,7 +761,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function get_edit_agent_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_agent_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -914,7 +914,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function set_edit_agent_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_agent_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;
@@ -1002,7 +1002,7 @@ if ( ! class_exists( 'WPSC_Agent_Working_Hrs' ) ) :
 		public static function delete_agent_wh_exception() {
 
 			if ( check_ajax_referer( 'wpsc_delete_agent_wh_exception', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0;

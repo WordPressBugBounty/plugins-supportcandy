@@ -119,8 +119,10 @@ if ( ! class_exists( 'WPSC_EN_Assign_Agent' ) ) :
 				return $gr;
 			}
 
+			$en->prev = apply_filters( 'wpsc_en_assign_agent_prev_assignees', $en->prev, $en );
+
 			foreach ( $en->prev as $agent ) {
-				if ( ! $agent->is_active ) {
+				if ( ! $agent->is_active || $agent->is_agentgroup ) {
 					continue;
 				}
 				$gr[] = $agent->customer->email;

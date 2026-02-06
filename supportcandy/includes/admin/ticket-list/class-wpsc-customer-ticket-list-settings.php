@@ -180,8 +180,8 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 						<tr>
 							<td><?php echo esc_attr( $cf->name ); ?></td>
 							<td>
-								<a href="javascript:wpsc_get_edit_customer_tl_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_customer_tl_item' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a> |
-								<a href="javascript:wpsc_delete_customer_tl_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_customer_tl_item' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+								<span class="wpsc-link" onclick="wpsc_get_edit_customer_tl_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_customer_tl_item' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
+								<span class="wpsc-link" onclick="wpsc_delete_customer_tl_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_customer_tl_item' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 							</td>
 						</tr>
 						<?php
@@ -318,7 +318,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function set_add_customer_tl_item() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_customer_tl_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -352,7 +352,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function delete_customer_tl_item() {
 
 			if ( check_ajax_referer( 'wpsc_delete_customer_tl_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -568,7 +568,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function set_add_ctl_default_filter() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_ctl_default_filter', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -628,7 +628,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function get_edit_ctl_default_filter() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_ctl_default_filter', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -639,7 +639,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 
 			$fslug = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
 			if ( ! $fslug || ! isset( $ctl_filters[ $fslug ] ) ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			$ctl_filter = $ctl_filters[ $fslug ];
@@ -762,7 +762,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function set_edit_ctl_default_filter() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_ctl_default_filter', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -847,7 +847,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function delete_ctl_default_filter() {
 
 			if ( check_ajax_referer( 'wpsc_delete_ctl_default_filter', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -874,7 +874,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function sort_ctl_default_filters() {
 
 			if ( check_ajax_referer( 'wpsc_sort_ctl_default_filters', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -949,8 +949,8 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 						<tr>
 							<td><?php echo esc_attr( $cf->name ); ?></td>
 							<td>
-								<a href="javascript:wpsc_get_edit_ctl_filter_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ctl_filter_item' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></a> |
-								<a href="javascript:wpsc_delete_ctl_filter_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_ctl_filter_item' ) ); ?>');" class="wpsc-link"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></a>
+								<span class="wpsc-link" onclick="wpsc_get_edit_ctl_filter_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ctl_filter_item' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
+								<span class="wpsc-link" onclick="wpsc_delete_ctl_filter_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_ctl_filter_item' ) ); ?>');"><?php esc_attr_e( 'Delete', 'supportcandy' ); ?></span>
 							</td>
 						</tr>
 						<?php
@@ -1087,7 +1087,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function set_add_ctl_filter_item() {
 
 			if ( check_ajax_referer( 'wpsc_set_add_ctl_filter_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -1121,7 +1121,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function delete_ctl_filter_item() {
 
 			if ( check_ajax_referer( 'wpsc_delete_ctl_filter_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -1187,7 +1187,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function get_edit_ctl_filter_item() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_ctl_filter_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -1270,7 +1270,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function set_edit_ctl_filter_item() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_ctl_filter_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -1329,7 +1329,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function get_edit_customer_tl_item() {
 
 			if ( check_ajax_referer( 'wpsc_get_edit_customer_tl_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
@@ -1412,7 +1412,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		public static function set_edit_customer_tl_item() {
 
 			if ( check_ajax_referer( 'wpsc_set_edit_customer_tl_item', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorised request!', 401 );
+				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
 			if ( ! WPSC_Functions::is_site_admin() ) {

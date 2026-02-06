@@ -282,27 +282,44 @@ if ( ! class_exists( 'WPSC_DF_Last_Reply_Source' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			$slug = is_string( $cf->slug ) ? trim( $cf->slug ) : '';
+			if ( $slug === '' || ! preg_match( '/^[a-zA-Z0-9_]+$/', $slug ) ) {
+				return '1=0';
+			}
+
+			$column = 't.' . $cf->slug;
+
+			// Normalize values → array of clean strings.
+			$values = is_array( $val ) ? $val : array( $val );
+			$clean  = array();
+
+			foreach ( $values as $v ) {
+				if ( is_string( $v ) ) {
+					$v = trim( $v );
+					if ( $v !== '' ) {
+						$clean[] = esc_sql( $v );
+					}
+				}
+			}
+
+			if ( empty( $clean ) ) {
+				return '1=0';
+			}
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = 't.' . $cf->slug . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					return "$column = '{$clean[0]}'";
 
 				case 'IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					return "CONVERT($column USING utf8) IN ('" . implode( "', '", $clean ) . "')";
 
 				case 'NOT IN':
-					$str = 'CONVERT(t.' . $cf->slug . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					return "CONVERT($column USING utf8) NOT IN ('" . implode( "', '", $clean ) . "')";
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**

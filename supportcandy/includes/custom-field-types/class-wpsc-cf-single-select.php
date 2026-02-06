@@ -177,9 +177,11 @@ if ( ! class_exists( 'WPSC_CF_Single_Select' ) ) :
 
 			// Ticket model.
 			add_filter( 'wpsc_ticket_joins', array( __CLASS__, 'ticket_join' ), 9, 2 );
+			add_filter( 'wpsc_archive_ticket_joins', array( __CLASS__, 'ticket_join' ), 9, 2 );
 
 			// ticket search query.
 			add_filter( 'wpsc_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
+			add_filter( 'wpsc_archive_ticket_search', array( __CLASS__, 'ticket_search' ), 10, 5 );
 		}
 
 		/**
@@ -304,27 +306,37 @@ if ( ! class_exists( 'WPSC_CF_Single_Select' ) ) :
 		 */
 		public static function parse_filter( $cf, $compare, $val ) {
 
-			$str = '';
+			global $wpdb;
+
+			$column = self::get_sql_slug( $cf );
 
 			switch ( $compare ) {
 
 				case '=':
-					$str = self::get_sql_slug( $cf ) . '=\'' . esc_sql( $val ) . '\'';
-					break;
+					return $wpdb->prepare(
+						"{$column} = %s",
+						(string) $val
+					);
 
 				case 'IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
-
 				case 'NOT IN':
-					$str = 'CONVERT(' . self::get_sql_slug( $cf ) . ' USING utf8) NOT IN(\'' . implode( '\', \'', esc_sql( $val ) ) . '\')';
-					break;
+					if ( ! is_array( $val ) || empty( $val ) ) {
+						return ( $compare === 'IN' ) ? '1=0' : '1=1';
+					}
+
+					$placeholders = implode(
+						',',
+						array_fill( 0, count( $val ), '%s' )
+					);
+
+					return $wpdb->prepare(
+						"CONVERT({$column} USING utf8) {$compare} ({$placeholders})",
+						array_values( $val )
+					);
 
 				default:
-					$str = '1=1';
+					return '1=1';
 			}
-
-			return $str;
 		}
 
 		/**
