@@ -32,11 +32,13 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 
 			// calculate customer ticket count.
 			add_action( 'wpsc_create_new_ticket', array( __CLASS__, 'customer_ticket_count' ) );
-			add_action( 'wpsc_ticket_archive', array( __CLASS__, 'customer_ticket_count' ) );
 			add_action( 'wpsc_delete_ticket', array( __CLASS__, 'customer_ticket_count' ) );
 			add_action( 'wpsc_ticket_restore', array( __CLASS__, 'customer_ticket_count' ) );
 			add_action( 'wpsc_ticket_delete_permanently', array( __CLASS__, 'customer_ticket_count' ) );
-			add_action( 'wpsc_change_raised_by', array( __CLASS__, 'customer_ticket_count' ), 200, 4 );
+			add_action( 'wpsc_change_raised_by', array( __CLASS__, 'customer_ticket_count_after_change_raised_by' ), 200, 4 );
+			add_action( 'wpsc_ticket_archive', array( __CLASS__, 'reset_customer_ticket_count' ), 200, 2 );
+			add_action( 'wpsc_archive_ticket_restore', array( __CLASS__, 'reset_customer_ticket_count' ), 200, 2 );
+			add_action( 'wpsc_after_ticket_merge', array( __CLASS__, 'customer_ticket_count_after_ticket_merge' ), 200, 2 );
 
 			// view customer profile info.
 			add_action( 'wp_ajax_wpsc_view_customer_detailed_info', array( __CLASS__, 'view_customer_detailed_info' ) );
@@ -671,6 +673,44 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				</div>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Count customer tickets after merge ticket
+		 *
+		 * @param WPSC_Ticket $prev_ticket - previous ticket object.
+		 * @param WPSC_Ticket $new_ticket - new ticket object.
+		 * @return void
+		 */
+		public static function customer_ticket_count_after_ticket_merge( $prev_ticket, $new_ticket ) {
+
+			$prev_ticket->customer->update_ticket_count();
+		}
+
+		/**
+		 * Count customer tickets after create/delete/restore ticket
+		 *
+		 * @param WPSC_Ticket $ticket - ticket object.
+		 * @param int         $prev - previous customer id.
+		 * @param int         $new - new customer id.
+		 * @param int         $customer_id - current customer id.
+		 * @return void
+		 */
+		public static function customer_ticket_count_after_change_raised_by( $ticket, $prev, $new, $customer_id ) {
+
+			$ticket->customer->update_ticket_count();
+		}
+
+		/**
+		 * Count customer archive tickets after restore ticket
+		 *
+		 * @param WPSC_Ticket         $ticket - ticket object.
+		 * @param WPSC_Archive_Ticket $ar_ticket - archive ticket object.
+		 * @return void
+		 */
+		public static function reset_customer_ticket_count( $ticket, $ar_ticket ) {
+
+			$ticket->customer->update_ticket_count();
 		}
 
 		/**

@@ -121,6 +121,28 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 		 */
 		public static function send_background_emails() {
 
+			if ( get_transient( 'wpsc_email_cron_lock' ) ) {
+				return;
+			}
+
+			$gs = get_option( 'wpsc-en-general' );
+			$ttl = max( 30, (int) $gs['cron-email-count'] * 2 );
+			set_transient( 'wpsc_email_cron_lock', time(), $ttl );
+
+			try {
+				self::process_queue();
+			} finally {
+				delete_transient( 'wpsc_email_cron_lock' );
+			}
+		}
+
+		/**
+		 * Process email queue
+		 *
+		 * @return void
+		 */
+		public static function process_queue() {
+
 			$gs    = get_option( 'wpsc-en-general' );
 			$count = $gs['cron-email-count'];
 

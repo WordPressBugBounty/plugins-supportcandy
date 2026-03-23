@@ -149,7 +149,7 @@ if ( ! class_exists( 'WPSC_DBW_Category_Reports' ) ) :
 						),
 					);
 				}
-				$total_tickets[] = WPSC_Ticket::find( $args )['total_items'];
+				$total_tickets[] = WPSC_Ticket::count( $args );
 			}
 			ob_start();
 			?>

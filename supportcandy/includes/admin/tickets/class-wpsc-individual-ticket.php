@@ -164,8 +164,10 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					self::get_mobile_widgets();
 				if ( $gs['reply-form-position'] == 'top' ) {
 					self::get_reply_section();
+					do_action( 'wpsc_it_after_reply_section', self::$ticket );
 					self::get_thread_section();
 				} else {
+					do_action( 'wpsc_it_before_reply_section', self::$ticket );
 					self::get_thread_section();
 					self::get_reply_section();
 				}
@@ -293,17 +295,20 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function load_actions() {
 
 			$current_user = WPSC_Current_User::$current_user;
-			$actions      = array(
-				'refresh' => array(
-					'label'    => esc_attr__( 'Refresh', 'supportcandy' ),
-					'callback' => 'wpsc_it_ab_refresh(' . self::$ticket->id . ');',
-				),
-			);
 
 			$gs          = get_option( 'wpsc-gs-general' );
 			$tl_advanced = get_option( 'wpsc-tl-ms-advanced' );
 			$ms_advanced = get_option( 'wpsc-ms-advanced-settings' );
 
+			$actions = array();
+			if ( ! self::$is_restricted ) {
+				$actions['refresh'] = array(
+					'label'    => esc_attr__( 'Refresh', 'supportcandy' ),
+					'callback' => 'wpsc_it_ab_refresh(' . self::$ticket->id . ');',
+				);
+			}
+
+			$thread_actions = array();
 			$close_flag = false;
 			if ( $current_user->is_customer &&
 				(
@@ -330,7 +335,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			}
 
 			// Duplicate.
-			if ( self::$view_profile == 'agent' && self::has_ticket_cap( 'dt' ) ) {
+			if ( self::$view_profile == 'agent' && self::has_ticket_cap( 'dt' ) && ! self::$is_restricted ) {
 				$actions['duplicate'] = array(
 					'label'    => esc_attr__( 'Duplicate', 'supportcandy' ),
 					'callback' => 'wpsc_it_get_duplicate_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_get_duplicate_ticket' ) ) . '\');',
@@ -338,13 +343,15 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			}
 
 			// Copy url.
-			$actions['copy'] = array(
-				'label'    => esc_attr__( 'Copy URL', 'supportcandy' ),
-				'callback' => 'wpsc_it_copy_url(' . self::$ticket->id . ');',
-			);
+			if ( ! self::$is_restricted ) {
+				$actions['copy'] = array(
+					'label'    => esc_attr__( 'Copy URL', 'supportcandy' ),
+					'callback' => 'wpsc_it_copy_url(' . self::$ticket->id . ');',
+				);
+			}
 
 			// Archive.
-			if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) ) {
+			if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) && ! self::$is_restricted ) {
 				$actions['archive'] = array(
 					'label'    => esc_attr__( 'Archive', 'supportcandy' ),
 					'callback' => 'wpsc_it_archive_ticket(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_archive_ticket' ) ) . '\');',
@@ -412,19 +419,22 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 				// Thread actions.
 				$thread_actions = array(
-					'info'       => array(
+					'info' => array(
 						'icon'     => 'info-circle',
 						'label'    => esc_attr__( 'Info', 'supportcandy' ),
 						'callback' => 'wpsc_it_thread_info',
 					),
-					'new-ticket' => array(
+				);
+
+				if ( ! self::$is_restricted ) {
+					$thread_actions['new-ticket'] = array(
 						'icon'     => 'plus-square',
 						'label'    => esc_attr__( 'Create new ticket from this thread', 'supportcandy' ),
 						'callback' => 'wpsc_it_thread_new_ticket',
-					),
-				);
+					);
+				}
 
-				if ( self::has_ticket_cap( 'eth' ) ) {
+				if ( self::$ticket->is_active && self::has_ticket_cap( 'eth' ) && ! self::$is_restricted ) {
 					$thread_actions['edit'] = array(
 						'icon'     => 'edit',
 						'label'    => esc_attr__( 'Edit', 'supportcandy' ),
@@ -432,7 +442,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					);
 				}
 
-				if ( self::has_ticket_cap( 'dth' ) ) {
+				if ( self::$ticket->is_active && self::has_ticket_cap( 'dth' ) && ! self::$is_restricted ) {
 					$thread_actions['delete'] = array(
 						'icon'     => 'trash-alt',
 						'label'    => esc_attr__( 'Delete', 'supportcandy' ),
@@ -511,7 +521,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			<div class="wpsc-it-body-item wpsc-it-subject-container">
 				<h2><?php echo '[' . esc_attr( $gs['ticket-alice'] ) . esc_attr( self::$ticket->id ) . '] ' . esc_attr( self::$ticket->subject ); ?></h2>
 				<?php
-				if ( self::$ticket->is_active && self::$view_profile == 'agent' && self::has_ticket_cap( 'ctf' ) ) :
+				if ( self::$ticket->is_active && self::$view_profile == 'agent' && self::has_ticket_cap( 'ctf' ) && ! self::$is_restricted ) :
 					?>
 					<span onclick="wpsc_it_get_edit_subject(<?php echo esc_attr( self::$ticket->id ); ?>)"><?php WPSC_Icons::get( 'edit' ); ?></span>
 					<?php
@@ -564,28 +574,54 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					<p class="wpsc_auth_header"><?php esc_attr_e( 'You must sign in to submit a reply', 'supportcandy' ); ?></p>
 					<p class="wpsc_auth_link wpsc-signin-customer">
 						<?php
-							printf(
-								/* translators: %s: Sign in */
-								esc_attr__( '%s using email and password (registered user)', 'supportcandy' ),
-								'<span class="wpsc-link" onclick="wpsc_user_sign_in();">' . esc_attr__( 'Sign in', 'supportcandy' ) . '</span>'
-							);
+						$signin_link = sprintf(
+							'<span class="wpsc-link" onclick="wpsc_user_sign_in();">%s</span>',
+							esc_html__( 'Sign in', 'supportcandy' )
+						);
+
+						echo wp_kses(
+							sprintf(
+								/* translators: %1$s: Sign in link */
+								esc_html__( '%1$s using email and password (registered user)', 'supportcandy' ),
+								$signin_link
+							),
+							array(
+								'span' => array(
+									'class'   => true,
+									'onclick' => true,
+								),
+							)
+						);
 						?>
 					</p>
+
 					<?php
-					if ( $page_settings['otp-login'] && in_array( 'guest', $gs['allow-create-ticket'] ) ) {
+					if ( $page_settings['otp-login'] && in_array( 'guest', $gs['allow-create-ticket'], true ) ) {
 						?>
 						<p class="wpsc_auth_link wpsc-signin-guest">
 							<?php
-								printf(
-									/* translators: %s: Sign in */
-									esc_attr__( '%s using email and one time password (guest user)', 'supportcandy' ),
-									'<span class="wpsc-link" onclick="wpsc_get_guest_sign_in();">' . esc_attr__( 'Sign in', 'supportcandy' ) . '</span>'
-								);
+							$guest_link = sprintf(
+								'<span class="wpsc-link" onclick="wpsc_get_guest_sign_in();">%s</span>',
+								esc_html__( 'Sign in', 'supportcandy' )
+							);
+
+							echo wp_kses(
+								sprintf(
+									/* translators: %1$s: Sign in link */
+									esc_html__( '%1$s using email and one time password (guest user)', 'supportcandy' ),
+									$guest_link
+								),
+								array(
+									'span' => array(
+										'class'   => true,
+										'onclick' => true,
+									),
+								)
+							);
 							?>
 						</p>
-						<?php
-					}
-					?>
+					<?php } ?>
+
 				</div>
 				<script>
 
@@ -704,9 +740,13 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			$gs          = get_option( 'wpsc-gs-general' );
 			$ms_advanced = get_option( 'wpsc-ms-advanced-settings' );
+			$ad_settings = get_option( 'wpsc-tl-ms-advanced' );
 
 			if (
-				self::$ticket->status->id == $gs['close-ticket-status'] &&
+				(
+					self::$ticket->status->id == $gs['close-ticket-status'] ||
+					in_array( self::$ticket->status->id, $ad_settings['closed-ticket-statuses'] )
+				) &&
 				(
 					( $current_user->is_agent && ! in_array( 'agent', $ms_advanced['allow-reply-to-close-ticket'] ) ) ||
 					( ! $current_user->is_agent && ! in_array( 'customer', $ms_advanced['allow-reply-to-close-ticket'] ) )
@@ -770,7 +810,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 									<span class="wpsc-link wpsc-it-macro" onclick="wpsc_get_macros()"><?php esc_attr_e( 'Insert Macro', 'supportcandy' ); ?></span>
 									<?php
 								endif;
-								do_action( 'wpsc_it_editor_actions' );
+								do_action( 'wpsc_it_editor_actions', self::$ticket );
 								?>
 							</div>
 							<?php
@@ -1075,19 +1115,48 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			<?php
 			if ( $gs['reply-form-position'] == 'top' ) {
 				foreach ( $response['results'] as $thread ) {
-					if ( $thread->type == 'log' ) {
-						self::print_log( $thread );
+
+					// Default caller based on type.
+					if ( $thread->type === 'log' ) {
+						$default_caller = array( __CLASS__, 'print_log' );
 					} else {
-						self::print_thread( $thread );
+						$default_caller = array( __CLASS__, 'print_thread' );
+					}
+
+					// Allow addons or core to override the method.
+					$caller = apply_filters(
+						'wpsc_it_print_thread_caller',
+						$default_caller,
+						$thread->type,
+						$thread
+					);
+
+					// Execute handler if valid, otherwise fallback to default handler.
+					if ( ! empty( $caller ) && is_callable( $caller ) ) {
+						call_user_func( $caller, $thread );
 					}
 				}
 			} else {
 				for ( $i = count( $response['results'] ) - 1; $i >= 0; $i-- ) {
 					$thread = $response['results'][ $i ];
-					if ( $thread->type == 'log' ) {
-						self::print_log( $thread );
+					// Default caller based on type.
+					if ( $thread->type === 'log' ) {
+						$default_caller = array( __CLASS__, 'print_log' );
 					} else {
-						self::print_thread( $thread );
+						$default_caller = array( __CLASS__, 'print_thread' );
+					}
+
+					// Allow addons or core to override the method.
+					$caller = apply_filters(
+						'wpsc_it_print_thread_caller',
+						$default_caller,
+						$thread->type,
+						$thread
+					);
+
+					// Execute handler if valid, otherwise fallback to default handler.
+					if ( ! empty( $caller ) && is_callable( $caller ) ) {
+						call_user_func( $caller, $thread );
 					}
 				}
 			}
@@ -2332,11 +2401,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			}
 
 			self::load_current_ticket();
-
-			if ( self::$is_restricted ) {
-				wp_send_json_error( 'Unauthorized request!', 401 );
-			}
-
 			self::archive_ticket();
 			wp_die();
 		}
@@ -2355,8 +2419,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			$success = WPSC_Archive_Ticket::set_archive_ticket( self::$ticket );
 			if ( $success ) {
-				$ticket = new WPSC_Archive_Ticket( $id );
-				do_action( 'wpsc_ticket_archive', $ticket );
+				$ar_ticket = new WPSC_Archive_Ticket( $id );
+				do_action( 'wpsc_ticket_archive', self::$ticket, $ar_ticket );
 			}
 		}
 
@@ -2377,7 +2441,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			}
 
 			self::load_current_ticket();
-
 			if ( ! self::has_ticket_cap( 'dtt' ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
@@ -2414,7 +2477,9 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			self::load_current_ticket();
 			$current_user = WPSC_Current_User::$current_user;
-			self::load_current_ticket();
+			if ( self::$is_restricted ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
 
 			if ( !
 				self::$view_profile == 'agent'
@@ -2472,7 +2537,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		public static function it_thread_info() {
 
 			if ( check_ajax_referer( 'wpsc_it_thread_info', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorized request!', 401 );
+				wp_send_json_error( 'Unauthorised request!', 401 );
 			}
 
 			self::load_current_ticket();

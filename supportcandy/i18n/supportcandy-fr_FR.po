@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SupportCandy\n"
 "POT-Creation-Date: 2024-07-01 11:12+0530\n"
-"PO-Revision-Date: 2024-07-01 11:33+0530\n"
+"PO-Revision-Date: 2026-02-13 11:18+0530\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr_FR\n"
@@ -10,14 +10,13 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.8\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-Flags-xgettext: --add-comments=translators:\n"
 "X-Poedit-WPHeader: supportcandy.php\n"
 "X-Poedit-SourceCharset: UTF-8\n"
-"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
-"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
-"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-KeywordsList: "
+"__;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: *.min.js\n"
 
@@ -220,13 +219,11 @@ msgstr "Dernière réponse par"
 #: class-wpsc-installation.php:712 class-wpsc-installation.php:1529
 #: class-wpsc-installation.php:2155
 msgid "Tags"
-msgstr ""
+msgstr "Balises"
 
 #: class-wpsc-installation.php:727 class-wpsc-installation.php:2460
-#, fuzzy
-#| msgid "Last Reply On"
 msgid "Last Reply Source"
-msgstr "Dernière réponse le"
+msgstr "Source de la dernière réponse"
 
 #: class-wpsc-installation.php:743
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:51
@@ -313,7 +310,7 @@ msgstr "Champs du ticket"
 
 #: class-wpsc-installation.php:1526
 msgid "Agent only fields"
-msgstr "Champs réservés uniquement aux agents"
+msgstr "Champs pour agents uniquement"
 
 #: class-wpsc-installation.php:1527
 msgid "Additional recipients"
@@ -335,70 +332,52 @@ msgstr ""
 "types %2$s."
 
 #: class-wpsc-installation.php:1755 class-wpsc-installation.php:2240
-#, fuzzy
-#| msgid "New Ticket"
 msgid "New Tickets"
-msgstr "Nouveau ticket"
+msgstr "Nouveaux billets"
 
 #: class-wpsc-installation.php:1812 class-wpsc-installation.php:2297
-#, fuzzy
-#| msgid "Ticket Statuses"
 msgid "Ticket Statistics"
 msgstr "Statuts des tickets"
 
 #: class-wpsc-installation.php:1813 class-wpsc-installation.php:2298
 msgid "Todays Trends"
-msgstr ""
+msgstr "Tendances du jour"
 
 #: class-wpsc-installation.php:1814 class-wpsc-installation.php:2299
-#, fuzzy
-#| msgid "Workload"
 msgid "Agent Workload"
-msgstr "Charge de travail"
+msgstr "Charge de travail des agents"
 
 #: class-wpsc-installation.php:1815 class-wpsc-installation.php:2300
 #: includes/admin/customers/class-wpsc-customers.php:1003
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:38
 msgid "Recent Activities"
-msgstr ""
+msgstr "Activités récentes"
 
 #: class-wpsc-installation.php:1816 class-wpsc-installation.php:2301
-#, fuzzy
-#| msgid "Reply Tickets"
 msgid "Recent Tickets"
-msgstr "Billets de réponse"
+msgstr "Billets récents"
 
 #: class-wpsc-installation.php:1817 class-wpsc-installation.php:2302
-#, fuzzy
-#| msgid "Change ticket category"
 msgid "Unresolved tickets by Category"
-msgstr "Changer de catégorie de ticket"
+msgstr "Tickets non résolus par catégorie"
 
 #: class-wpsc-installation.php:1818 class-wpsc-installation.php:2303
-#, fuzzy
-#| msgid "Change ticket priority"
 msgid "Unresolved tickets by Priority"
-msgstr "Modifier la priorité des tickets"
+msgstr "Tickets non résolus par priorité"
 
 #: class-wpsc-installation.php:1819 class-wpsc-installation.php:2304
-#, fuzzy
-#| msgid "Unresolved statuses"
 msgid "Unresolved tickets by Status"
-msgstr "Statuts non résolus"
+msgstr "Tickets non résolus par statut"
 
 #: class-wpsc-installation.php:1820 class-wpsc-installation.php:2499
-#, fuzzy
-#| msgid "Ticket Statuses"
 msgid "Ticket statistics by day of week"
-msgstr "Statuts des tickets"
+msgstr "Statistiques de billetterie par jour de la semaine"
 
 #: framework/class-wpsc-framework.php:415
 msgid "Please wait..."
 msgstr "Veuillez patienter..."
 
 #: framework/class-wpsc-framework.php:416
-#, fuzzy
-#| msgid "Requied fields missing!"
 msgid "Required fields missing!"
 msgstr "Champs obligatoires manquants !"
 
@@ -460,14 +439,16 @@ msgid ""
 "Deleting a customer will permanently remove all associated customer "
 "information and tickets!"
 msgstr ""
+"La suppression d'un client entraînera la suppression définitive de toutes "
+"les informations et tickets associés à ce client !"
 
 #: framework/class-wpsc-framework.php:429
 msgid "Please accept terms and conditions!"
-msgstr ""
+msgstr "Veuillez accepter les conditions générales!"
 
 #: framework/class-wpsc-framework.php:430
 msgid "Please accept GDPR policy!"
-msgstr ""
+msgstr "Veuillez accepter la politique GDPR !"
 
 #: global-functions.php:31
 msgid "Please activate your license!"
@@ -814,7 +795,7 @@ msgstr "Feuilles"
 #: includes/models/class-wpsc-working-hour.php:433
 #, php-format
 msgid "%s to see the documentation!"
-msgstr ""
+msgstr "%s pour consulter la documentation !"
 
 #: includes/admin/agent-settings/class-wpsc-agent-leaves.php:49
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:56
@@ -861,8 +842,6 @@ msgstr ""
 #: includes/models/class-wpsc-holiday.php:415
 #: includes/models/class-wpsc-wh-exception.php:422
 #: includes/models/class-wpsc-working-hour.php:434
-#, fuzzy
-#| msgid "Click Here"
 msgid "Click here"
 msgstr "Cliquez ici"
 
@@ -1108,7 +1087,7 @@ msgstr "Êtes-vous sûr de vouloir supprimer ce congé ?"
 #: includes/models/class-wpsc-attachment.php:1115
 #: includes/models/class-wpsc-custom-field.php:741
 msgid "Bad request!"
-msgstr ""
+msgstr "Mauvaise demande!"
 
 #: includes/admin/agent-settings/class-wpsc-agent-leaves.php:233
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:71
@@ -1785,7 +1764,7 @@ msgstr "Étiquette"
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:164
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:554
 msgid "Capability"
-msgstr ""
+msgstr "Capability"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:166
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:556
@@ -1814,10 +1793,8 @@ msgstr "Notes privées"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:194
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:583
-#, fuzzy
-#| msgid "Delete Ticket"
 msgid "Duplicate Ticket"
-msgstr "Supprimer le ticket"
+msgstr "Billet en double"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:201
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:590
@@ -1873,10 +1850,8 @@ msgstr "Supprimer le ticket"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:271
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:660
-#, fuzzy
-#| msgid "Copy Tag"
 msgid "Modify Tags"
-msgstr "Étiquette de copie"
+msgstr "Modifier les balises"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:283
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:670
@@ -1885,8 +1860,6 @@ msgstr "Autres autorisations"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:288
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:675
-#, fuzzy
-#| msgid "WP dashboard accees"
 msgid "WP dashboard access"
 msgstr "Accès au tableau de bord WP"
 
@@ -1909,10 +1882,8 @@ msgstr "Modifier les informations relatives aux clients"
 
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:304
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:691
-#, fuzzy
-#| msgid "WP dashboard accees"
 msgid "Dashboard access"
-msgstr "Accès au tableau de bord WP"
+msgstr "Accès au tableau de bord"
 
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:89
 msgid "Agent name"
@@ -1932,10 +1903,8 @@ msgstr "Sélectionnez un rôle"
 
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:333
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:403
-#, fuzzy
-#| msgid "Unauthorized access!"
 msgid "Unauthorized access"
-msgstr "Accès non autorisé !"
+msgstr "Accès non autorisé"
 
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:82
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:93
@@ -2040,7 +2009,7 @@ msgstr "Support"
 #: includes/admin/tickets/class-wpsc-tickets.php:92
 #: includes/frontend/class-wpsc-shortcode-one.php:214
 msgid "Ticket List"
-msgstr "Liste des tickets"
+msgstr "Liste des billets"
 
 #: includes/admin/class-wpsc-admin.php:133
 #: includes/admin/customers/class-wpsc-customers.php:821
@@ -2082,15 +2051,15 @@ msgstr "Licences"
 #: includes/admin/class-wpsc-admin.php:206
 #: includes/admin/class-wpsc-admin.php:207
 msgid "Pro Features"
-msgstr ""
+msgstr "Fonctionnalités professionnelles"
 
 #: includes/admin/class-wpsc-admin.php:216
 msgid "Task Manager"
-msgstr ""
+msgstr "Gestionnaire de tâches"
 
 #: includes/admin/class-wpsc-admin.php:226
 msgid "Recent Activites"
-msgstr ""
+msgstr "Activités récentes"
 
 #: includes/admin/class-wpsc-admin.php:254
 #: includes/frontend/class-wpsc-frontend.php:146
@@ -2098,10 +2067,8 @@ msgid "Required fields can not be empty!"
 msgstr "Les champs obligatoires ne peuvent pas être vides !"
 
 #: includes/admin/class-wpsc-admin.php:255
-#, fuzzy
-#| msgid "Please sign in"
 msgid "Please submit the option!"
-msgstr "Veuillez vous inscrire"
+msgstr "Veuillez soumettre votre choix !"
 
 #: includes/admin/class-wpsc-admin.php:257
 #: includes/admin/class-wpsc-admin.php:258
@@ -2145,7 +2112,7 @@ msgstr "Dernier"
 #: includes/admin/custom-fields/class-wpsc-aof.php:69
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:121
 msgid "Agent Only Fields"
-msgstr "Champs réservés uniquement aux agents"
+msgstr "Champs d'agent uniquement"
 
 #: includes/admin/custom-fields/class-wpsc-aof.php:84
 #: includes/admin/custom-fields/class-wpsc-cf.php:85
@@ -2212,7 +2179,7 @@ msgstr "Champs du formulaire de ticket"
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:109
 #: includes/admin/custom-fields/class-wpsc-tf.php:65
 msgid "Ticket Fields"
-msgstr "Liste des tickets"
+msgstr "Champs de ticket"
 
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:115
 #: includes/admin/custom-fields/class-wpsc-cf.php:70
@@ -2341,16 +2308,12 @@ msgid "Visibility conditions"
 msgstr "Conditions de visibilité"
 
 #: includes/admin/customers/class-wpsc-customers.php:57
-#, fuzzy
-#| msgid "User"
 msgid "All Users"
-msgstr "Utilisateur"
+msgstr "Tous les utilisateurs"
 
 #: includes/admin/customers/class-wpsc-customers.php:58
-#, fuzzy
-#| msgid "User Tickets"
 msgid "Users has tickets"
-msgstr "Billets d'utilisateur"
+msgstr "Les utilisateurs ont des tickets"
 
 #: includes/admin/customers/class-wpsc-customers.php:85
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-agent-list.php:59
@@ -2442,55 +2405,41 @@ msgid "The %1$s has been changed"
 msgstr "Le %1$s a été modifié"
 
 #: includes/admin/customers/class-wpsc-customers.php:796
-#, fuzzy
-#| msgid "Backgound"
 msgid "Back"
-msgstr "Arrière-plan"
+msgstr "Dos"
 
 #: includes/admin/customers/class-wpsc-customers.php:822
-#, fuzzy
-#| msgid "Custom Fields"
 msgid "Custom fields"
 msgstr "Champs personnalisés"
 
 #: includes/admin/customers/class-wpsc-customers.php:823
 msgid "Other"
-msgstr ""
+msgstr "Autre"
 
 #: includes/admin/customers/class-wpsc-customers.php:985
-#, fuzzy
-#| msgid "View Logs"
 msgid "View logs"
 msgstr "Afficher les journaux"
 
 #: includes/admin/customers/class-wpsc-customers.php:1007
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:59
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:55
-#, fuzzy
-#| msgid "View less!"
 msgid "View All"
-msgstr "Voir moins !"
+msgstr "Tout afficher"
 
 #: includes/admin/customers/class-wpsc-customers.php:1080
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:119
-#, fuzzy
-#| msgid "Create new ticket"
 msgid "created a ticket"
-msgstr "Créer un nouveau ticket"
+msgstr "créé un ticket"
 
 #: includes/admin/customers/class-wpsc-customers.php:1084
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:125
-#, fuzzy
-#| msgid "Delete ticket"
 msgid "replied to ticket"
-msgstr "Supprimer le ticket"
+msgstr "a répondu au ticket"
 
 #: includes/admin/customers/class-wpsc-customers.php:1088
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:131
-#, fuzzy
-#| msgid "added a note"
 msgid "added a note to ticket"
-msgstr "a ajouté une note"
+msgstr "J'ai ajouté une note au ticket"
 
 #: includes/admin/customers/class-wpsc-customers.php:1108
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:180
@@ -2501,7 +2450,7 @@ msgstr "a ajouté une note"
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:193
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:223
 msgid "Record not found!"
-msgstr ""
+msgstr "Enregistrement introuvable !"
 
 #: includes/admin/email-notifications/class-wpsc-en-delete-ticket.php:41
 #: includes/class-wpsc-triggers.php:47
@@ -2548,10 +2497,8 @@ msgstr "Texte"
 
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:90
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:90
-#, fuzzy
-#| msgid "Sign-in using one time password"
 msgid "One time password"
-msgstr "Se connecter en utilisant un mot de passe unique"
+msgstr "Mot de passe à usage unique"
 
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:158
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:120
@@ -2610,20 +2557,16 @@ msgid "Blocked emails (one per line)"
 msgstr "Emails bloqués (un par ligne)"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:100
-#, fuzzy
-#| msgid "Ticket Notifications"
 msgid "Attachments in notifications"
-msgstr "Notifications de tickets"
+msgstr "Pièces jointes dans les notifications"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:103
-#, fuzzy
-#| msgid "Attach Files"
 msgid "Actual files"
-msgstr "Joindre des fichiers"
+msgstr "Fichiers réels"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:104
 msgid "File links"
-msgstr ""
+msgstr "Liens vers les fichiers"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:105
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:121
@@ -2658,7 +2601,7 @@ msgstr "Notifications de tickets"
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:103
 #: includes/class-wpsc-triggers.php:65
 msgid "Trigger"
-msgstr ""
+msgstr "Déclenchement"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:116
 msgid "Enabled"
@@ -2742,10 +2685,8 @@ msgid "Click to select options"
 msgstr "Cliquez pour sélectionner les options"
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:830
-#, fuzzy
-#| msgid "Email Notifications"
 msgid "Clone notification"
-msgstr "Notifications par courriel"
+msgstr "Notification de clonage"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:54
 #: includes/class-wpsc-current-user.php:727
@@ -2758,26 +2699,20 @@ msgid "Username"
 msgstr "Nom d'utilisateur"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:92
-#, fuzzy
-#| msgid "First Name"
 msgid "First name"
 msgstr "Prénom"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:93
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last name"
-msgstr "Nom"
+msgstr "Nom de famille"
 
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:94
-#, fuzzy
-#| msgid "From name"
 msgid "Full name"
-msgstr "Du nom"
+msgstr "Nom et prénom"
 
 #: includes/admin/misc/class-wpsc-license.php:32
 msgid "Sync"
-msgstr ""
+msgstr "Synchroniser"
 
 #: includes/admin/misc/class-wpsc-license.php:35
 msgid "Activate license keys for add-ons in order to get support and updates."
@@ -2787,7 +2722,7 @@ msgstr ""
 
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:62
 msgid "Start To End"
-msgstr ""
+msgstr "Du début à la fin"
 
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:69
 #: includes/admin/tickets/class-wpsc-ticket-list.php:463
@@ -2801,23 +2736,19 @@ msgid "Reset"
 msgstr "Réinitialiser"
 
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:161
-#, fuzzy
-#| msgid "Select fields"
 msgid "Select customers or agents"
-msgstr "Sélectionnez les champs"
+msgstr "Sélectionnez des clients ou des agents"
 
 #. translators: %1$s: Name
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:412
 #, php-format
 msgid "%1$s"
-msgstr ""
+msgstr "%1$s"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-agent-collision.php:56
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:330
-#, fuzzy
-#| msgid "Agent Roles"
 msgid "Agent collision"
-msgstr "Rôles des agents"
+msgstr "Collision d'agents"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-agent-collision.php:60
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:66
@@ -2861,20 +2792,16 @@ msgstr "Couleur de fond"
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:61
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-settings.php:60
 msgid "Cards"
-msgstr ""
+msgstr "Cartes"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:67
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:85
-#, fuzzy
-#| msgid "Text color"
 msgid "Svg color"
-msgstr "Couleur du texte"
+msgstr "Couleur SVG"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:79
-#, fuzzy
-#| msgid "Widget body"
 msgid "Widget"
-msgstr "Corps du widget"
+msgstr "Widget"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-general.php:59
 #: includes/admin/settings/appearence/class-wpsc-appearence-indidual-ticket.php:79
@@ -2883,10 +2810,8 @@ msgid "Primary color"
 msgstr "Couleur primaire"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-general.php:66
-#, fuzzy
-#| msgid "Text color"
 msgid "Menu color"
-msgstr "Couleur du texte"
+msgstr "Couleur des menus"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-general.php:73
 msgid "Main container"
@@ -2958,10 +2883,8 @@ msgid "Modal Popup"
 msgstr "Popup modale"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:71
-#, fuzzy
-#| msgid "Agent Roles"
 msgid "Agent Collision"
-msgstr "Rôles des agents"
+msgstr "Collision d'agents"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:76
 #: includes/admin/settings/class-wpsc-settings.php:76
@@ -2969,7 +2892,7 @@ msgstr "Rôles des agents"
 #: includes/admin/tickets/class-wpsc-tickets.php:83
 #: includes/frontend/class-wpsc-shortcode-one.php:205
 msgid "Dashboard"
-msgstr ""
+msgstr "Tableau de bord"
 
 #: includes/admin/settings/appearence/class-wpsc-appearence-ticket-list.php:62
 msgid "List header"
@@ -3016,18 +2939,14 @@ msgid "Rich Text Editor"
 msgstr "Éditeur de texte enrichi"
 
 #: includes/admin/settings/class-wpsc-settings.php:124
-#, fuzzy
-#| msgid "Appearence"
 msgid "Appearance"
 msgstr "Apparence"
 
 #: includes/admin/settings/class-wpsc-settings.php:130
 #: includes/admin/settings/ticket-tags/class-wpsc-ticket-tags-settings-general.php:65
 #: includes/admin/settings/ticket-tags/class-wpsc-ticket-tags-settings.php:56
-#, fuzzy
-#| msgid "Tickets"
 msgid "Ticket Tags"
-msgstr "Billets"
+msgstr "Étiquettes de billets"
 
 #: includes/admin/settings/class-wpsc-ticket-categories.php:435
 msgid "Delete category"
@@ -3065,75 +2984,65 @@ msgid "Save Order"
 msgstr "Enregistrer la commande"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:125
-#, fuzzy
-#| msgid "Default date format"
 msgid "Default date range"
-msgstr "Format de date par défaut"
+msgstr "Plage de dates par défaut"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:128
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:58
 #: includes/custom-field-types/class-wpsc-df-date-created.php:208
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:208
 msgid "Today"
-msgstr ""
+msgstr "Aujourd'hui"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:129
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:59
 #: includes/custom-field-types/class-wpsc-df-date-created.php:209
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:209
-#, fuzzy
-#| msgid "Registered"
 msgid "Yesterday"
-msgstr "Enregistré"
+msgstr "Hier"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:130
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:60
 #: includes/custom-field-types/class-wpsc-df-date-created.php:210
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:210
 msgid "This week"
-msgstr ""
+msgstr "Cette semaine"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:131
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:61
 #: includes/custom-field-types/class-wpsc-df-date-created.php:211
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:211
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last week"
-msgstr "Nom"
+msgstr "La semaine dernière"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:132
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:62
 #: includes/custom-field-types/class-wpsc-df-date-created.php:213
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:213
 msgid "Last 30 days"
-msgstr ""
+msgstr "30 derniers jours"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:133
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:63
 #: includes/custom-field-types/class-wpsc-df-date-created.php:214
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:214
 msgid "This month"
-msgstr ""
+msgstr "Ce mois-ci"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:134
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:64
 #: includes/custom-field-types/class-wpsc-df-date-created.php:215
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:215
-#, fuzzy
-#| msgid "Last note"
 msgid "Last month"
-msgstr "Dernière note"
+msgstr "Mois dernier"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:145
 msgid "Allowed recent activity logs"
-msgstr ""
+msgstr "Journaux d'activité récents autorisés"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:148
-#, fuzzy
-#| msgid "reported"
 msgid "Report"
-msgstr "signalé"
+msgstr "Rapport"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:149
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:361
@@ -3142,13 +3051,11 @@ msgstr "Réponse"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:150
 msgid "Note"
-msgstr ""
+msgstr "Note"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:172
-#, fuzzy
-#| msgid "WP dashboard accees"
 msgid "Dashboard auto refresh"
-msgstr "Accès au tableau de bord WP"
+msgstr "Actualisation automatique du tableau de bord"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:175
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:616
@@ -3161,10 +3068,8 @@ msgid "Off"
 msgstr "En arrêt"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-settings.php:65
-#, fuzzy
-#| msgid "Ticket Widgets"
 msgid "Widgets"
-msgstr "Widgets pour les tickets"
+msgstr "Widgets"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-settings.php:175
 #: includes/admin/tickets/widgets/class-wpsc-itw-additional-recipients.php:246
@@ -3180,26 +3085,20 @@ msgid "Allowed agent roles"
 msgstr "Rôles d'agent autorisés"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-widgets-setting.php:82
-#, fuzzy
-#| msgid "Add new field"
 msgid "Add widget"
-msgstr "Ajouter un nouveau champ"
+msgstr "Ajouter un widget"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-widgets-setting.php:142
-#, fuzzy
-#| msgid "Add new field"
 msgid "Add new widget"
-msgstr "Ajouter un nouveau champ"
+msgstr "Ajouter un nouveau widget"
 
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-widgets-setting.php:148
-#, fuzzy
-#| msgid "Select fields"
 msgid "Select custom fields"
-msgstr "Sélectionnez les champs"
+msgstr "Sélectionnez des champs personnalisés"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-agent-list.php:152
 msgid "Total"
-msgstr ""
+msgstr "Total"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:55
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:55
@@ -3207,73 +3106,63 @@ msgstr ""
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:55
 #: includes/custom-field-types/class-wpsc-df-date-created.php:212
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:212
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last 7 days"
-msgstr "Nom"
+msgstr "7 derniers jours"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:56
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:56
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:56
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:56
-#, fuzzy
-#| msgid "Last Name"
 msgid "Last Week"
-msgstr "Nom"
+msgstr "La semaine dernière"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:57
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:57
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:57
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:57
 msgid "Last 30 Days"
-msgstr ""
+msgstr "30 derniers jours"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:58
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:58
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:58
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:59
-#, fuzzy
-#| msgid "Last note"
 msgid "Last Month"
-msgstr "Dernière note"
+msgstr "Mois dernier"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:307
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:307
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:320
-#, fuzzy
-#| msgid "User Type"
 msgid "Chart Type"
-msgstr "Type d'utilisateur"
+msgstr "Type de graphique"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:310
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:310
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:323
 msgid "Pie"
-msgstr ""
+msgstr "Pie"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:311
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:311
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:324
 msgid "Doughnut"
-msgstr ""
+msgstr "Donut"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:312
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:312
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:325
 msgid "Horizontal Bar"
-msgstr ""
+msgstr "Barre horizontale"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:313
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-priorities.php:313
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-unresolved-statuses.php:326
 msgid "Vertical Bar"
-msgstr ""
+msgstr "Barre verticale"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:111
-#, fuzzy
-#| msgid "Tickets"
 msgid "Ticket"
-msgstr "Billets"
+msgstr "Billet"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:142
 #: includes/custom-field-types/class-wpsc-cf-checkbox.php:1641
@@ -3334,22 +3223,16 @@ msgid "None"
 msgstr "Aucun"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:150
-#, fuzzy
-#| msgid "Reply Tickets"
 msgid "No recent tickets!"
-msgstr "Billets de réponse"
+msgstr "Pas de billets récents !"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:55
-#, fuzzy
-#| msgid "Ticket Records"
 msgid "Ticket created"
-msgstr "Records de tickets"
+msgstr "Billet créé"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:56
-#, fuzzy
-#| msgid "Ticket list"
 msgid "Ticket closed"
-msgstr "Liste des tickets"
+msgstr "Billet fermé"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-ticket-statistics.php:206
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:1512
@@ -3363,64 +3246,58 @@ msgstr "Liste des tickets"
 #: includes/class-wpsc-current-user.php:538
 #: includes/class-wpsc-current-user.php:563
 #: includes/class-wpsc-current-user.php:662
-#, fuzzy
-#| msgid "Unauthorized access!"
 msgid "Unauthorized"
-msgstr "Accès non autorisé !"
+msgstr "Non autorisé"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:58
-#, fuzzy
-#| msgid "Last note"
 msgid "This Month"
-msgstr "Dernière note"
+msgstr "Ce mois-ci"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:113
 msgid "Monday"
-msgstr ""
+msgstr "Lundi"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:114
 msgid "Tuesday"
-msgstr ""
+msgstr "Mardi"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:115
 msgid "Wednesday"
-msgstr ""
+msgstr "Wednesday"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:116
 msgid "Thursday"
-msgstr ""
+msgstr "Jeudi"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:117
 msgid "Friday"
-msgstr ""
+msgstr "Samedi"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:118
 msgid "Saturday"
-msgstr ""
+msgstr "Samedi"
 
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-week-trend-tickets.php:119
 msgid "Sunday"
-msgstr ""
+msgstr "Dimanche"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:74
 msgid "Attachment max file size(mb)"
 msgstr "Taille maximale du fichier joint (mb)"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:80
-#, fuzzy
-#| msgid "Allowed file extensions(comma seperated)"
 msgid "Allowed file extensions(comma separated)"
 msgstr "Extensions de fichiers autorisées (séparées par des virgules)"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:86
-#, fuzzy
-#| msgid "Email address (one per line)"
 msgid "MIME exceptions (One per line)"
-msgstr "Adresse électronique (une par ligne)"
+msgstr "Exceptions MIME (Une par ligne)"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:88
 msgid "Add files in format, extension: MIME type. For example, png: image/png."
 msgstr ""
+"Ajoutez les fichiers au format suivant : extension : type MIME. Par exemple, "
+"png : image/png."
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:94
 msgid "Download behaviour"
@@ -3498,16 +3375,12 @@ msgid "Thread email visibility"
 msgstr "Visibilité de l'email du fil"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-general.php:234
-#, fuzzy
-#| msgid "Select fields"
 msgid "Select allowed search fields"
-msgstr "Sélectionnez les champs"
+msgstr "Sélectionnez les champs de recherche autorisés"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-general.php:237
-#, fuzzy
-#| msgid "Edit Threads"
 msgid "Threads"
-msgstr "Fils d'édition"
+msgstr "Sujets"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-page-settings.php:83
 #: includes/admin/settings/general-settings/class-wpsc-gs-page-settings.php:124
@@ -3562,16 +3435,16 @@ msgstr "Connexion OTP"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-page-settings.php:179
 msgid "Load scripts"
-msgstr ""
+msgstr "Charger des scripts"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-page-settings.php:182
 msgid "All Pages"
-msgstr ""
+msgstr "Toutes les pages"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:76
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:124
 msgid "Choose action after creating a ticket"
-msgstr ""
+msgstr "Choisissez une action après avoir créé un ticket"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:79
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:96
@@ -3585,14 +3458,12 @@ msgstr "Texte de remerciement"
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:128
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:162
 msgid "Page url"
-msgstr ""
+msgstr "URL de la page"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:81
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:129
-#, fuzzy
-#| msgid "Open ticket page"
 msgid "Open ticket"
-msgstr "Ouvrir la page du ticket"
+msgstr "Billet ouvert"
 
 #: includes/admin/settings/general-settings/class-wpsc-gs.php:56
 msgid "Page Settings"
@@ -3745,45 +3616,33 @@ msgid "Raised By User"
 msgstr "Soulevé par l'utilisateur"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:294
-#, fuzzy
-#| msgid "My Profile"
 msgid "My Profile tab"
-msgstr "Mon profil"
+msgstr "Onglet Mon profil"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:303
-#, fuzzy
-#| msgid "Agent Profile"
 msgid "Agent Profile tab"
-msgstr "Profil de l'agent"
+msgstr "Onglet Profil d'agent"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:312
-#, fuzzy
-#| msgid "Ticket Notifications"
 msgid "Ticket url authentication"
-msgstr "Notifications de tickets"
+msgstr "Authentification de l'URL du ticket"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:321
 msgid "REST API"
-msgstr ""
+msgstr "REST API"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:339
-#, fuzzy
-#| msgid "Allow reply to closed tickets"
 msgid "Allow agent to self assign ticket"
-msgstr "Autoriser la réponse aux tickets fermés"
+msgstr "Autoriser l'agent à s'attribuer lui-même les tickets"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:348
-#, fuzzy
-#| msgid "Reply & Close"
 msgid "Reply and Close button"
-msgstr "Répondre et fermer"
+msgstr "Bouton Répondre et Fermer"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:84
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-tac.php:75
-#, fuzzy
-#| msgid "Create ticket from thread"
 msgid "Create ticket form"
-msgstr "Créer un ticket à partir d'un fil de discussion"
+msgstr "Créer un formulaire de ticket"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:97
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:127
@@ -3794,10 +3653,8 @@ msgstr "Texte de la case à cocher"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:114
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-tac.php:105
-#, fuzzy
-#| msgid "User Registration OTP"
 msgid "Registration form"
-msgstr "Enregistrement de l'utilisateur OTP"
+msgstr "Formulaire d'inscription"
 
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:145
 msgid "Personal data retention"
@@ -4089,7 +3946,7 @@ msgstr "Redirection de la réponse au ticket"
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:494
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:221
 msgid "Ticket list"
-msgstr "Liste des tickets"
+msgstr "Liste des billets"
 
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:300
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:495
@@ -4138,18 +3995,14 @@ msgid "Saved filters"
 msgstr "Filtres sauvegardés"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:216
-#, fuzzy
-#| msgid "Default"
 msgid "Default tab"
-msgstr "Défaut"
+msgstr "Onglet par défaut"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:218
 msgid "Select dafault section"
-msgstr ""
+msgstr "Sélectionnez la section par défaut"
 
 #: includes/admin/tickets/class-wpsc-current-agent-profile.php:222
-#, fuzzy
-#| msgid "New Ticket"
 msgid "New ticket"
 msgstr "Nouveau ticket"
 
@@ -4236,39 +4089,35 @@ msgstr "Détails du ticket"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:538
 msgid "You must sign in to submit a reply"
-msgstr ""
+msgstr "Vous devez vous connecter pour soumettre une réponse"
 
 #. translators: %s: Sign in
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:543
 #, php-format
 msgid "%s using email and password (registered user)"
 msgstr ""
+"%s en utilisant l'adresse e-mail et le mot de passe (utilisateur enregistré)"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:544
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:556
-#, fuzzy
-#| msgid "Sign In"
 msgid "Sign in"
-msgstr "S'inscrire"
+msgstr "Se connecter"
 
 #. translators: %s: Sign in
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:555
-#, fuzzy, php-format
-#| msgid "Sign-in using one time password"
+#, php-format
 msgid "%s using email and one time password (guest user)"
-msgstr "Se connecter en utilisant un mot de passe unique"
+msgstr ""
+"%s utilisant l'adresse e-mail et un mot de passe à usage unique (utilisateur "
+"invité)"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:718
-#, fuzzy
-#| msgid "CC (comma separeted list)"
 msgid "CC (comma separated list)"
 msgstr "CC (liste séparée par des virgules)"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:723
-#, fuzzy
-#| msgid "BCC (comma separeted list)"
 msgid "BCC (comma separated list)"
-msgstr "BCC (liste séparée par des virgules)"
+msgstr "CCI (liste séparée par des virgules)"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:739
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:2640
@@ -4384,10 +4233,8 @@ msgid "Thread log"
 msgstr "Journal du fil"
 
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:3317
-#, fuzzy
-#| msgid "Current User"
 msgid "Currently viewing"
-msgstr "Utilisateur actuel"
+msgstr "En cours de visualisation"
 
 #. translators: %1$s: Name, %2$s: Email Address
 #: includes/admin/tickets/class-wpsc-new-ticket.php:139
@@ -4501,16 +4348,12 @@ msgid "Select agent(s)"
 msgstr "Sélectionnez un/plusieurs agent(s)"
 
 #: includes/admin/tickets/class-wpsc-ticket-list.php:1941
-#, fuzzy
-#| msgid "Select agent(s)"
 msgid "Select tag(s)"
-msgstr "Sélectionnez un/plusieurs agent(s)"
+msgstr "Sélectionner une ou plusieurs étiquettes"
 
 #: includes/admin/tickets/class-wpsc-ticket-list.php:2181
-#, fuzzy
-#| msgid "Assign Agents"
 msgid "Assign Tags"
-msgstr "Affecter des agents"
+msgstr "Attribuer des balises"
 
 #: includes/admin/tickets/class-wpsc-tickets.php:101
 #: includes/frontend/class-wpsc-shortcode-one.php:223
@@ -4593,7 +4436,7 @@ msgstr "Prénom"
 
 #: includes/class-wpsc-current-user.php:424
 msgid "Last Name"
-msgstr "Nom"
+msgstr "Nom de famille"
 
 #: includes/class-wpsc-current-user.php:429
 msgid "Username is available!"
@@ -4614,13 +4457,11 @@ msgstr "S'inscrire"
 
 #: includes/class-wpsc-current-user.php:625
 #: includes/class-wpsc-current-user.php:803
-#, fuzzy
-#| msgid "We have sent 6-digit one time password on your given email address."
 msgid ""
 "We have sent a 6-digit one-time pass code to the email address you provided."
 msgstr ""
-"Nous avons envoyé un mot de passe unique à 6 chiffres à votre adresse "
-"électronique."
+"Nous avons envoyé un code d'accès unique à 6 chiffres à l'adresse "
+"électronique que vous avez fournie."
 
 #: includes/class-wpsc-current-user.php:747
 #: includes/class-wpsc-current-user.php:802
@@ -4638,19 +4479,19 @@ msgstr "S'inscrire"
 #: includes/class-wpsc-functions.php:621 includes/class-wpsc-functions.php:629
 #, php-format
 msgid "%dd"
-msgstr ""
+msgstr "%dd"
 
 #. translators: %d: number of hours
 #: includes/class-wpsc-functions.php:639
 #, php-format
 msgid "%dh"
-msgstr ""
+msgstr "%dh"
 
 #. translators: %d: number of minutes
 #: includes/class-wpsc-functions.php:648
 #, php-format
 msgid "%dm"
-msgstr ""
+msgstr "%dm"
 
 #. translators: %d: number of years
 #: includes/class-wpsc-functions.php:703
@@ -4784,7 +4625,7 @@ msgstr "URL du ticket"
 
 #: includes/class-wpsc-macros.php:142
 msgid "Returns the ticket URL without any HTML formatting."
-msgstr ""
+msgstr "Renvoie l'URL du billet sans aucune mise en forme HTML."
 
 #: includes/class-wpsc-macros.php:179
 msgid "Insert macro"
@@ -4808,7 +4649,7 @@ msgstr "Insérer"
 
 #: includes/class-wpsc-task-scheduler.php:148
 msgid "Initializing..."
-msgstr ""
+msgstr "Initialisation..."
 
 #: includes/class-wpsc-ticket-conditions.php:105
 msgid "Ticket submitted by"
@@ -4819,19 +4660,17 @@ msgid "WP user role"
 msgstr "Rôle de l'utilisateur WP"
 
 #: includes/class-wpsc-ticket-conditions.php:131
-#, fuzzy
-#| msgid "Term & Conditions"
 msgid "Conditions"
-msgstr "Termes et conditions"
+msgstr "Conditions"
 
 #: includes/class-wpsc-ticket-conditions.php:196
 #: includes/class-wpsc-ticket-conditions.php:210
 msgid "+ OR"
-msgstr ""
+msgstr "+ OU"
 
 #: includes/class-wpsc-ticket-conditions.php:203
 msgid "+ AND"
-msgstr ""
+msgstr "+ ET"
 
 #: includes/class-wpsc-ticket-conditions.php:317
 #: includes/class-wpsc-ticket-conditions.php:328
@@ -4971,10 +4810,8 @@ msgid "Submit private note"
 msgstr "Soumettre une note privée"
 
 #: includes/class-wpsc-triggers.php:40
-#, fuzzy
-#| msgid "Change ticket status"
 msgid "Change ticket subject"
-msgstr "Modifier le statut du ticket"
+msgstr "Changer le sujet du ticket"
 
 #: includes/class-wpsc-triggers.php:41
 msgid "Change ticket status"
@@ -4993,16 +4830,12 @@ msgid "Change assignee"
 msgstr "Changement d'attributaire"
 
 #: includes/class-wpsc-triggers.php:45
-#, fuzzy
-#| msgid "Change Ticket Fields"
 msgid "Change ticket fields"
 msgstr "Modifier les champs du ticket"
 
 #: includes/class-wpsc-triggers.php:46
-#, fuzzy
-#| msgid "Change Agent Only Fields"
 msgid "Change agentonly fields"
-msgstr "Champs réservés uniquement aux agents de changement"
+msgstr "Modifier les champs réservés aux agents"
 
 #: includes/custom-field-types/class-wpsc-cf-checkbox.php:205
 msgid "Checkbox"
@@ -5445,20 +5278,18 @@ msgstr "Numéro"
 
 #: includes/custom-field-types/class-wpsc-cf-number.php:1158
 #: includes/custom-field-types/class-wpsc-cf-number.php:1325
-#, fuzzy
-#| msgid "Select field type"
 msgid "Select type"
-msgstr "Sélectionnez le type de champ"
+msgstr "Sélectionnez le type"
 
 #: includes/custom-field-types/class-wpsc-cf-number.php:1162
 #: includes/custom-field-types/class-wpsc-cf-number.php:1329
 msgid "Integer"
-msgstr ""
+msgstr "Entier"
 
 #: includes/custom-field-types/class-wpsc-cf-number.php:1163
 #: includes/custom-field-types/class-wpsc-cf-number.php:1330
 msgid "Float"
-msgstr ""
+msgstr "Flotter"
 
 #: includes/custom-field-types/class-wpsc-cf-number.php:1203
 #: includes/custom-field-types/class-wpsc-cf-number.php:1357
@@ -5516,14 +5347,12 @@ msgid "12 Hrs"
 msgstr "12 Hrs"
 
 #: includes/custom-field-types/class-wpsc-cf-time.php:1213
-#, fuzzy
-#| msgid "From name"
 msgid "From time"
-msgstr "Du nom"
+msgstr "Du temps"
 
 #: includes/custom-field-types/class-wpsc-cf-time.php:1228
 msgid "To time"
-msgstr ""
+msgstr "Au temps"
 
 #: includes/custom-field-types/class-wpsc-cf-url.php:541
 msgid "Invalid URL!"
@@ -5555,10 +5384,8 @@ msgid "Both"
 msgstr "Les deux"
 
 #: includes/custom-field-types/class-wpsc-df-assigned-agent.php:1185
-#, fuzzy
-#| msgid "Assigned to me"
 msgid "Assign to me"
-msgstr "Attribué à moi"
+msgstr "Attribuez-moi"
 
 #: includes/custom-field-types/class-wpsc-df-browser.php:336
 msgid "Navigator"
@@ -5625,7 +5452,7 @@ msgstr "Inscrivez-vous maintenant"
 
 #: includes/frontend/class-wpsc-frontend.php:281
 msgid "Sign-in using one time password"
-msgstr "Se connecter en utilisant un mot de passe unique"
+msgstr "Connectez-vous à l'aide d'un mot de passe à usage unique"
 
 #: includes/frontend/class-wpsc-frontend.php:287
 msgid "Create new ticket as guest"
@@ -5655,16 +5482,13 @@ msgid "Log out"
 msgstr "Déconnexion"
 
 #: includes/frontend/class-wpsc-shortcode-three.php:340
-#, fuzzy
-#| msgid ""
-#| "We have sent 6-digit one time password on your given email address. "
-#| "Please insert it below and submit to open ticket!"
 msgid ""
 "We have sent a 6-digit one-time pass code to the email address you provided. "
 "Please insert it below and submit to open ticket!"
 msgstr ""
-"Nous avons envoyé un mot de passe unique à 6 chiffres sur votre adresse e-"
-"mail. Veuillez l'insérer ci-dessous et soumettre pour ouvrir le ticket !"
+"Nous avons envoyé un code d'accès unique à 6 chiffres à l'adresse e-mail que "
+"vous avez fournie. Veuillez l'insérer ci-dessous et soumettre pour ouvrir un "
+"ticket !soumettre pour ouvrir le ticket !"
 
 #: includes/models/class-wpsc-attachment.php:662
 msgid "Insert/edit image"

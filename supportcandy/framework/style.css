@@ -206,7 +206,7 @@ input[type="text"].select2-search__field:focus {
   background-color: #fff;
   overflow: auto;
 }
-.wpsc-humbargar-menu .box-inner {
+.wpsc-humbargar-menu .wpsc-merge-box-inner {
   padding: 15px 15px 0;
 }
 .wpsc-humbargar-close {
@@ -507,7 +507,6 @@ input[type="text"].select2-search__field:focus {
 }
 .wpsc-modal-body {
   display: flex;
-  justify-content: center;
   font-size: 14px;
   padding: 20px 15px 15px 15px;
   max-height: 300px;
@@ -868,6 +867,10 @@ input[type="text"].select2-search__field:focus {
 .wpsc-thread .thread-text {
   overflow: hidden;
 }
+.wpsc-thread .thread-text ul{
+  list-style-type: disc !important;
+  padding-inline-start: 2em;
+}
 .wpsc-thread p {
   font-size: 14px;
   font-weight: 400;
@@ -883,6 +886,9 @@ input[type="text"].select2-search__field:focus {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 .wpsc-log-diff .transform-icon svg {
   width: 12px;
@@ -2150,3 +2156,115 @@ table.wpsc-working-hrs {
 .wpsc-icon-wp-logo {
   height: 15px !important;
 }
+
+/* Merge ticket popup css starts */
+.wpsc-merge-container {
+	width: 100%;
+	display: block;
+	justify-content: space-between;
+}
+
+.wpsc-merge-container .wpsc-merge-warning {
+	background-color: #fff8e5;
+	padding: 5px 15px;
+	margin-bottom: 15px;
+	font-size: 14px;
+	border-radius: 5px;
+	text-align: center;
+	border: 1px solid #FFE79B;
+}
+
+.wpsc-merge-container .wpsc-merge-box {
+	width: 100%;
+	background-color: #f0f0f0;
+	position: relative;
+	display: inline-flex;
+	border-radius: 5px;
+	padding: 10px 0px;
+}
+
+.wpsc-merge-container .wpsc-merge-box:nth-child(4) {
+	margin-bottom: 10px;
+}
+
+.wpsc-merge-container .wpsc-merge-box .wpsc-merge-ticket-details {
+	padding: 0px 15px;
+	position: relative;
+	flex: 1 1 30%;
+}
+
+.wpsc-merge-container .wpsc-merge-box .wpsc-merge-id {
+	padding: 0px 15px;
+	position: relative;
+}
+
+.wpsc-merge-container .wpsc-merge-box .wpsc-merge-id > div {
+	font-size: 14px;
+    color: #777;
+    background-color: #E5E4E2;
+    padding: 5px 15px;
+    border-radius: 5px;
+    border: 1px solid #D3D3D3;
+}
+
+.wpsc-merge-container .wpsc-merge-box .wpsc-merge-ticket-details h3 {
+	font-size: 14px;
+	margin: 0em 0 0.8em 0;
+}
+
+.wpsc-merge-container .wpsc-merge-box .wpsc-merge-ticket-details > p {
+	margin: 5px 0 15px 0;
+	font-size: 12px;
+	line-height: 0.1;
+	color: #777;
+}
+
+.wpsc-merge-container .wpsc-merge-box .wpsc-merge-ticket-details > span {
+	font-style: italic;
+}
+
+.wpsc-merge-divider {
+	width: 100%;
+	display: block;
+	height: 0.5px;
+	background-color: #C8C8C8;
+	margin-bottom: 1em;
+}
+
+.wpsc-comment-textarea {
+	width: 100%;
+}
+
+.wpsc-merge-container .wpsc-merge-direction {
+	width: 100%;
+}
+
+.wpsc-merge-container .wpsc-merge-direction svg {
+	width: 12px;
+	padding: 20px 0px;
+	display: flex;
+	margin: auto;
+}
+
+.wpsc-merge-comment-info {
+	margin: 5px 0 15px 0;
+	font-size: 12px;
+	line-height: 0.1;
+	color: #777;
+}
+
+@media screen and (max-width: 768px) {
+  
+  .wpsc-merge-comment-info {
+    line-height: normal;
+  }
+  
+  .wpsc-merge-container .wpsc-merge-box {
+    display: block;
+  }
+
+	.wpsc-merge-container .wpsc-merge-box .wpsc-merge-id {
+		padding: 0px 15px 10px 15px;
+	}
+}
+/* Merge ticket popup css ends */

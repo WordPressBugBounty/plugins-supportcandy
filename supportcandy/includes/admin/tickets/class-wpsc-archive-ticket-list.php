@@ -1211,15 +1211,15 @@ if ( ! class_exists( 'WPSC_Archive_Ticket_List' ) ) :
 
 			foreach ( $ticket_ids as $ticket_id ) {
 
-				$ticket = new WPSC_Archive_Ticket( $ticket_id );
-				if ( ! $ticket->id || ! self::has_ticket_cap( 'at' ) ) {
+				$ar_ticket = new WPSC_Archive_Ticket( $ticket_id );
+				if ( ! $ar_ticket->id || ! self::has_ticket_cap( 'at' ) ) {
 					continue;
 				}
 
-				$success = WPSC_Archive_Ticket::restore_archive_ticket( $ticket );
+				$success = WPSC_Archive_Ticket::restore_archive_ticket( $ar_ticket );
 				if ( $success ) {
-					$ticket = new WPSC_Ticket( $ticket->id );
-					do_action( 'wpsc_ticket_restore', $ticket );
+					$ticket = new WPSC_Ticket( $ar_ticket->id );
+					do_action( 'wpsc_archive_ticket_restore', $ticket, $ar_ticket );
 				}
 			}
 			wp_die();

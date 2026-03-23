@@ -240,7 +240,7 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 			);
 
 			// Restore-archived.
-			if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) ) {
+			if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) && ! WPSC_Ticket_Restrictions_Manager::is_restricted( self::$ticket ) ) {
 				$actions['restore-archived'] = array(
 					'label'    => esc_attr__( 'Restore', 'supportcandy' ),
 					'callback' => 'wpsc_it_restore_archived(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_restore_archived' ) ) . '\');',
@@ -414,19 +414,48 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 			<?php
 			if ( $gs['reply-form-position'] == 'top' ) {
 				foreach ( $response['results'] as $thread ) {
-					if ( $thread->type == 'log' ) {
-						self::print_log( $thread );
+
+					// Default caller based on type.
+					if ( $thread->type === 'log' ) {
+						$default_caller = array( __CLASS__, 'print_log' );
 					} else {
-						self::print_thread( $thread );
+						$default_caller = array( __CLASS__, 'print_thread' );
+					}
+
+					// Allow addons or core to override the method.
+					$caller = apply_filters(
+						'wpsc_it_print_thread_caller',
+						$default_caller,
+						$thread->type,
+						$thread
+					);
+
+					// Execute handler if valid, otherwise fallback to default handler.
+					if ( ! empty( $caller ) && is_callable( $caller ) ) {
+						call_user_func( $caller, $thread );
 					}
 				}
 			} else {
 				for ( $i = count( $response['results'] ) - 1; $i >= 0; $i-- ) {
 					$thread = $response['results'][ $i ];
-					if ( $thread->type == 'log' ) {
-						self::print_log( $thread );
+					// Default caller based on type.
+					if ( $thread->type === 'log' ) {
+						$default_caller = array( __CLASS__, 'print_log' );
 					} else {
-						self::print_thread( $thread );
+						$default_caller = array( __CLASS__, 'print_thread' );
+					}
+
+					// Allow addons or core to override the method.
+					$caller = apply_filters(
+						'wpsc_it_print_thread_caller',
+						$default_caller,
+						$thread->type,
+						$thread
+					);
+
+					// Execute handler if valid, otherwise fallback to default handler.
+					if ( ! empty( $caller ) && is_callable( $caller ) ) {
+						call_user_func( $caller, $thread );
 					}
 				}
 			}
@@ -954,15 +983,15 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}
 
-			$ticket = new WPSC_Archive_Ticket( $ticket_id );
-			if ( ! $ticket->id ) {
+			$ar_ticket = new WPSC_Archive_Ticket( $ticket_id );
+			if ( ! $ar_ticket->id ) {
 				wp_send_json_error( new WP_Error( '002', 'Something went wrong!' ), 400 );
 			}
 
-			$success = WPSC_Archive_Ticket::restore_archive_ticket( $ticket );
+			$success = WPSC_Archive_Ticket::restore_archive_ticket( $ar_ticket );
 			if ( $success ) {
-				$ticket = new WPSC_Ticket( $ticket->id );
-				do_action( 'wpsc_ticket_restore', $ticket );
+				$ticket = new WPSC_Ticket( $ar_ticket->id );
+				do_action( 'wpsc_archive_ticket_restore', $ticket, $ar_ticket );
 			}
 		}
 
@@ -1123,7 +1152,7 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 		public static function delete_archive_ticket( $ticket ) {
 
 			WPSC_Archive_Ticket::destroy( $ticket );
-			do_action( 'wpsc_ticket_delete_permanently', $ticket );
+			do_action( 'wpsc_delete_archive_ticket_permanently', $ticket );
 		}
 	}
 endif;

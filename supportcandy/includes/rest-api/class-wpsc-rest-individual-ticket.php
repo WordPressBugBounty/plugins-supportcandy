@@ -125,6 +125,8 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 
 			do_action( 'wpsc_create_new_ticket', $ticket );
 
+			WPSC_Email_Notifications::send_background_emails();
+
 			$request = new WP_REST_Request( 'GET', '/supportcandy/v2/tickets/' . $ticket->id );
 			return rest_do_request( $request );
 		}
@@ -522,6 +524,8 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 			} else {
 				do_action( 'wpsc_submit_note', $thread );
 			}
+
+			WPSC_Email_Notifications::send_background_emails();
 
 			$response = self::modify_thread_response( array( 'results' => array( $thread->to_array() ) ), $ticket, $current_user );
 			return new WP_REST_Response( $response['results'][0], 200 );

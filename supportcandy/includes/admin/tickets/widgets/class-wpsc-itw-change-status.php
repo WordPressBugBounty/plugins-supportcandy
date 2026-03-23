@@ -149,6 +149,10 @@ if ( ! class_exists( 'WPSC_ITW_Change_Status' ) ) :
 		 */
 		public static function it_get_edit_ticket_status() {
 
+			if ( check_ajax_referer( 'wpsc_it_get_edit_ticket_status', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorised request!', 401 );
+			}
+
 			WPSC_Individual_Ticket::load_current_ticket();
 			if ( WPSC_Individual_Ticket::$is_restricted ) {
 				wp_send_json_error( 'Unauthorised request!', 401 );

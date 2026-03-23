@@ -87,7 +87,7 @@ if ( ! class_exists( 'WPSC_DBC_Mine_Tickets' ) ) :
 			$more_settings = $current_user->is_agent ? get_option( 'wpsc-tl-ms-agent-view' ) : get_option( 'wpsc-tl-ms-customer-view' );
 
 			$filters = array();
-			$count = WPSC_Ticket::find(
+			$count = WPSC_Ticket::count(
 				array(
 					'items_per_page' => 0,
 					'system_query'   => $current_user->get_tl_system_query( $filters ),
@@ -105,7 +105,7 @@ if ( ! class_exists( 'WPSC_DBC_Mine_Tickets' ) ) :
 						),
 					),
 				)
-			)['total_items'];
+			);
 			wp_send_json( array( 'count' => $count ) );
 		}
 	}

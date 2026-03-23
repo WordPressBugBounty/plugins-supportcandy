@@ -522,7 +522,7 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 
 				<div style="margin: 0 0 5px !important;">
 					<input id="wpsc-email" type="text" name="email_address" style="margin-bottom: 0px !important;" placeholder="<?php esc_attr_e( 'Email Address', 'supportcandy' ); ?>" autocomplete="off"/>
-					<small id="wpsc-email-unavailable" style="color: #e84118;font-style:italic;display:none;"><?php esc_attr_e( 'Email is already taken!', 'supportcandy' ); ?></small>
+					<small id="wpsc-email-unavailable" style="color: #e84118;font-style:italic;display:none;"><?php esc_attr_e( 'Email is already taken or not allowed!', 'supportcandy' ); ?></small>
 					<small id="wpsc-email-available" style="color: #4cd137;font-style:italic;display:none;"><?php esc_attr_e( 'Email is available!', 'supportcandy' ); ?></small>
 					<script>
 						jQuery('#wpsc-email').change(function(){
@@ -762,6 +762,13 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 		public static function is_email_available( $email ) {
 
 			$user = get_user_by( 'email', $email );
+
+			// check allowed email domains.
+			$allowed_domains = apply_filters( 'wpsc_registration_allowed_email_domains', array() );
+			$domain = substr( strrchr( $email, '@' ), 1 );
+			if ( $allowed_domains && ! in_array( $domain, $allowed_domains, true ) ) {
+				return true;
+			}
 			return $user ? true : false;
 		}
 
@@ -802,6 +809,19 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 			}
 
 			$data = json_decode( $otp->data );
+
+			// check allowed email domains.
+			$allowed_domains = apply_filters( 'wpsc_registration_allowed_email_domains', array() );
+			$domain = substr( strrchr( $data->email_address, '@' ), 1 );
+			if ( $allowed_domains && ! in_array( $domain, $allowed_domains, true ) ) {
+				wp_send_json_error(
+					array(
+						'isSuccess' => 0,
+						'message'   => __( 'Email domain is not allowed.', 'supportcandy' ),
+					),
+					403
+				);
+			}
 
 			// insert user.
 			$display_name = $data->firstname . ' ' . $data->lastname;

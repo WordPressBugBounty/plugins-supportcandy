@@ -320,7 +320,7 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 			// get tickets to be deleted.
 			$tickets = WPSC_Ticket::find(
 				array(
-					'items_per_page' => 2,
+					'items_per_page' => 20,
 					'orderby'        => 'date_closed',
 					'order'          => 'ASC',
 					'is_active'      => 0,

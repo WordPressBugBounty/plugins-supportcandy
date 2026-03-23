@@ -15,6 +15,7 @@ if ( ! class_exists( 'WPSC_Ticket_Restrictions_Manager' ) ) :
 		public static function init() {
 
 			add_filter( 'wpsc_individual_ticket_actions', array( __CLASS__, 'individual_ticket_actions' ), 10, 2 );
+			add_filter( 'wpsc_individual_archive_ticket_actions', array( __CLASS__, 'it_archive_actions' ), 10, 2 );
 			add_filter( 'wpsc_it_submit_actions', array( __CLASS__, 'it_submit_actions' ), 99, 2 );
 			add_filter( 'wpsc_it_thread_actions', array( __CLASS__, 'it_thread_actions' ), 10, 2 );
 		}
@@ -49,7 +50,7 @@ if ( ! class_exists( 'WPSC_Ticket_Restrictions_Manager' ) ) :
 		public static function individual_ticket_actions( $actions, $ticket ) {
 
 			if ( ! $ticket->is_active ) {
-				$restricted = array( 'refresh', 'close', 'duplicate', 'copy', 'archive', 'delete' );
+				$restricted = array( 'refresh', 'close', 'duplicate', 'copy', 'delete' );
 			} else {
 				$restricted = array( 'restore', 'delete-permanently' );
 			}
@@ -96,6 +97,19 @@ if ( ! class_exists( 'WPSC_Ticket_Restrictions_Manager' ) ) :
 
 			$allows_actions = array_diff_key( $actions, array_flip( $restricted ) );
 			$allows_actions = apply_filters( 'wpsc_allowed_it_thread_actions', $allows_actions, $actions, $ticket );
+			return $allows_actions;
+		}
+
+		/**
+		 * Filter submit actions based on archive ticket status.
+		 *
+		 * @param array       $actions - action array.
+		 * @param WPSC_Ticket $ticket - ticket object.
+		 * @return array
+		 */
+		public static function it_archive_actions( $actions, $ticket ) {
+
+			$allows_actions = apply_filters( 'wpsc_allowed_it_archive_actions', $actions, $actions, $ticket );
 			return $allows_actions;
 		}
 	}

@@ -2125,7 +2125,7 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 
 				$ticket = new WPSC_Ticket( $ticket_id );
 				WPSC_Individual_Ticket::$ticket = $ticket;
-				if ( ! $ticket->id || ! $ticket->is_active || ! WPSC_Individual_Ticket::has_ticket_cap( 'at' ) ) {
+				if ( ! $ticket->id || ! WPSC_Individual_Ticket::has_ticket_cap( 'at' ) ) {
 					continue;
 				}
 
@@ -2240,14 +2240,6 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 					);
 				}
 
-				if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) ) {
-					$bulk_actions['archive'] = array(
-						'icon'     => 'archive',
-						'label'    => esc_attr__( 'Archive', 'supportcandy' ),
-						'callback' => 'wpsc_bulk_archive_tickets',
-					);
-				}
-
 				if ( $current_user->is_agent && self::has_ticket_cap( 'dtt' ) ) {
 					$bulk_actions['delete'] = array(
 						'icon'     => 'trash-alt',
@@ -2273,6 +2265,14 @@ if ( ! class_exists( 'WPSC_Ticket_List' ) ) :
 						'callback' => 'wpsc_bulk_permanently_delete_tickets',
 					);
 				}
+			}
+
+			if ( $current_user->is_agent && self::has_ticket_cap( 'at' ) ) {
+				$bulk_actions['archive'] = array(
+					'icon'     => 'archive',
+					'label'    => esc_attr__( 'Archive', 'supportcandy' ),
+					'callback' => 'wpsc_bulk_archive_tickets',
+				);
 			}
 
 			$bulk_actions = apply_filters( 'wpsc_tl_bulk_actions', $bulk_actions );

@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 3.4.5
+Stable tag: 3.4.6
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -104,6 +104,7 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 
 = Our Other Plugins =
 * [PSM Multi Currency Switcher & Currency Converter for WooCommerce](https://psmplugins.com/multi-currency-for-woocommerce/) - Offer your customers a seamless multi-currency shopping experience. This plugin automatically updates exchange rates, detects your customer's currency by their location, and provides robust switching options so you can sell around the world with ease.
+* [PSM Request a Quote for WooCommerce] (https://wordpress.org/plugins/psm-request-a-quote/) - Allow customers to request a quote for WooCommerce products with ease.
 
 == Installation ==
 
@@ -197,6 +198,17 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.4.6 (March 23, 2026) =
+* New: Added Merge Ticket feature (Pro) in Productivity Suite.
+* New: Added AI Assistant feature (Pro) in Productivity Suite.
+* New: Archive action added for deleted tickets.
+* Fix: Addons not updating when Home URL and Site URL are different.
+* Fix: Improved upgrade process from version 2 to version 3.
+* Fix: Optimized dashboard card performance.
+* Fix: Bullet lists not displaying in ticket replies.
+* Fix: Reply restrictions now apply to all statuses defined as Closed Statuses
+* New: Added hooks in the registration form.
 
 = 3.4.5 (January 28, 2026) =
 * Fix: Resolved an issue where archived tickets could not be deleted

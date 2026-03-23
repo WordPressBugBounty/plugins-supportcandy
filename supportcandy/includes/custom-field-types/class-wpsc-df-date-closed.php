@@ -278,16 +278,8 @@ if ( ! class_exists( 'WPSC_DF_Date_Closed' ) ) :
 			}
 			$column = 't.' . $cf->slug;
 
-			$is_valid_date = static function ( $date ) {
-				if ( ! is_string( $date ) ) {
-					return false;
-				}
-				$d = DateTime::createFromFormat( 'Y-m-d', $date );
-				return $d && $d->format( 'Y-m-d' ) === $date;
-			};
-
 			if ( in_array( $compare, array( '=', '<', '>', '<=', '>=' ), true ) ) {
-				if ( ! $is_valid_date( $val ) ) {
+				if ( ! WPSC_Functions::is_valid_date( $val ) ) {
 					return '1=0';
 				}
 			}
@@ -345,19 +337,17 @@ if ( ! class_exists( 'WPSC_DF_Date_Closed' ) ) :
 				case 'BETWEEN':
 					if (
 						! is_array( $val ) ||
-						! $is_valid_date( $val['operand_val_1'] ?? '' ) ||
-						! $is_valid_date( $val['operand_val_2'] ?? '' )
+						! isset( $val['operand_val_1'], $val['operand_val_2'] ) ||
+						! WPSC_Functions::is_valid_datetime( $val['operand_val_1'] ) ||
+						! WPSC_Functions::is_valid_datetime( $val['operand_val_2'] )
 					) {
 						return '1=0';
 					}
 
-					$from = WPSC_Functions::get_utc_date_str( $val['operand_val_1'] . ' 00:00:00' );
-					$to   = WPSC_Functions::get_utc_date_str( $val['operand_val_2'] . ' 23:59:59' );
-
 					return $wpdb->prepare(
 						"{$column} BETWEEN %s AND %s",
-						$from,
-						$to
+						$val['operand_val_1'],
+						$val['operand_val_2']
 					);
 
 				default:

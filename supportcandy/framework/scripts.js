@@ -2475,6 +2475,13 @@ function wpsc_get_archive_tickets() {
  * Get tickets based on filter set
  */
 function wpsc_get_tickets() {
+
+  if (supportcandy.ticket_list_loading) {
+    return;
+  }
+
+  supportcandy.ticket_list_loading = true;
+
   jQuery(".wpsc-bulk-selector").prop("checked", false);
   jQuery(".wpsc-ticket-list").html(supportcandy.loader_html);
 
@@ -2483,6 +2490,7 @@ function wpsc_get_tickets() {
     _ajax_nonce: supportcandy.nonce,
     is_frontend: supportcandy.is_frontend,
   };
+
   if (
     typeof supportcandy.ticketList != "undefined" &&
     typeof supportcandy.ticketList.filters != "undefined"
@@ -2491,6 +2499,7 @@ function wpsc_get_tickets() {
   }
 
   jQuery.post(supportcandy.ajax_url, data, function (response) {
+
     jQuery(".wpsc-filter-actions").html(response.filter_actions);
     jQuery(".wpsc-ticket-bulk-actions").html(response.bulk_actions);
     jQuery(".wpsc-ticket-list").html(response.tickets);
@@ -2499,15 +2508,20 @@ function wpsc_get_tickets() {
     jQuery("select.wpsc-input-sort-by").val(response.filters.orderby);
     jQuery("select.wpsc-input-sort-order").val(response.filters.order);
     jQuery("input.wpsc-search-input").val(response.filters.search);
+
     if (response.pagination.total_pages > 1) {
       jQuery(".wpsc-pagination-btn").show();
     } else {
       jQuery(".wpsc-pagination-btn").hide();
     }
+
     supportcandy.ticketList = {
       filters: response.filters,
       pagination: response.pagination,
     };
+
+  }).always(function(){
+      supportcandy.ticket_list_loading = false;
   });
 }
 
@@ -2577,28 +2591,31 @@ function wpsc_set_tl_auto_refresh(el) {
  * Auto refresh
  */
 function wpsc_tl_auto_refresh() {
-  if (
-    supportcandy.current_section === "ticket-list" &&
-    !supportcandy.ticketListIsIndividual &&
-    supportcandy.tl_auto_refresh === 1 &&
-    !(
-      jQuery(".wpsc-bulk-select:checked").length ||
-      jQuery(".wpsc-search-input").is(":focus")
-    )
-  ) {
-    wpsc_get_tickets();
-    if (
-      typeof supportcandy.tl_auto_refresh_schedule !== "undefined" &&
-      supportcandy.tl_auto_refresh_schedule == true
-    ) {
-      return;
-    }
-    supportcandy.tl_auto_refresh_schedule = true;
-    setTimeout(function () {
-      supportcandy.tl_auto_refresh_schedule = false;
-      wpsc_tl_auto_refresh();
-    }, 60000);
+
+  if (supportcandy.tl_auto_refresh_started) {
+    return;
   }
+
+  supportcandy.tl_auto_refresh_started = true;
+
+  function run_refresh() {
+
+    if (
+      supportcandy.current_section === "ticket-list" &&
+      !supportcandy.ticketListIsIndividual &&
+      supportcandy.tl_auto_refresh === 1 &&
+      !(
+        jQuery(".wpsc-bulk-select:checked").length ||
+        jQuery(".wpsc-search-input").is(":focus")
+      )
+    ) {
+      wpsc_get_tickets();
+    }
+
+    setTimeout(run_refresh, 60000);
+  }
+
+  run_refresh();
 }
 
 /**

@@ -993,8 +993,8 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 					),
 				),
 			);
-			$agents = WPSC_Agent::find( $args );
-			if ( $agents['total_items'] ) {
+			$agents = WPSC_Agent::count( $args );
+			if ( $agents ) {
 				wp_send_json_error( 'The role can not be deleted if existing agents are associated with it!', 400 );
 			}
 

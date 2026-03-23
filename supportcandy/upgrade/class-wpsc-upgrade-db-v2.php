@@ -5204,42 +5204,68 @@ if ( ! class_exists( 'WPSC_Upgrade_DB_V2' ) ) :
 		 */
 		public static function import_uploaded_thread_images( $thread_content, $thread, $ticket ) {
 
+			if ( empty( $thread_content ) || empty( $thread ) || empty( $ticket ) ) {
+				return $thread_content;
+			}
+
+			if ( strpos( $thread_content, 'wpsc_img_attachment=' ) === false ) {
+				return $thread_content;
+			}
+
 			global $wpdb;
 			$upload_dir = wp_upload_dir();
-			$regex = 'src="' . preg_quote( home_url(), '/' ) . '\?wpsc_img_attachment=(.*?)"';
-			preg_match_all( '/' . $regex . '/', $thread_content, $matches );
-			if ( $matches[1] ) {
-				$count = count( $matches[1] );
-				for ( $i = 0; $i < $count; $i++ ) {
+			$regex = '/src="([^"]*\?wpsc_img_attachment=([0-9]+))"/';
+			if ( ! preg_match_all( $regex, $thread_content, $matches, PREG_SET_ORDER ) ) {
+				return $thread_content;
+			}
 
-					$file_path = get_term_meta( $matches[1][ $i ], 'file_path', true );
-					if ( ! file_exists( $file_path ) ) {
-						continue;
-					}
+			foreach ( $matches as $match ) {
 
-					$file_path = str_replace( $upload_dir['basedir'], '', $file_path );
-					$file_name = basename( $file_path );
-
-					$wpdb->insert(
-						$wpdb->prefix . 'psmsc_attachments',
-						array(
-							'name'         => $file_name,
-							'file_path'    => $file_path,
-							'is_image'     => 1,
-							'is_active'    => 1,
-							'date_created' => ( new DateTime() )->format( 'Y-m-d H:i:s' ),
-							'source'       => 'img_editor',
-							'source_id'    => $thread->id,
-							'ticket_id'    => $ticket->id,
-						)
-					);
-
-					$thread_content = str_replace(
-						home_url() . '?wpsc_img_attachment=' . $matches[1][ $i ],
-						home_url( '/' ) . '?wpsc_attachment=' . $wpdb->insert_id,
-						$thread_content
-					);
+				$full_url      = $match[1];
+				$attachment_id = (int) $match[2];
+				if ( ! $attachment_id ) {
+					continue;
 				}
+
+				$file_path = get_term_meta( $attachment_id, 'file_path', true );
+				if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
+					continue;
+				}
+
+				$relative_path = str_replace( $upload_dir['basedir'], '', $file_path );
+				$file_name     = basename( $relative_path );
+				$inserted = $wpdb->insert(
+					$wpdb->prefix . 'psmsc_attachments',
+					array(
+						'name'         => $file_name,
+						'file_path'    => $relative_path,
+						'is_image'     => 1,
+						'is_active'    => 1,
+						'date_created' => current_time( 'mysql' ),
+						'source'       => 'img_editor',
+						'source_id'    => (int) $thread->id,
+						'ticket_id'    => (int) $ticket->id,
+					),
+					array(
+						'%s',
+						'%s',
+						'%d',
+						'%d',
+						'%s',
+						'%s',
+						'%d',
+						'%d',
+					)
+				);
+
+				// If insert failed, skip replacement.
+				if ( false === $inserted ) {
+					continue;
+				}
+
+				// Replace exact matched URL .
+				$new_url = home_url( '/' ) . '?wpsc_attachment=' . $wpdb->insert_id;
+				$thread_content = str_replace( $full_url, $new_url, $thread_content );
 			}
 			return $thread_content;
 		}

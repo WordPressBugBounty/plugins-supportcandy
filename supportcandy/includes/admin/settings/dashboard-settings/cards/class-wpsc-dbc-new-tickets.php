@@ -86,7 +86,7 @@ if ( ! class_exists( 'WPSC_DBC_New_Tickets' ) ) :
 
 			$cf  = WPSC_Custom_Field::get_cf_by_slug( 'status' );
 			$filters = array();
-			$count = WPSC_Ticket::find(
+			$count = WPSC_Ticket::count(
 				array(
 					'items_per_page' => 0,
 					'system_query'   => $current_user->get_tl_system_query( $filters ),
@@ -99,7 +99,7 @@ if ( ! class_exists( 'WPSC_DBC_New_Tickets' ) ) :
 						),
 					),
 				)
-			)['total_items'];
+			);
 
 			wp_send_json( array( 'count' => $count ) );
 		}

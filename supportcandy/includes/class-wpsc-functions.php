@@ -483,6 +483,9 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 		 * @return boolean
 		 */
 		public static function is_valid_date( $date, $format = 'Y-m-d' ) {
+			if ( preg_match( '/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}(:\d{2})?$/', $date ) ) {
+				return self::is_valid_datetime( $date );
+			}
 			$d = DateTime::createFromFormat( $format, $date );
 			return $d && $d->format( $format ) === $date;
 		}
@@ -497,6 +500,9 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 
 			if ( ! is_string( $datetime ) ) {
 				return false;
+			}
+			if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $datetime ) ) {
+				return self::is_valid_date( $datetime );
 			}
 			$datetime = trim( $datetime );
 			$formats = array(
@@ -1244,33 +1250,100 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 		 */
 		public static function get_ticket_url( $ticket_id, $view ) {
 
-			$url = '';
-			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			$view = (int) $view;
-			if ( $view === 0 ) {
-				$url = admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . $ticket_id );
-			} elseif ( $page_settings['ticket-url-page'] == 'support-page' && $page_settings['support-page'] ) {
-				$url = get_permalink( $page_settings['support-page'] );
-				$url = add_query_arg(
-					array(
-						'wpsc-section' => 'ticket-list',
-						'ticket-id'    => $ticket_id,
-					),
-					$url
-				);
-			} elseif ( $page_settings['ticket-url-page'] == 'open-ticket-page' && $page_settings['open-ticket-page'] ) {
-				$url        = get_permalink( $page_settings['open-ticket-page'] );
-				$ticket = new WPSC_Ticket( $ticket_id );
-				$url = add_query_arg(
-					array(
-						'ticket-id' => $ticket_id,
-						'auth-code' => $ticket->auth_code,
-					),
-					$url
-				);
+			$ticket_id = absint( $ticket_id );
+			$view      = (int) $view;
+			$url       = '';
+
+			if ( ! $ticket_id ) {
+				return $url;
+			}
+
+			$page_settings = get_option( 'wpsc-gs-page-settings', array() );
+
+			// Detect ticket type.
+			$is_archive = false;
+			$ticket = new WPSC_Ticket( $ticket_id );
+			if ( ! $ticket->id ) {
+				$ticket = new WPSC_Archive_Ticket( $ticket_id );
+				if ( ! $ticket->id ) {
+					return $url;
+				}
+				$is_archive = true;
+			}
+
+			$type = $is_archive
+				? 'wpsc-archive-tickets&section=archive-ticket-list'
+				: 'wpsc-tickets&section=ticket-list';
+
+			$admin_url = admin_url( 'admin.php?page=' . $type . '&id=' . $ticket_id );
+
+			// Backend view always wins.
+			if ( $view === 0 || $is_archive ) {
+				return apply_filters( 'wpsc_get_ticket_url_by_view', $admin_url, $ticket_id, $view );
+			}
+
+			// Frontend view (normal tickets only).
+			if ( $view === 1 ) {
+
+				$ticket_url_page = $page_settings['ticket-url-page'] ?? '';
+				$support_page    = absint( $page_settings['support-page'] ?? 0 );
+				$open_page       = absint( $page_settings['open-ticket-page'] ?? 0 );
+
+				if ( $ticket_url_page === 'support-page' && $support_page ) {
+
+					$url = add_query_arg(
+						array(
+							'wpsc-section' => 'ticket-list',
+							'ticket-id'    => $ticket_id,
+						),
+						get_permalink( $support_page )
+					);
+
+				} elseif ( $ticket_url_page === 'open-ticket-page' && $open_page && ! empty( $ticket->auth_code ) ) {
+
+					$url = add_query_arg(
+						array(
+							'ticket-id' => $ticket_id,
+							'auth-code' => $ticket->auth_code,
+						),
+						get_permalink( $open_page )
+					);
+				}
+			}
+
+			if ( empty( $url ) ) {
+				$url = $admin_url;
 			}
 
 			return apply_filters( 'wpsc_get_ticket_url_by_view', $url, $ticket_id, $view );
+		}
+
+		/**
+		 * Get unique, non-empty closed statuses from merged settings.
+		 *
+		 * Merges advanced and general settings, filters out empty values,
+		 * ensures uniqueness, and returns an indexed array.
+		 *
+		 * @return array Unique, non-empty closed statuses.
+		 */
+		public static function get_closed_statuses() {
+
+			$tl_ms_advance_settings = get_option( 'wpsc-tl-ms-advanced' );
+			$general_settings = get_option( 'wpsc-gs-general' );
+
+			// Merge, filter non-empty, get unique values, and convert all to string.
+			$closed_statuses = array_unique(
+				array_filter(
+					array_merge(
+						$tl_ms_advance_settings['closed-ticket-statuses'],
+						(array) $general_settings['close-ticket-status']
+					),
+					function ( $statuses ) {
+						return ! empty( $statuses );
+					}
+				)
+			);
+			return array_map( 'strval', $closed_statuses ); // Ensure indexed array.
 		}
 	}
 endif;
