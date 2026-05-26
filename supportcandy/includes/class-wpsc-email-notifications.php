@@ -249,6 +249,12 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 				return false;
 			}
 
+			// check block notification flag in misc to skip notifications if it is set for the ticket.
+			$misc_array = $this->ticket->misc ? $this->ticket->misc : array();
+			if ( ! empty( $misc_array['block_notifications'] ) ) {
+				return false;
+			}
+
 			// from name & email.
 			$en_general = get_option( 'wpsc-en-general' );
 			if ( ! $en_general['from-name'] || ! $en_general['from-email'] ) {

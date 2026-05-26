@@ -331,6 +331,16 @@ if ( ! class_exists( 'WPSC_Text_Editor' ) ) :
 								wpsc_clear_saved_draft_reply( ticket_id );
 							}
 						});
+						editor.on('keyup change input', function () {
+							var field = jQuery('#' + editor.id).closest('.wpsc-tff');
+
+							// Check if editor actually has content
+							var content = editor.getContent({ format: 'text' }).trim();
+
+							if (content !== '') {
+								field.find('.wpsc-error-msg').remove();
+							}
+						});
 					}
 				});
 				<?php

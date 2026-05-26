@@ -31,14 +31,14 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 			add_action( 'wp_ajax_wpsc_delete_customer', array( __CLASS__, 'delete_customer_info' ) );
 
 			// calculate customer ticket count.
-			add_action( 'wpsc_create_new_ticket', array( __CLASS__, 'customer_ticket_count' ) );
-			add_action( 'wpsc_delete_ticket', array( __CLASS__, 'customer_ticket_count' ) );
-			add_action( 'wpsc_ticket_restore', array( __CLASS__, 'customer_ticket_count' ) );
-			add_action( 'wpsc_ticket_delete_permanently', array( __CLASS__, 'customer_ticket_count' ) );
-			add_action( 'wpsc_change_raised_by', array( __CLASS__, 'customer_ticket_count_after_change_raised_by' ), 200, 4 );
-			add_action( 'wpsc_ticket_archive', array( __CLASS__, 'reset_customer_ticket_count' ), 200, 2 );
-			add_action( 'wpsc_archive_ticket_restore', array( __CLASS__, 'reset_customer_ticket_count' ), 200, 2 );
-			add_action( 'wpsc_after_ticket_merge', array( __CLASS__, 'customer_ticket_count_after_ticket_merge' ), 200, 2 );
+			add_action( 'wpsc_create_new_ticket', array( __CLASS__, 'customer_ticket_count' ), 500 );
+			add_action( 'wpsc_delete_ticket', array( __CLASS__, 'customer_ticket_count' ), 500 );
+			add_action( 'wpsc_ticket_restore', array( __CLASS__, 'customer_ticket_count' ), 500 );
+			add_action( 'wpsc_ticket_delete_permanently', array( __CLASS__, 'customer_ticket_count' ), 500 );
+			add_action( 'wpsc_change_raised_by', array( __CLASS__, 'customer_ticket_count_after_change_raised_by' ), 500, 4 );
+			add_action( 'wpsc_ticket_archive', array( __CLASS__, 'reset_customer_ticket_count' ), 500, 2 );
+			add_action( 'wpsc_archive_ticket_restore', array( __CLASS__, 'reset_customer_ticket_count' ), 500, 2 );
+			add_action( 'wpsc_after_ticket_merge', array( __CLASS__, 'customer_ticket_count_after_ticket_merge' ), 500, 2 );
 
 			// view customer profile info.
 			add_action( 'wp_ajax_wpsc_view_customer_detailed_info', array( __CLASS__, 'view_customer_detailed_info' ) );
@@ -684,7 +684,19 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 */
 		public static function customer_ticket_count_after_ticket_merge( $prev_ticket, $new_ticket ) {
 
-			$prev_ticket->customer->update_ticket_count();
+			if ( empty( $prev_ticket->customer ) ) {
+				return;
+			}
+
+			$customer = $prev_ticket->customer;
+
+			if ( ! is_object( $customer ) ) {
+				$customer = new WPSC_Customer( $customer );
+			}
+
+			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+				$customer->update_ticket_count();
+			}
 		}
 
 		/**
@@ -698,7 +710,19 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 */
 		public static function customer_ticket_count_after_change_raised_by( $ticket, $prev, $new, $customer_id ) {
 
-			$ticket->customer->update_ticket_count();
+			if ( empty( $ticket->customer ) ) {
+				return;
+			}
+
+			$customer = $ticket->customer;
+
+			if ( ! is_object( $customer ) ) {
+				$customer = new WPSC_Customer( $customer );
+			}
+
+			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+				$customer->update_ticket_count();
+			}
 		}
 
 		/**
@@ -710,7 +734,19 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 */
 		public static function reset_customer_ticket_count( $ticket, $ar_ticket ) {
 
-			$ticket->customer->update_ticket_count();
+			if ( empty( $ticket->customer ) ) {
+				return;
+			}
+
+			$customer = $ticket->customer;
+
+			if ( ! is_object( $customer ) ) {
+				$customer = new WPSC_Customer( $customer );
+			}
+
+			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+				$customer->update_ticket_count();
+			}
 		}
 
 		/**
@@ -721,7 +757,19 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 */
 		public static function customer_ticket_count( $ticket ) {
 
-			$ticket->customer->update_ticket_count();
+			if ( empty( $ticket->customer ) ) {
+				return;
+			}
+
+			$customer = $ticket->customer;
+
+			if ( ! is_object( $customer ) ) {
+				$customer = new WPSC_Customer( $customer );
+			}
+
+			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+				$customer->update_ticket_count();
+			}
 		}
 
 		/**

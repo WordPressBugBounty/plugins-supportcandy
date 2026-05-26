@@ -175,6 +175,9 @@ if ( ! class_exists( 'WPSC_DF_Category' ) ) :
 			// Ticket model.
 			add_filter( 'wpsc_ticket_joins', array( __CLASS__, 'ticket_join' ), 10, 2 );
 			add_filter( 'wpsc_archive_ticket_joins', array( __CLASS__, 'ticket_join' ), 10, 2 );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -190,6 +193,20 @@ if ( ! class_exists( 'WPSC_DF_Category' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Category', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**
@@ -451,9 +468,8 @@ if ( ! class_exists( 'WPSC_DF_Category' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('select').first().val();
-				if (customField.hasClass('required') && !val) {
+				if (isRequired && !val) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

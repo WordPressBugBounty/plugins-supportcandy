@@ -63,7 +63,9 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 
 			if ( ! WPSC_Functions::is_site_admin() ) {
 				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
-			}?>
+			}
+			$custom_fields_types = array_merge( WPSC_Custom_Field::$cf_types, WPSC_Custom_Field::$default_cf_types );
+			?>
 
 			<div class="wpsc-setting-header">
 				<h2><?php esc_attr_e( 'Agent Only Fields', 'supportcandy' ); ?></h2>
@@ -83,6 +85,8 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 						<tr>
 							<th><?php esc_attr_e( 'Field', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Extra info', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Type', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Personal Info', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Actions', 'supportcandy' ); ?></th>
 						</tr>
 					</thead>
@@ -96,6 +100,8 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 							<tr>
 								<td><?php echo esc_attr( $cf->name ); ?></td>
 								<td><?php echo esc_attr( $cf->extra_info ); ?></td>
+								<td><?php echo esc_attr( $custom_fields_types[ $cf->type::$slug ]['label'] ); ?></td>
+								<td><?php echo esc_attr( $cf->is_personal_info ? __( 'Yes', 'supportcandy' ) : __( 'No', 'supportcandy' ) ); ?></td>
 								<td>
 									<span class="wpsc-link" onclick="wpsc_get_edit_custom_field(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_custom_field' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span>
 									<?php

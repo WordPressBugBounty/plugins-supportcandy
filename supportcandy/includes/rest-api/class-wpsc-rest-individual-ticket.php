@@ -208,7 +208,7 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 					do_action( 'wpsc_change_ticket_subject', $ticket, $prev, $new, $current_user->customer->id );
 				}
 
-					// status.
+				// status.
 				if ( $slug == 'status' && $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'cs' ) ) {
 
 					$status = new WPSC_Status( intval( $val ) );
@@ -219,7 +219,7 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 					WPSC_Individual_Ticket::change_status( $ticket->status->id, $status->id, $current_user->customer->id );
 				}
 
-					// priority.
+				// priority.
 				if ( $slug == 'priority' && $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'cs' ) ) {
 
 					$priority = new WPSC_Priority( intval( $val ) );
@@ -230,7 +230,7 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 					WPSC_Individual_Ticket::change_priority( $ticket->priority->id, $priority->id, $current_user->customer->id );
 				}
 
-					// category.
+				// category.
 				if ( $slug == 'category' && $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'cs' ) ) {
 
 					$category = new WPSC_Category( intval( $val ) );
@@ -241,7 +241,7 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 					WPSC_Individual_Ticket::change_category( $ticket->category->id, $category->id, $current_user->customer->id );
 				}
 
-					// customer.
+				// customer.
 				if ( $slug == 'customer' && $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'crb' ) ) {
 
 					$customer = new WPSC_Customer( intval( $val ) );
@@ -252,7 +252,7 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 					WPSC_Individual_Ticket::change_raised_by( $ticket->customer, $customer, $current_user->customer->id );
 				}
 
-					// assignee.
+				// assignee.
 				if ( $slug == 'assigned_agent' && $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'aa' ) ) {
 
 					$new = array_unique(
@@ -288,7 +288,7 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 					WPSC_Individual_Ticket::change_assignee( $ticket->assigned_agent, $new, $current_user->customer->id );
 				}
 
-					// additional recipients.
+				// additional recipients.
 				if (
 						$slug == 'add_recipients' &&
 						(
@@ -315,9 +315,10 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 						! $cf->type::$is_default &&
 						! in_array( $cf->type::$slug, WPSC_ITW_Ticket_Fields::$ignore_cft )
 					) {
-
 					$cf->type::set_rest_edit_ticket_cf( $ticket, $cf, $val );
 				}
+
+				do_action( 'wpsc_rest_update_ticket_field', $ticket, $slug, $val, $cf );
 			}
 			// save the changes.
 			if ( $ticket != $ticket_clone ) {
@@ -473,7 +474,20 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 			$type = $request->get_param( 'type' );
 			$body = $request->get_param( 'body' );
 			$source = $request->get_param( 'source' );
+
 			$attachments = $request->get_param( 'attachments' );
+			$validated_attachments = array();
+			foreach ( $attachments as $id ) {
+
+				$attachment = new WPSC_Attachment( $id );
+				if ( ! $attachment->id ||
+					( $attachment->ticket_id && $attachment->is_active ) ) {
+					continue;
+				}
+
+				$validated_attachments[] = $id;
+			}
+			$attachments = $validated_attachments;
 
 			// Set reply profile.
 			WPSC_Individual_Ticket::$reply_profile = 'agent';

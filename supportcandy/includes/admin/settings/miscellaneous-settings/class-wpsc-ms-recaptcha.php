@@ -199,7 +199,6 @@ if ( ! class_exists( 'WPSC_MS_Recaptcha' ) ) :
 					var recaptcha = jQuery("#g-recaptcha-response").val();
 					if (recaptcha === "") {
 						isValid = false;
-						alert("<?php esc_attr_e( 'Captcha not set!', 'supportcandy' ); ?>");
 					}
 					break;
 				<?php

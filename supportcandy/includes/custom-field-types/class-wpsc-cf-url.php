@@ -555,15 +555,11 @@ if ( ! class_exists( 'WPSC_CF_URL' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('input').first().val().trim();
-				if (customField.hasClass('required') && !val) {
+				if (isRequired && !val) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
-					break;
-				}
-				if (val && !validateURL(val)) {
+				} else if (val && !validateURL(val)) {
+					showFieldError(customField, 'Invalid URL');
 					isValid = false;
-					alert('<?php esc_attr_e( 'Invalid URL!', 'supportcandy' ); ?>');
-					break;
 				}
 				break;
 			<?php

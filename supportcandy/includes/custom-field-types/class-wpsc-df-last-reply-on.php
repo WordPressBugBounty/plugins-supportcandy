@@ -163,6 +163,9 @@ if ( ! class_exists( 'WPSC_DF_Last_Reply_On' ) ) :
 
 			// Get object of this class.
 			add_filter( 'wpsc_load_ref_classes', array( __CLASS__, 'load_ref_class' ) );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -178,6 +181,20 @@ if ( ! class_exists( 'WPSC_DF_Last_Reply_On' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Last Reply On', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**

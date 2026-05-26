@@ -332,10 +332,9 @@ if ( ! class_exists( 'WPSC_MS_GDPR' ) ) :
 			?>
 
 			case 'gdpr':
-				var checkbox = customField.find('input:checked');
-				if (checkbox.length === 0) {
+				if (customField.find('input:checked').length === 0) {
+					showFieldError(customField, supportcandy.translations.req_gdpr);
 					isValid = false;
-					alert(supportcandy.translations.req_gdpr);
 				}
 				break;
 			<?php

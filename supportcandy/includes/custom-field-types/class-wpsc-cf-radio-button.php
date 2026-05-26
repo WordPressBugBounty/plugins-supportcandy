@@ -476,10 +476,8 @@ if ( ! class_exists( 'WPSC_CF_Radio_Button' ) ) :
 			?>
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
-				var rb = customField.find('input:checked');
-				if (customField.hasClass('required') && rb.length === 0) {
+				if (isRequired && customField.find('input:checked').length === 0) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

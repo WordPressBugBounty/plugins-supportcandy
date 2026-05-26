@@ -166,6 +166,9 @@ if ( ! class_exists( 'WPSC_DF_Browser' ) ) :
 
 			// TFF!
 			add_action( 'wpsc_create_ticket_data', array( __CLASS__, 'set_create_ticket_data' ), 10, 3 );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -181,6 +184,20 @@ if ( ! class_exists( 'WPSC_DF_Browser' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Browser', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**

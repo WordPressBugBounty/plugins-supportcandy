@@ -279,10 +279,8 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 			?>
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
-				var count = customField.find('input[type=hidden]').length;
-				if (customField.hasClass('required') && count === 0) {
+				if (isRequired && customField.find('input[type=hidden]').length === 0) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

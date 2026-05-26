@@ -190,6 +190,9 @@ if ( ! class_exists( 'WPSC_DF_Customer' ) ) :
 
 			// Customer filter autocomplete.
 			add_action( 'wp_ajax_wpsc_customer_filter_autocomplete', array( __CLASS__, 'customer_filter_autocomplete' ) );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -205,6 +208,20 @@ if ( ! class_exists( 'WPSC_DF_Customer' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Customer', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**

@@ -296,10 +296,9 @@ if ( ! class_exists( 'WPSC_MS_TAC' ) ) :
 			?>
 
 			case 'term-and-conditions':
-				var checkbox = customField.find('input:checked');
-				if (checkbox.length === 0) {
+				if (customField.find('input:checked').length === 0) {
+					showFieldError(customField, supportcandy.translations.req_term_cond);
 					isValid = false;
-					alert(supportcandy.translations.req_term_cond);
 				}
 				break;
 			<?php

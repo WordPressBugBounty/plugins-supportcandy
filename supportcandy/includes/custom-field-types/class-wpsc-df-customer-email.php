@@ -167,6 +167,9 @@ if ( ! class_exists( 'WPSC_DF_Customer_Email' ) ) :
 
 			// TFF!
 			add_action( 'wpsc_js_validate_ticket_form', array( __CLASS__, 'js_validate_ticket_form' ) );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -182,6 +185,21 @@ if ( ! class_exists( 'WPSC_DF_Customer_Email' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Customer Email', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**
@@ -243,15 +261,11 @@ if ( ! class_exists( 'WPSC_DF_Customer_Email' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('input').first().val().trim();
-				if (customField.hasClass('required') && !val) {
+				if (isRequired && !val) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
-					break;
-				}
-				if (val && !validateEmail(val)) {
+				} else if (val && !validateEmail(val)) {
+					showFieldError(customField, '<?php esc_attr_e( 'Invalid email address!', 'supportcandy' ); ?>');
 					isValid = false;
-					alert('<?php esc_attr_e( 'Invalid email address!', 'supportcandy' ); ?>');
-					break;
 				}
 				break;
 			<?php

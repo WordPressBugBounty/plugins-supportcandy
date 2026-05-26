@@ -52,6 +52,11 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 			}
 
 			$tff = get_option( 'wpsc-tff', array() );
+			$width = array(
+				'1/3'  => __( '1/3rd of row', 'supportcandy' ),
+				'half' => __( 'Half width', 'supportcandy' ),
+				'full' => __( 'Full width', 'supportcandy' ),
+			);
 			?>
 
 			<div class="wpsc-setting-header">
@@ -71,6 +76,9 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 					<thead>
 						<tr>
 							<th><?php esc_attr_e( 'Field', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Required', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Visibility Conditions', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Width', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Actions', 'supportcandy' ); ?></th>
 						</tr>
 					</thead>
@@ -81,9 +89,14 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 							if ( ! $cf ) {
 								continue;
 							}
+							$vis_decoded = is_string( $settings['visibility'] ) ? json_decode( $settings['visibility'], true ) : $settings['visibility'];
+							$visibility = ( ! empty( $vis_decoded ) ) ? __( 'Yes', 'supportcandy' ) : __( 'No', 'supportcandy' );
 							?>
 							<tr>
 								<td><?php echo esc_attr( $cf->name ); ?></td>
+								<td><?php echo esc_attr( $settings['is-required'] ? __( 'Yes', 'supportcandy' ) : __( 'No', 'supportcandy' ) ); ?></td>
+								<td><?php echo esc_attr( $visibility ); ?></td>
+								<td><?php echo esc_attr( isset( $width[ $settings['width'] ] ) ? $width[ $settings['width'] ] : $settings['width'] ); ?></td>
 								<td>
 									<span class="wpsc-link" onclick="wpsc_get_edit_tff(<?php echo esc_attr( $cf->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_tff' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span>
 									<?php

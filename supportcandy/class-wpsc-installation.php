@@ -1539,6 +1539,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			// ticket widgets.
 			$labels = array(
+				'agent-collision'       => __( 'Currently viewing', 'supportcandy' ),
 				'change-status'         => __( 'Ticket status', 'supportcandy' ),
 				'raised-by'             => __( 'Customer', 'supportcandy' ),
 				'ticket-info'           => __( 'Ticket info', 'supportcandy' ),
@@ -1555,14 +1556,22 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			update_option(
 				'wpsc-ticket-widget',
 				array(
-					'change-status'         => array(
-						'title'                     => $labels['change-status'],
+					'agent-collision'       => array(
+						'title'                     => $labels['agent-collision'],
 						'is_enable'                 => 1,
-						'allow-customer'            => 1,
+						'allow-customer'            => 0,
 						'allowed-agent-roles'       => array( 1, 2 ),
 						'show-priority-to-customer' => 0,
-						'callback'                  => 'wpsc_get_tw_ticket_status()',
-						'class'                     => 'WPSC_ITW_Change_Status',
+						'callback'                  => 'wpsc_get_tw_agent_collision()',
+						'class'                     => 'WPSC_ITW_Agent_Collision',
+					),
+					'change-status'         => array(
+						'title'               => $labels['change-status'],
+						'is_enable'           => 1,
+						'allow-customer'      => 1,
+						'allowed-agent-roles' => array( 1, 2 ),
+						'callback'            => 'wpsc_get_tw_ticket_status()',
+						'class'               => 'WPSC_ITW_Change_Status',
 					),
 					'raised-by'             => array(
 						'title'               => $labels['raised-by'],
@@ -2252,7 +2261,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			if ( version_compare( self::$current_version, '3.2.4', '<' ) ) {
 
 				// add default true to admin and agent dashboard access.
-				$roles = get_option( 'wpsc-agent-roles' );
+				$roles = get_option( 'wpsc-agent-roles', array() );
 				$role_keys = array();
 				foreach ( $roles as $key => $role ) {
 					$role['caps']['dash-access'] = true;
@@ -2650,6 +2659,41 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				wp_clear_scheduled_hook( 'wpsc_permanently_delete_archive_tickets' );
 				wp_clear_scheduled_hook( 'wpsc_permenently_delete_tickets' );
 				wp_clear_scheduled_hook( 'wpsc_auto_archive_closed_tickets' );
+			}
+
+			if ( version_compare( self::$current_version, '3.4.7', '<' ) ) {
+
+				$widgets = get_option( 'wpsc-ticket-widget', array() );
+				if ( ! isset( $widgets['agent-collision'] ) ) {
+
+					$roles = get_option( 'wpsc-agent-roles', array() );
+					$role_keys = array();
+					foreach ( $roles as $key => $role ) {
+						$role_keys[] = $key;
+					}
+
+					$label = esc_attr__( 'Currently viewing', 'supportcandy' );
+					$agent_collision = array(
+						'agent-collision' => array(
+							'title'                     => $label,
+							'is_enable'                 => 1,
+							'allow-customer'            => 0,
+							'allowed-agent-roles'       => $role_keys,
+							'show-priority-to-customer' => 0,
+							'callback'                  => 'wpsc_get_tw_agent_collision()',
+							'class'                     => 'WPSC_ITW_Agent_Collision',
+						),
+					);
+
+					// append the widget on the top.
+					$widgets = array_merge( $agent_collision, $widgets );
+					update_option( 'wpsc-ticket-widget', $widgets );
+
+					// string translations.
+					$string_translations = get_option( 'wpsc-string-translation' );
+					$string_translations['wpsc-twt-agent-collision'] = $label;
+					update_option( 'wpsc-string-translation', $string_translations );
+				}
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );

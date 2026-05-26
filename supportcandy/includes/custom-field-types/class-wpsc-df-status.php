@@ -177,6 +177,9 @@ if ( ! class_exists( 'WPSC_DF_Status' ) ) :
 			// Individual ticket.
 			add_action( 'wp_ajax_wpsc_it_close_ticket', array( __CLASS__, 'it_close_ticket' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_it_close_ticket', array( __CLASS__, 'it_close_ticket' ) );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -192,6 +195,20 @@ if ( ! class_exists( 'WPSC_DF_Status' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Status', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**

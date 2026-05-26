@@ -488,9 +488,8 @@ if ( ! class_exists( 'WPSC_CF_Single_Select' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('select').first().val();
-				if (customField.hasClass('required') && !val) {
+				if (isRequired && !val) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

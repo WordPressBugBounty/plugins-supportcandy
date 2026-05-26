@@ -43,6 +43,13 @@ if ( ! class_exists( 'WPSC_Custom_Field' ) ) :
 		public static $cf_types;
 
 		/**
+		 * Default Custom field type
+		 *
+		 * @var array
+		 */
+		public static $default_cf_types;
+
+		/**
 		 * Custom fields with slug indexing.
 		 *
 		 * @var array
@@ -70,7 +77,7 @@ if ( ! class_exists( 'WPSC_Custom_Field' ) ) :
 			add_filter( 'wpsc_load_ref_classes', array( __CLASS__, 'load_ref_class' ) );
 
 			// Set custom field types.
-			add_action( 'init', array( __CLASS__, 'set_cf_types' ) );
+			add_action( 'init', array( __CLASS__, 'set_all_cf_types' ) );
 		}
 
 		/**
@@ -654,6 +661,23 @@ if ( ! class_exists( 'WPSC_Custom_Field' ) ) :
 
 			global $wpdb;
 			return $wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_customers ADD {$this->slug} {$this->type::$data_type}" );
+		}
+
+		/**
+		 * Set all custom field types
+		 */
+		public static function set_all_cf_types() {
+
+			self::set_default_cf_types();
+			self::set_cf_types();
+		}
+
+		/**
+		 * Set default custom field types
+		 */
+		public static function set_default_cf_types() {
+
+			self::$default_cf_types = apply_filters( 'wpsc_default_cf_types', array() );
 		}
 
 		/**

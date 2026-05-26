@@ -526,9 +526,8 @@ if ( ! class_exists( 'WPSC_CF_Multi_Select' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('select').first().val();
-				if (customField.hasClass('required') && val.length === 0) {
+				if (isRequired && (!val || val.length === 0)) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

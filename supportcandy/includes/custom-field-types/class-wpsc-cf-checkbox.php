@@ -512,10 +512,8 @@ if ( ! class_exists( 'WPSC_CF_Checkbox' ) ) :
 			?>
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
-				var checkbox = customField.find('input:checked');
-				if (customField.hasClass('required') && checkbox.length === 0) {
+				if (isRequired && customField.find('input:checked').length === 0) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

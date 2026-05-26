@@ -171,6 +171,9 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 
 			// Add ticket id to description attachments.
 			add_action( 'wpsc_create_new_ticket', array( __CLASS__, 'add_attachment_ticket_id' ), 1 );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -186,6 +189,20 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Description', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**
@@ -423,14 +440,16 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var is_tinymce = (typeof tinyMCE != "undefined") && tinyMCE.activeEditor && !tinyMCE.activeEditor.isHidden();
-				if (is_tinymce && tinymce.get('description')){
-					var val = tinyMCE.get('description').getContent();
+				var val = '';
+
+				if (is_tinymce && tinymce.get('description')) {
+					val = tinyMCE.get('description').getContent();
 				} else {
-					var val = jQuery('#description').val().trim();
+					val = jQuery('#description').val().trim();
 				}
-				if (customField.hasClass('required') && !val) {
+
+				if (isRequired && !val) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php
@@ -556,13 +575,12 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 						array_map(
 							function ( $id ) {
 								$attachment = new WPSC_Attachment( intval( $id ) );
-								if ( $attachment->id ) {
-									$attachment->is_active = 1;
-									$attachment->save();
-									return $attachment->id;
-								} else {
+								if ( ! $attachment->id || ( $attachment->ticket_id && $attachment->is_active ) ) {
 									return false;
 								}
+								$attachment->is_active = 1;
+								$attachment->save();
+								return $attachment->id;
 							},
 							explode( ',', $attachments )
 						)

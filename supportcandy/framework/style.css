@@ -1425,6 +1425,7 @@ table.wpsc-working-hrs {
   min-height: 30px !important;
   max-height: 30px !important;
   padding: 0 24px 0 8px !important;
+  line-height: 2 !important; // fix for wordpress 7
 }
 
 /* Checkboxes */
@@ -2268,3 +2269,48 @@ table.wpsc-working-hrs {
 	}
 }
 /* Merge ticket popup css ends */
+
+/* Agent collision css starts */
+.wpsc-live-agents {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.wpsc-agent-avatar {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Avatar image */
+.wpsc-agent-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Hover effect */
+.wpsc-agent-avatar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+/* Agent collision css ends */
+
+/* Error message only */
+.wpsc-error-msg {
+    color: #e53935;
+    font-size: 12px;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+#wpsc-container input[type=number] {
+  min-height: 30px !important; // fix for wordpress 7
+}

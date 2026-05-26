@@ -175,6 +175,9 @@ if ( ! class_exists( 'WPSC_DF_Additional_Recipients' ) ) :
 
 			// create ticket data for rest api.
 			add_filter( 'wpsc_rest_create_ticket', array( __CLASS__, 'set_rest_ticket_data' ), 10, 3 );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -190,6 +193,21 @@ if ( ! class_exists( 'WPSC_DF_Additional_Recipients' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Additional Recipients', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**
@@ -258,9 +276,8 @@ if ( ! class_exists( 'WPSC_DF_Additional_Recipients' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('textarea').first().val().trim();
-				if (customField.hasClass('required') && !val) {
+				if (isRequired && !val) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

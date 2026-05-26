@@ -108,6 +108,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			add_action( 'wp_ajax_nopriv_wpsc_it_ticket_restore', array( __CLASS__, 'ticket_restore' ) );
 			add_action( 'wp_ajax_wpsc_it_delete_permanently', array( __CLASS__, 'set_delete_ticket_permanently' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_it_delete_permanently', array( __CLASS__, 'set_delete_ticket_permanently' ) );
+			add_action( 'wp_ajax_wpsc_it_block_unblock_notifications', array( __CLASS__, 'set_block_unblock_notifications' ) );
+			add_action( 'wp_ajax_nopriv_wpsc_it_block_unblock_notifications', array( __CLASS__, 'set_block_unblock_notifications' ) );
 
 			// Thread actions.
 			add_action( 'wp_ajax_wpsc_it_thread_info', array( __CLASS__, 'it_thread_info' ) );
@@ -136,10 +138,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			// Load older threads.
 			add_action( 'wp_ajax_wpsc_load_older_threads', array( __CLASS__, 'load_older_threads' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_load_older_threads', array( __CLASS__, 'load_older_threads' ) );
-
-			// agent collision.
-			add_filter( 'wp_ajax_wpsc_check_live_agents', array( __CLASS__, 'check_live_agents' ) );
-			add_action( 'wp_ajax_nopriv_wpsc_check_live_agents', array( __CLASS__, 'check_live_agents' ) );
 		}
 
 		/**
@@ -160,7 +158,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 				<?php
 					self::get_actions();
 					self::get_subject();
-					self::get_live_agents();
 					self::get_mobile_widgets();
 				if ( $gs['reply-form-position'] == 'top' ) {
 					self::get_reply_section();
@@ -379,6 +376,25 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 				$actions['delete-permanently'] = array(
 					'label'    => esc_attr__( 'Delete permanently', 'supportcandy' ),
 					'callback' => 'wpsc_it_delete_permanently(' . self::$ticket->id . ', \'' . esc_attr( wp_create_nonce( 'wpsc_it_delete_permanently' ) ) . '\');',
+				);
+			}
+
+			// Block Notifications.
+			$misc        = is_array( self::$ticket->misc ) ? self::$ticket->misc : array();
+			$is_blocked = ! empty( $misc['block_notifications'] );
+			$action_label = $is_blocked
+				? esc_html__( 'Unblock Notifications', 'supportcandy' )
+				: esc_html__( 'Block Notifications', 'supportcandy' );
+
+			if ( $current_user->is_agent && WPSC_Functions::is_site_admin() && self::$ticket->is_active ) {
+				$actions['block-notifications'] = array(
+					'label'    => $action_label,
+					'callback' => sprintf(
+						"wpsc_it_block_unblock_notifications(%d, %s, '%s');",
+						(int) self::$ticket->id,
+						$is_blocked ? 'false' : 'true',
+						wp_create_nonce( 'wpsc_it_block_unblock_notifications' )
+					),
 				);
 			}
 
@@ -2450,6 +2466,43 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 		}
 
 		/**
+		 * Block/Unblock ticket notifications ajax request
+		 *
+		 * @return void
+		 */
+		public static function set_block_unblock_notifications() {
+
+			if ( ! check_ajax_referer( 'wpsc_it_block_unblock_notifications', '_ajax_nonce', false ) ) {
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
+			}
+
+			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user || ! $current_user->is_agent ) {
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
+			}
+
+			self::load_current_ticket();
+			if ( self::$is_restricted || ! self::$ticket ) {
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
+			}
+
+			$is_block = isset( $_POST['is_block'] ) ? (int) $_POST['is_block'] : 0;
+			$is_block = $is_block === 1 ? 1 : 0;
+
+			$misc = is_array( self::$ticket->misc ) ? self::$ticket->misc : array();
+			if ( $is_block ) {
+				$misc['block_notifications'] = 1;
+			} else {
+				unset( $misc['block_notifications'] );
+			}
+
+			self::$ticket->misc = $misc;
+			self::$ticket->save();
+			do_action( 'wpsc_ticket_block_notifications', self::$ticket, $is_block );
+			wp_die();
+		}
+
+		/**
 		 * Permanently delete current ticket
 		 *
 		 * @return void
@@ -3559,193 +3612,6 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			wp_send_json( $html_response );
 			wp_die();
-		}
-
-		/**
-		 * Show the list of live agents.
-		 *
-		 * @return void
-		 */
-		public static function get_live_agents() {
-
-			$current_user = WPSC_Current_User::$current_user;
-			$ms_advanced = get_option( 'wpsc-ms-advanced-settings' );
-			if ( ! ( $current_user->is_agent && $ms_advanced['agent-collision'] ) ) {
-				return;
-			}
-			?>
-			<div class="wpsc-it-body-item wpsc-agent-collision wpsc-it-widget">
-				<div class="wpsc-widget-header">
-					<h2><?php esc_attr_e( 'Currently viewing', 'supportcandy' ); ?></h2>
-				</div>
-				<div class="wpsc-widget-body wpsc-live-agents">
-				</div>
-			</div>
-
-			<script>
-				supportcandy.agent_collision = true;
-				wpsc_get_live_agents(<?php echo intval( $current_user->agent->id ); ?>, <?php echo intval( self::$ticket->id ); ?>);
-				function wpsc_get_live_agents( agent_id, ticket_id ){
-					
-					jQuery('.wpsc-live-agents').html('');
-					jQuery('.wpsc-agent-collision').hide();
-					var current_tid = jQuery('#wpsc-current-ticket').val();
-					if( current_tid != ticket_id ){
-						return;
-					}
-					const urlParams = new URLSearchParams(window.location.search);
-					if( supportcandy.is_frontend === '0' ) {
-						section = urlParams.get('section');
-					}else{
-						section = urlParams.get('wpsc-section');
-					}
-					if( ! ( section == 'ticket-list' && ( urlParams.has('id') || urlParams.has('ticket-id')) ) ){
-						return;
-					}
-					var data = { action: 'wpsc_check_live_agents', agent_id, ticket_id, operation: 'check', _ajax_nonce: supportcandy.nonce };
-					jQuery.post(
-						supportcandy.ajax_url,
-						data,
-						function (response) {
-							if ( response.agents ) {
-								jQuery('.wpsc-live-agents').html(response.agents);
-								jQuery('.wpsc-agent-collision').show();
-							} else {
-								jQuery('.wpsc-live-agents').html('');
-								jQuery('.wpsc-agent-collision').hide();
-							}
-						}
-					);
-					setTimeout(
-						function () {
-							wpsc_get_live_agents( agent_id, ticket_id );
-						},
-						60000
-					);
-				}
-
-				jQuery(document).ready(function(){
-					window.addEventListener('beforeunload', function () {
-						const urlParams = new URLSearchParams(window.location.search);
-
-						// Determine section
-						let section = supportcandy.is_frontend === '0'
-							? urlParams.get('section')
-							: urlParams.get('wpsc-section');
-
-						// Only trigger if we are on the ticket detail page
-						if (!(section === 'ticket-list' && (urlParams.has('id') || urlParams.has('ticket-id')))) {
-							return;
-						}
-
-						// Prepare data
-						const data = new FormData();
-						data.append('action', 'wpsc_check_live_agents');
-						data.append('agent_id', '<?php echo intval( $current_user->agent->id ); ?>');
-						data.append('ticket_id', '<?php echo intval( self::$ticket->id ); ?>');
-						data.append('operation', 'leave');
-						data.append('_ajax_nonce', supportcandy.nonce);
-
-						// Send reliably on tab close
-						navigator.sendBeacon(supportcandy.ajax_url, data);
-					});
-				});
-			</script>
-			<?php
-		}
-
-		/**
-		 * Get list of live agents.
-		 *
-		 * @return void
-		 */
-		public static function check_live_agents() {
-
-			if ( check_ajax_referer( 'general', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorized request!', 401 );
-			}
-
-			$current_user = WPSC_Current_User::$current_user;
-			$ms_advanced = get_option( 'wpsc-ms-advanced-settings' );
-			if ( ! ( $current_user->is_agent && $ms_advanced['agent-collision'] ) ) {
-				wp_send_json_error( new WP_Error( '001', 'Unauthorized!' ), 401 );
-			}
-
-			$id = isset( $_POST['ticket_id'] ) ? intval( $_POST['ticket_id'] ) : 0; // phpcs:ignore
-			if ( ! $id ) {
-				wp_send_json_error( new WP_Error( '001', 'Unauthorized!' ), 401 );
-			}
-
-			$ticket = new WPSC_Ticket( $id );
-			if ( ! $ticket->id ) {
-				wp_send_json_error( new WP_Error( '002', 'Something went wrong!' ), 400 );
-			}
-
-			self::$ticket = $ticket;
-			if ( ! self::has_ticket_cap( 'view' ) ) {
-				wp_send_json_error( new WP_Error( '003', 'Unauthorized!' ), 401 );
-			}
-
-			$agent_id = isset( $_POST['agent_id'] ) ? intval( $_POST['agent_id'] ) : 0; // phpcs:ignore
-			if ( ! $agent_id ) {
-				wp_send_json_error( new WP_Error( '001', 'Unauthorized!' ), 401 );
-			}
-
-			$agent = new WPSC_Agent( $agent_id );
-			if ( ! $agent->id ) {
-				wp_send_json_error( new WP_Error( '002', 'Something went wrong!' ), 400 );
-			}
-
-			$operation = isset( $_POST['operation'] ) ? esc_attr( $_POST['operation'] ) : 'check'; // phpcs:ignore
-
-			$agents = json_decode( $ticket->live_agents, true );
-			$agents = $agents ? $agents : array();
-
-			if ( $operation == 'leave' ) {
-
-				if ( array_key_exists( $agent->id, $agents ) ) {
-					unset( $agents[ $agent->id ] );
-					$agents = wp_json_encode( $agents );
-					$ticket->live_agents = $agents;
-					$ticket->save();
-				}
-				wp_die();
-			}
-			// check inactive agents.
-			foreach ( $agents as $key => $tm ) {
-				if ( $key == $agent->id ) {
-					continue;
-				}
-
-				$time = DateTime::createFromFormat( 'Y-m-d H:i:s', $tm );
-				$now = new DateTime();
-				$interval = $now->diff( $time );
-				if ( $interval->i >= 1 && $interval->s > 1 ) {
-					unset( $agents[ $key ] );
-				}
-			}
-
-			$agents[ $agent->id ] = ( new DateTime() )->format( 'Y-m-d H:i:s' );
-
-			$html = '';
-			foreach ( $agents as $ag_id => $tmp ) {
-				if ( $ag_id == $agent->id ) {
-					continue;
-				}
-				$agt = new WPSC_Agent( $ag_id );
-
-				$html .= '<div class="wpsc-ac-agent"> ' .
-							get_avatar( $agt->customer->email, 20 ) .
-							'<span class="ac-name">' . $agt->name . '</span></div>';
-			}
-
-			$agents = wp_json_encode( $agents );
-			$ticket->live_agents = $agents;
-			$ticket->save();
-			$response = array(
-				'agents' => $html,
-			);
-			wp_send_json( $response );
 		}
 	}
 endif;

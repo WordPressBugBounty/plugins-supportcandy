@@ -3,9 +3,9 @@ Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
 Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.6
+Stable tag: 3.4.7
 
 Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -92,6 +92,15 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 * [Email Marketing Tools Integration](https://supportcandy.net/downloads/email-marketing-tools-integration/) - Elevate customer engagement by effortlessly connecting SupportCandy with leading email marketing tools like MailChimp,GetResponse and Brevo. Subscribe users during registration or ticket creation, and personalize interactions with subscriber tags.
 * [Webhooks](https://supportcandy.net/downloads/webhooks/) - Webhooks deliver real-time notifications, ensuring you stay informed during critical support events, from new ticket creation to closures and agent assignments.
 
+= AI Assistant (Pro) : =
+
+Enhance your support workflow with our powerful AI Assistant feature, designed to improve agent efficiency and response quality.
+
+Key capabilities include:
+* Ticket Summary - Instantly generate a concise summary of long or complex tickets, helping agents quickly understand the issue without reading the entire conversation.
+* Polish Agent Replies - Draft quickly and let the Polish (AI) button refine your grammar, tone, and clarity. The AI automatically analyzes the entire ticket thread for context, ensuring every response is pinpoint accurate. You can continue to provide follow-up prompts to tweak the suggestion until you’re satisfied, then simply click **Replace** or **Append** to the editor.
+* Custom AI Prompts - Administrators can define custom prompt instructions from the settings panel. The AI will follow these instructions while polishing replies, allowing you to align responses with your brand voice and support guidelines.
+
 = Examples areas of use : =
 * Helpdesk
 * Technical Support
@@ -104,7 +113,7 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 
 = Our Other Plugins =
 * [PSM Multi Currency Switcher & Currency Converter for WooCommerce](https://psmplugins.com/multi-currency-for-woocommerce/) - Offer your customers a seamless multi-currency shopping experience. This plugin automatically updates exchange rates, detects your customer's currency by their location, and provides robust switching options so you can sell around the world with ease.
-* [PSM Request a Quote for WooCommerce] (https://wordpress.org/plugins/psm-request-a-quote/) - Allow customers to request a quote for WooCommerce products with ease.
+* [PSM Request a Quote for WooCommerce](https://wordpress.org/plugins/psm-request-a-quote/) - Allow customers to request a quote for WooCommerce products with ease.
 
 == Installation ==
 
@@ -198,6 +207,13 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.4.7 (May 26, 2026) =
+* New: Option to disable email notifications for specific tickets
+* New: Improved form validation to highlight incomplete fields on submission
+* New: Agent collision widget added
+* Fix: Security vulnerability resolved
+* Fix: Email notifications not sent to agents assigned via workflows
 
 = 3.4.6 (March 23, 2026) =
 * New: Added Merge Ticket feature (Pro) in Productivity Suite.

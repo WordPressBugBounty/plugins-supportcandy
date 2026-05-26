@@ -430,6 +430,8 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 			$localizations['translations']['req_term_cond']           = esc_attr__( 'Please accept terms and conditions!', 'supportcandy' );
 			$localizations['translations']['req_gdpr']           = esc_attr__( 'Please accept GDPR policy!', 'supportcandy' );
 			$localizations['translations']['delete_permanently'] = esc_attr__( 'Deleting a ticket will permanently remove all associated information and cannot be undone!', 'supportcandy' );
+			$localizations['translations']['block_notifications'] = esc_attr__( 'Blocking notifications will stop all email alerts for this ticket.', 'supportcandy' );
+			$localizations['translations']['unblock_notifications'] = esc_attr__( 'Unblocking notifications will resume email alerts for this ticket.', 'supportcandy' );
 			return $localizations;
 		}
 

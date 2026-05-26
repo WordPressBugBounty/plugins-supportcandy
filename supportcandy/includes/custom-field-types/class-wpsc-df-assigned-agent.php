@@ -196,6 +196,9 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 			// Agent assign ticket to self.
 			add_action( 'wp_ajax_wpsc_self_assign_ticket', array( __CLASS__, 'self_assign_ticket' ) );
 			add_action( 'wp_ajax_nopriv_wpsc_self_assign_ticket', array( __CLASS__, 'self_assign_ticket' ) );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -211,6 +214,20 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'Assigned Agent', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**
@@ -656,9 +673,8 @@ if ( ! class_exists( 'WPSC_DF_Assigned_Agent' ) ) :
 
 			case '<?php echo esc_attr( self::$slug ); ?>':
 				var val = customField.find('select').first().val();
-				if (customField.hasClass('required') && val.length === 0) {
+				if (isRequired && (!val || val.length === 0)) {
 					isValid = false;
-					alert(supportcandy.translations.req_fields_missing);
 				}
 				break;
 			<?php

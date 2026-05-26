@@ -322,21 +322,57 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 
 					var customFields = jQuery('.wpsc-tff.wpsc-visible');
 					var flag = true;
+					var firstInvalidField = null;
+
+					// Remove old errors
+					clearAllFieldErrors();
 					jQuery.each(customFields, function(index, customField){
 
 						customField = jQuery(customField);
 						var customFieldType = customField.data('cft');
 						var isValid = true;
+						var isRequired = customField.hasClass('required');
+
+						var fieldLabel = customField.find('.wpsc-tff-label .name').text().trim() || 'This field';
 						switch (customFieldType) {
 							<?php do_action( 'wpsc_js_validate_ticket_form' ); ?>
 						}
+						//Common error handling
 						if (!isValid) {
+
 							flag = false;
-							return false;
+
+							// Show error message
+							showFieldError(customField, fieldLabel + ' is required');
+
+							// Track first invalid field
+							if (!firstInvalidField) {
+								firstInvalidField = customField;
+							}
 						}
 					});
+
+					// Scroll to first error
+					if (firstInvalidField) {
+						firstInvalidField[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
 					return flag;
 				}
+
+				function showFieldError(field, message) {
+					if (field.find('.wpsc-error-msg').length === 0) {
+						field.append('<div class="wpsc-error-msg">' + message + '</div>');
+					}
+				}
+
+				function clearAllFieldErrors() {
+					jQuery('.wpsc-error-msg').remove();
+				}
+
+				jQuery(document).on('input change', '.wpsc-tff input, .wpsc-tff textarea, .wpsc-tff select', function(){
+					var field = jQuery(this).closest('.wpsc-tff');
+					field.find('.wpsc-error-msg').remove();
+				});
 
 				function wpsc_clear_hidden_fields() {
 					var customFields = jQuery('.wpsc-tff.wpsc-hidden');

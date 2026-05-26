@@ -173,6 +173,9 @@ if ( ! class_exists( 'WPSC_DF_User_Type' ) ) :
 			// WP user chagnes (add/delete).
 			add_action( 'user_register', array( __CLASS__, 'wp_user_register' ), 11, 2 );
 			add_action( 'delete_user', array( __CLASS__, 'wp_user_delete' ), 10, 3 );
+
+			// Set custom field type.
+			add_filter( 'wpsc_default_cf_types', array( __CLASS__, 'default_cf_types' ), 4 );
 		}
 
 		/**
@@ -188,6 +191,20 @@ if ( ! class_exists( 'WPSC_DF_User_Type' ) ) :
 				'save-key' => 'id',
 			);
 			return $classes;
+		}
+
+		/**
+		 * Add default custom field type to list
+		 *
+		 * @param array $default_cf_types - default custom field types array.
+		 * @return array
+		 */
+		public static function default_cf_types( $default_cf_types ) {
+			$default_cf_types[ self::$slug ] = array(
+				'label' => esc_attr__( 'User Type', 'supportcandy' ),
+				'class' => __CLASS__,
+			);
+			return $default_cf_types;
 		}
 
 		/**

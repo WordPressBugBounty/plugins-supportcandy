@@ -429,6 +429,35 @@ function wpsc_it_delete_permanently(ticket_id, nonce) {
 }
 
 /**
+ * Block/unblock notifications
+ */
+function wpsc_it_block_unblock_notifications(ticketId, isBlock, nonce) {
+
+	if (!ticketId || typeof isBlock !== 'boolean' || !nonce) {
+		console.error('Invalid parameters passed to wpsc_it_block_unblock_notifications');
+		return;
+	}
+
+	const message = isBlock
+		? supportcandy.translations.block_notifications
+		: supportcandy.translations.unblock_notifications;
+
+	if (!window.confirm(message)) {
+		return;
+	}
+
+  var data = {
+			action: 'wpsc_it_block_unblock_notifications',
+			ticket_id: ticketId,
+			is_block: isBlock ? 1 : 0,
+			_ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    wpsc_get_individual_ticket(ticketId);
+  });
+}
+
+/**
  *  Get edit ticket subject modal UI
  */
 function wpsc_it_get_edit_subject(ticket_id) {
