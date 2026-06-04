@@ -1,5 +1,9 @@
 == Changelog ==
 
+= 3.4.8 (June 04, 2026) =
+* New: Added Cloudflare CAPTCHA integration
+* Fix: Resolved PHP notice issues
+
 = 3.4.7 (May 26, 2026) =
 * New: Option to disable email notifications for specific tickets
 * New: Improved form validation to highlight incomplete fields on submission

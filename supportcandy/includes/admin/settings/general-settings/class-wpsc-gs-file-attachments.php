@@ -221,7 +221,7 @@ if ( ! class_exists( 'WPSC_GS_File_Attachments' ) ) :
 				dataform.append('_ajax_nonce', '<?php echo esc_attr( wp_create_nonce( 'wpsc_file_upload' ) ); ?>');
 
 				<?php
-				if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+				if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 					?>
 					grecaptcha.ready(function() {
 						grecaptcha.execute('<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>', {action: 'file_upload'}).then(function(token) {

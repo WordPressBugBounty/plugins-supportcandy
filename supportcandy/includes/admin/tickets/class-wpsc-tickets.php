@@ -201,6 +201,116 @@ if ( ! class_exists( 'WPSC_Tickets' ) ) :
 						self::load_html_snippets();
 						?>
 					</div>
+					<?php
+					if ( ! WPSC_Functions::is_paid_customer() ) {
+						?>
+						<div class="feature-wrapper">
+
+							<div class="feature-card">
+								<h3>Accelerate ticket resolutions using AI Assistant</h3>
+								<ul>
+									<li>Context-Aware Auto-Drafts: Instantly generates complete reply suggestions using your past ticket history and uploaded training data (PDFs, text files, and URLs).</li>
+									<li>Instant Ticket Summaries: Automatically condenses long conversation threads and detects customer sentiment (Happy, Neutral, Unhappy) for faster agent handovers.</li>
+									<li>Polished & Consistent Replies: Refines response grammar, tone, and clarity using custom, admin-defined prompts to enforce brand guidelines.</li>
+									<li>Secure AI Training (RAG): Uses Retrieval-Augmented Generation to fetch accurate data from your system while automatically removing sensitive personal information (PII).</li>
+								</ul>
+								<a target="_blank" href="https://supportcandy.net/ai-assistant/">Learn More about AI Assistant...</a>
+							</div>
+
+							<div class="feature-card">
+								<h3>Enable customers and agents to communicate directly via email</h3>
+								<ul>
+									<li>Bi-Directional Email Support: Allows both customers and agents to create, track, and reply to tickets directly from their personal email inboxes.</li>
+									<li>Secure API Connections: Supports standard IMAP authentication alongside quick-setup OAuth APIs for Google (Gmail) and Microsoft Exchange.</li>
+									<li>Smart Piping Rules: Automatically filters and assigns ticket properties (like setting priority to "High") based on keywords, sender addresses, or subject lines.</li>
+									<li>Advanced Inbound Control: Block unwanted spam, import CC'd users into the ticket loop, and choose between HTML or plain-text email preferences.</li>
+								</ul>
+								<a target="_blank" href="https://supportcandy.net/downloads/email-piping/">Learn More about Email Piping...</a>
+							</div>
+							<?php
+							if ( class_exists( 'WooCommerce' ) ) {
+								?>
+								<div class="feature-card">
+									<h3>Link WooCommerce orders and products directly to support tickets</h3>
+									<ul>
+										<li>Contextual Ticket Creation: Adds direct "Help" buttons to WooCommerce product pages and order lists, automatically pre-selecting the relevant item when a customer opens a ticket.</li>
+										<li>Instant Customer Order History: Empowers agents to view a customer’s full order history, subscription status, and lifetime spend directly inside the ticket sidebar.</li>
+										<li>Unified Customer Dashboard: Enables a dedicated support tab right inside the WooCommerce customer dashboard so buyers can track their tickets alongside their orders.</li>
+										<li>Backend Ticket Creation: Allows store managers and administrators to instantly create a support ticket from the backend of any specific WooCommerce order.</li>
+									</ul>
+									<a target="_blank" href="https://supportcandy.net/downloads/woocommerce-integration/">Learn More about WooCommerce Integration...</a>
+								</div>
+								<?php
+							}
+							?>
+							<div class="feature-card">
+								<h3>Automate your workflow</h3>
+								<ul>
+									<li>Event-Driven Automation: Create "Automatic Workflows" triggered instantly by system events like a new ticket being created or a status change.</li>
+									<li>On-Demand Execution: Set up "Manual Workflows" that agents can trigger with a single click from a dedicated widget when specific conditions are met.</li>
+									<li>Advanced Conditional Logic: Establish precise rules to automatically assign agents, update custom fields, change ticket statuses, or add private notes.</li>
+									<li>Customizable Operations: Tailor rules to match your team’s exact internal processes, reducing manual overhead and speeding up resolution times.</li>
+								</ul>
+								<a target="_blank" href="https://supportcandy.net/downloads/workflows/">Learn More about Workflows...</a>
+							</div>
+
+							<div class="feature-card">
+								<h3>Measure and improve your support quality with customer feedback</h3>
+								<ul>
+									<li>Automated Survey Triggers: Automatically email survey links to customers a set number of days after a ticket closes, or trigger an instant feedback window the moment they close it themselves.</li>
+									<li>One-Click Email Ratings: Allow customers to rate their experience directly from their inbox using intuitive rating links (e.g., Excellent, Good, Bad).</li>
+									<li>Customizable Rating Scales: Easily add, modify, or delete rating tiers and set unique confirmation messages tailored to each rating type.</li>
+									<li>Centralized Feedback Reports: Track, filter, and analyze submissions through a dedicated "Customer Feedback" admin dashboard or directly within individual ticket widgets.</li>
+								</ul>
+								<a target="_blank" href="https://supportcandy.net/downloads/satisfaction-survey/">Learn More about Satisfaction Survey...</a>
+							</div>
+						</div>
+						<style>
+							.feature-wrapper {
+								display: flex;
+								flex-wrap: wrap;
+								gap: 20px;
+								margin-top: 20px;
+							}
+
+							.feature-card {
+								flex: 1 1 350px;
+								min-width: 350px;
+								background: #fff;
+								padding: 20px;
+								border-radius: 6px;
+								box-sizing: border-box;
+							}
+
+							.feature-card h3 {
+								font-size: 15px;
+								margin-bottom: 10px;
+								margin-top: 0;
+							}
+
+							.feature-card ul {
+								padding-left: 18px;
+								margin-bottom: 10px;
+								list-style: disc !important;
+							}
+
+							.feature-card ul li {
+								font-size: 13px;
+							}
+
+							.feature-card a {
+								font-size: 13px;
+								color: #4a5bdc;
+								text-decoration: none;
+							}
+
+							.feature-card a:hover {
+								text-decoration: underline;
+							}
+						</style>
+						<?php
+					}
+					?>
 				</div>
 			</div>
 			<?php

@@ -21,6 +21,10 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 
 			// Load ref classes.
 			add_action( 'init', array( __CLASS__, 'load_ref_classes' ), 1 );
+
+			// Refresh paid customer option when plugins state changes.
+			add_action( 'activated_plugin', array( __CLASS__, 'update_paid_customer_status_option' ) );
+			add_action( 'deactivated_plugin', array( __CLASS__, 'update_paid_customer_status_option' ), 99 );
 		}
 
 		/**
@@ -1344,6 +1348,76 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 				)
 			);
 			return array_map( 'strval', $closed_statuses ); // Ensure indexed array.
+		}
+
+		/**
+		 * Check whether any SupportCandy addon is active.
+		 *
+		 * @return bool
+		 */
+		public static function is_paid_customer() {
+
+			$cache_key = 'wpsc_is_paid_customer';
+			$cached_status = get_option( $cache_key, null );
+
+			if ( null !== $cached_status ) {
+				return (bool) $cached_status;
+			}
+
+			return self::update_paid_customer_status_option();
+		}
+
+		/**
+		 * Update the paid customer status option based on active addons.
+		 *
+		 * @param string $plugin - Optional plugin path to exclude from check (used during activation/deactivation).
+		 * @return bool Updated paid customer status.
+		 */
+		public static function update_paid_customer_status_option( $plugin = '' ) {
+			$cache_key = 'wpsc_is_paid_customer';
+
+			$addon_plugins = array(
+				'wpsc-agentgroup/wpsc-agentgroup.php',
+				'wpsc-assign-agent-rules/wpsc-assign-agent-rules.php',
+				'wpsc-automatic-close-ticket/wpsc-automatic-close-ticket.php',
+				'wpsc-canned-reply/wpsc-canned-reply.php',
+				'wpsc-edd/wpsc-edd.php',
+				'wpsc-email-marketing-tools/wpsc-email-marketing-tools-integration.php',
+				'wpsc-email-piping/wpsc-email-piping.php',
+				'wpsc-export-ticket/wpsc-export-ticket.php',
+				'wpsc-gravity-forms/wpsc-gravity-form-integration.php',
+				'wpsc-lms/wpsc-lms.php',
+				'wpsc-pressapps-knowledge-base/wpsc-pressapps-knowledge-base.php',
+				'wpsc-print-ticket/wpsc-print-ticket.php',
+				'wpsc-private-credentials/wpsc_private_credentials.php',
+				'wpsc-productivity-suite/wpsc-productivity-suite.php',
+				'wpsc-reports/wpsc-reports.php',
+				'wpsc-satisfaction-survey/wpsc-satisfaction-survey.php',
+				'wpsc-schedule-tickets/wpsc-schedule-tickets.php',
+				'wpsc-sla/wpsc-sla.php',
+				'wpsc-slack/wpsc-slack.php',
+				'wpsc-timer/wpsc-timer.php',
+				'wpsc-ultimate-faq/wpsc-ultimate-faq.php',
+				'wpsc-usergroup/wpsc-usergroup.php',
+				'wpsc-webhooks/wpsc-webhooks.php',
+				'wpsc-woocommerce/wpsc-woocommerce.php',
+				'wpsc-workflows/wpsc-workflows.php',
+			);
+
+			$active_plugins = (array) get_option( 'active_plugins', array() );
+
+			if ( current_filter() === 'deactivated_plugin' && ! empty( $plugin ) ) {
+				$active_plugins = array_diff( $active_plugins, array( $plugin ) );
+			}
+
+			if ( is_multisite() ) {
+				$active_network_plugins = (array) get_site_option( 'active_sitewide_plugins', array() );
+				$active_plugins = array_merge( $active_plugins, array_keys( $active_network_plugins ) );
+			}
+
+			$is_paid_customer = ! empty( array_intersect( $addon_plugins, $active_plugins ) );
+			update_option( $cache_key, $is_paid_customer ? 1 : 0 );
+			return (bool) $is_paid_customer;
 		}
 	}
 endif;

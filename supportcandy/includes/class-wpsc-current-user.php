@@ -526,7 +526,6 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 					<small id="wpsc-email-available" style="color: #4cd137;font-style:italic;display:none;"><?php esc_attr_e( 'Email is available!', 'supportcandy' ); ?></small>
 					<script>
 						jQuery('#wpsc-email').change(function(){
-							console.log('email changed');
 							jQuery('#wpsc-email-available').hide();
 							jQuery('#wpsc-email-unavailable').hide();
 							var email = jQuery(this).val().trim();
@@ -549,27 +548,100 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 				<?php
 
 				// recaptcha.
-				if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+				if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 					$unique_id = uniqid( 'wpsc_' );
 					?>
-				<script src="https://www.google.com/recaptcha/api.js?onload=recaptchaCallback&render=explicit" async defer></script> <?php // phpcs:ignore ?>
-				<div id="<?php echo esc_attr( $unique_id ); ?>" data-sitekey="" style="margin-bottom: 5px;"></div>
-				<script>
-					var recaptchaCallback = function() {
-						var obj = jQuery('#<?php echo esc_attr( $unique_id ); ?>');
-						grecaptcha.render(obj.attr("id"), {
-							"sitekey" : "<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>",
-							"callback" : function(token) {
-								obj.closest('form').find(".g-recaptcha-response").val(token);
-							}
-						});
-					}
-				</script>
+					<script src="https://www.google.com/recaptcha/api.js?onload=recaptchaCallback&render=explicit" async defer></script> <?php // phpcs:ignore ?>
+					<div id="<?php echo esc_attr( $unique_id ); ?>" data-sitekey="" style="margin-bottom: 5px;"></div>
+					<script>
+						var recaptchaCallback = function() {
+							var obj = jQuery('#<?php echo esc_attr( $unique_id ); ?>');
+							grecaptcha.render(obj.attr("id"), {
+								"sitekey" : "<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>",
+								"callback" : function(token) {
+									obj.closest('form').find(".g-recaptcha-response").val(token);
+								}
+							});
+						}
+					</script>
 					<?php
 				}
-				if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+				if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 					?>
 					<script src="https://www.google.com/recaptcha/api.js?render=<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>"></script> <?php // phpcs:ignore ?>
+					<?php
+				}
+				if ( $recaptcha['captcha-provider'] === 'cloudflare-turnstile' && $recaptcha['cloudflare-site-key'] && $recaptcha['cloudflare-secret-key'] ) {
+					?>
+					<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script> <?php // phpcs:ignore ?>
+					<div class="wpsc-tff turnstile wpsc-xs-12 wpsc-sm-12 wpsc-md-12 wpsc-lg-12 required wpsc-visible" data-cft="turnstile">
+						<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $recaptcha['cloudflare-site-key'] ); ?>"></div>
+					</div>
+					<script>
+						jQuery(document).ready(function() {
+
+							function wpscInitTurnstileWidgets() {
+
+								if (
+									typeof window.turnstile === 'undefined' ||
+									typeof window.turnstile.render !== 'function'
+								) {
+									return false;
+								}
+
+								jQuery('.cf-turnstile').each(function() {
+
+									var widget = jQuery(this);
+
+									if (
+										widget.find('input[name="cf-turnstile-response"]').length ||
+										widget.find('iframe').length ||
+										widget.attr('data-wpsc-rendered') === '1'
+									) {
+
+										widget.attr('data-wpsc-rendered', '1');
+
+										return;
+									}
+
+									window.turnstile.render(
+										this,
+										{
+											sitekey: widget.data('sitekey')
+										}
+									);
+
+									widget.attr('data-wpsc-rendered', '1');
+								});
+
+								return true;
+							}
+
+							if (wpscInitTurnstileWidgets()) {
+								return;
+							}
+
+							var attempts = 0;
+
+							var timer = setInterval(
+								function() {
+
+									attempts++;
+
+									if (
+										wpscInitTurnstileWidgets() ||
+										attempts > 50
+									) {
+
+										clearInterval(timer);
+									}
+
+								},
+								100
+							);
+
+						});
+					</script>
 					<?php
 				}
 				do_action( 'wpsc_registration_form' );
@@ -606,7 +678,7 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 						<?php
 					}
 					?>
-				<div>
+				</div>
 
 				<button class="wpsc-button normal primary" onclick="wpsc_set_default_registration(this)"><?php esc_attr_e( 'Sign Up', 'supportcandy' ); ?></button>
 				<button class="wpsc-button normal secondary" onclick="window.location.reload();"><?php esc_attr_e( 'Cancel', 'supportcandy' ); ?></button>

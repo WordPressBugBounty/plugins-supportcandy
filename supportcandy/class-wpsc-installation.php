@@ -1480,10 +1480,12 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			update_option(
 				'wpsc-recaptcha-settings',
 				array(
-					'allow-recaptcha'      => 0,
-					'recaptcha-version'    => 3,
-					'recaptcha-site-key'   => '',
-					'recaptcha-secret-key' => '',
+					'captcha-provider'      => 0,
+					'recaptcha-version'     => 3,
+					'recaptcha-site-key'    => '',
+					'recaptcha-secret-key'  => '',
+					'cloudflare-site-key'   => '',
+					'cloudflare-secret-key' => '',
 				)
 			);
 
@@ -1507,6 +1509,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					'auto-archive-tickets-unit'      => 'days',
 					'permanent-archive-tickets-time' => 0,
 					'permanent-archive-tickets-unit' => 'days',
+					'permanent-delete-tickets-time'  => 0,
+					'permanent-delete-tickets-unit'  => 'days',
 					'allow-bcc'                      => 0,
 					'allow-cc'                       => 0,
 					'view-more'                      => 1,
@@ -2694,6 +2698,16 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					$string_translations['wpsc-twt-agent-collision'] = $label;
 					update_option( 'wpsc-string-translation', $string_translations );
 				}
+			}
+
+			if ( version_compare( self::$current_version, '3.4.8', '<' ) ) {
+
+				$recaptcha = get_option( 'wpsc-recaptcha-settings' );
+				$recaptcha['captcha-provider'] = $recaptcha['allow-recaptcha'] ? 'google-recaptcha' : '0';
+				$recaptcha['cloudflare-site-key'] = '';
+				$recaptcha['cloudflare-secret-key'] = '';
+				unset( $recaptcha['allow-recaptcha'] );
+				update_option( 'wpsc-recaptcha-settings', $recaptcha );
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );

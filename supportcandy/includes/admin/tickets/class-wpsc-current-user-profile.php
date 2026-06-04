@@ -100,7 +100,7 @@ if ( ! class_exists( 'WPSC_Current_User_Profile' ) ) :
 
 					<?php
 					$recaptcha = get_option( 'wpsc-recaptcha-settings' );
-					if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+					if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 						?>
 						grecaptcha.ready(function() {
 							grecaptcha.execute('<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>', {action: 'submit_my_profile'}).then(function(token) {
@@ -109,6 +109,21 @@ if ( ! class_exists( 'WPSC_Current_User_Profile' ) ) :
 							});
 						});
 						<?php
+					} elseif ( $recaptcha['captcha-provider'] === 'cloudflare-turnstile' && $recaptcha['cloudflare-site-key'] && $recaptcha['cloudflare-secret-key'] ) {
+						?>
+						var token = dataform.get('cf-turnstile-response');
+						if (!token) {
+							alert("<?php esc_attr_e( 'Security verification failed. Please refresh the page and try again.', 'supportcandy' ); ?>");
+							return;
+						}
+
+						dataform.set(
+							'cf-turnstile-response',
+							token
+						);
+						wpsc_post_my_profile_form(dataform);
+						<?php
+
 					} else {
 						?>
 						wpsc_post_my_profile_form(dataform);

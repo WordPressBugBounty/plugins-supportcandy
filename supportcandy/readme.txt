@@ -5,15 +5,17 @@ Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.7
+Stable tag: 3.4.8
 
-Enhance your WordPress site with our helpdesk and support ticket system. Manage customer support, tickets, and email tickets efficiently.
+Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
 == Description ==
 
 *THE SIMPLE, SECURE AND FEATURE-RICH SUPPORT TICKETING SYSTEM PLUGIN FOR YOUR WORDPRESS SITE.*
 
-SupportCandy adds to your WordPress site the features of a complete help desk and customer support ticket system. It is one of the oldest helpdesk & customer support ticketing plugin available for WordPress.
+[Click here](https://supportcandy.net/) to visit our official website.
+
+[AI Assistant (PRO)](https://supportcandy.net/ai-assistant/) feature is available now!
 
 We stand as a remarkably versatile and feature-packed help desk and ticket management plugin. Elevate your customer support game by effortlessly handling and resolving customer queries directly from the comfort of your WordPress dashboard.
 
@@ -22,8 +24,6 @@ SupportCandy Helpdesk is the ultimate solution for all your helpdesk and support
 [vimeo https://vimeo.com/858235638]
 
 [Follow this](https://supportcandy.net/docs-category/getting-started/) getting started guide and be ready to support your customers like never before within a few minutes!
-
-[Click here](https://supportcandy.net/) to visit our official website.
 
 *YOUR WORDPRESS-BASED SELF-HOSTED CUSTOMER SUPPORT SOLUTION BACKED BY UNPARALLEL TECHNICAL SUPPORT*
 
@@ -65,7 +65,8 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 - Customizable Appearance to match up with your theme
 - Auto delete closed tickets
 
-= Premium Add-Ons : =
+= Pro Features : =
+* [AI Assistant](https://supportcandy.net/ai-assistant/) - Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
 * [Email Piping](https://supportcandy.net/email-piping/) - The Email Piping extension in SupportCandy revolutionizes WordPress customer support by enabling users to create and respond to tickets directly from their email inboxes. This streamlines communication, eliminating the need for repeated website visits. With three piping methods, including Basic IMAP, Gmail and Microsoft Exchange.
 * [WooCommerce Integration](https://supportcandy.net/woocommerce-integration/) - The WooCommerce integration transforms customer support by seamlessly linking WooCommerce functionalities with the WordPress helpdesk plugin. Customers can effortlessly select orders and products within the ticket form, enhancing the assistance-seeking process. Agents gain a comprehensive view of customer order details, including order history and total spent, directly within the ticket. Add a support tab on the My Account page and a help button for orders.
 * [Canned Reply](https://supportcandy.net/canned-reply/) - The Canned Reply extension streamlines customer support in the WordPress helpdesk plugin by enabling agents to save and quickly access frequently used responses. Agents can effortlessly store and organize multiple replies, utilizing macros for added versatility. With a simple click, agents can retrieve canned responses, eliminating the need to remember information each time and significantly saving time. The extension also allows administrators to create public canned responses for universal accessibility.
@@ -208,6 +209,10 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 
 == Changelog ==
 
+= 3.4.8 (June 04, 2026) =
+* New: Added Cloudflare CAPTCHA integration
+* Fix: Resolved PHP notice issues
+
 = 3.4.7 (May 26, 2026) =
 * New: Option to disable email notifications for specific tickets
 * New: Improved form validation to highlight incomplete fields on submission
@@ -230,34 +235,5 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 * Fix: Resolved an issue where archived tickets could not be deleted
 * Fix: Fixed a bug preventing actions from being performed in the settings panel
 * Fix: Addressed reported security vulnerabilities to improve overall system safety
-
-= 3.4.4 (December 24, 2025) =
-* New: Added back the ability to delete tickets.
-* New: Added back the bulk delete actions on the ticket list.
-* New: Added back the deleted filter to see deleted tickets.
-* New: Added back the permanantly delete deleted tickets setting.
-* Fix: when agentonly custom fields are modified through the REST API. Multiple changelogs being created for the same custom field.
-* Fix: The bug prevents email notifications from being sent to previously assigned agent groups.
-
-= 3.4.3 (November 22, 2025) =
-* Fix: Ticket description was not displaying in email notifications after last update.
-* Fix: Archive Ticket list reset was not working in some cases.
-
-= 3.4.2 (November 21, 2025) =
-New: Added Archive Tickets feature
-Fix: Resolved upgrade issues when updating from version 2 to version 3
-Fix: Fixed issue where the Submit button required double-clicking to create a ticket in some cases
-Fix: Fixed issue with ticket_url_plain macro not working
-Fix: Implemented security vulnerability fixes
-
-= 3.4.1 (October 08, 2025) =
-Fix: Translations not loading.
-
-= 3.4.0 (October 08, 2025) =
-New: Added database indexing to improve performance.
-Fix: Improved error handling when using an already registered email address during registration.
-
-= 3.3.9 (September 24, 2025) =
-Fix: User registration and Open ticket features are not working
 
 [See changelog for all versions](https://plugins.svn.wordpress.org/supportcandy/trunk/changelog.txt).

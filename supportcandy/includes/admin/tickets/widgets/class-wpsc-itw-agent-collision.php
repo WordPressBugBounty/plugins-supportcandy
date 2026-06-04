@@ -80,6 +80,9 @@ if ( ! class_exists( 'WPSC_ITW_Agent_Collision' ) ) :
 		 */
 		public static function print_agent_collision_scripts( $ticket ) {
 			$current_user = WPSC_Current_User::$current_user;
+			if ( ! $current_user->is_agent ) {
+				return;
+			}
 			?>
 			<script>
 				supportcandy.agent_collision = true;

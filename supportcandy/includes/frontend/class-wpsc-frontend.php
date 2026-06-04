@@ -206,8 +206,8 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 							<?php
 
 							// recaptcha.
-							if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) :
-								$unique_id = uniqid( 'wpsc_' )
+							if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) :
+								$unique_id = uniqid( 'wpsc_' );
 								?>
 								<script src="https://www.google.com/recaptcha/api.js?onload=recaptchaCallback&render=explicit" async defer></script> <?php // phpcs:ignore ?>
 								<div id="<?php echo esc_attr( $unique_id ); ?>" style="margin-bottom: 5px;"></div>
@@ -224,9 +224,17 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 								</script>
 								<?php
 							endif;
-							if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) :
+							if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) :
 								?>
 								<script src="https://www.google.com/recaptcha/api.js?render=<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>"></script> <?php // phpcs:ignore ?>
+								<?php
+							endif;
+							if ( $recaptcha['captcha-provider'] === 'cloudflare-turnstile' && $recaptcha['cloudflare-site-key'] && $recaptcha['cloudflare-secret-key'] ) :
+								?>
+								<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script> <?php // phpcs:ignore ?>
+								<div class="wpsc-tff turnstile wpsc-xs-12 wpsc-sm-12 wpsc-md-12 wpsc-lg-12 required wpsc-visible" data-cft="turnstile">
+									<div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $recaptcha['cloudflare-site-key'] ); ?>"></div>
+								</div>
 								<?php
 							endif;
 							?>
@@ -310,7 +318,7 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 							return;
 						}
 						<?php
-						if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+						if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 							?>
 							grecaptcha.ready(function() {
 								grecaptcha.execute('<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>', {action: 'submit_login'}).then(function(token) {
@@ -319,11 +327,11 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 								});
 							});
 							<?php
-						} elseif ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+						} elseif ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 							?>
 							var token = dataform.get('g-recaptcha-response');
 							if (!token) {
-								alert("<?php esc_attr_e( 'Captcha not set!', 'supportcandy' ); ?>");
+								alert("<?php esc_attr_e( 'Security verification failed. Please refresh the page and try again.', 'supportcandy' ); ?>");
 								return;
 							}
 							wpsc_post_login_form(el, dataform);
@@ -464,7 +472,7 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 						}
 
 						<?php
-						if ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+						if ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 3 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 							?>
 							grecaptcha.ready(function() {
 								grecaptcha.execute('<?php echo esc_attr( $recaptcha['recaptcha-site-key'] ); ?>', {action: 'submit_registration'}).then(function(token) {
@@ -473,7 +481,7 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 								});
 							});
 							<?php
-						} elseif ( $recaptcha['allow-recaptcha'] === 1 && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
+						} elseif ( $recaptcha['captcha-provider'] === 'google-recaptcha' && $recaptcha['recaptcha-version'] == 2 && $recaptcha['recaptcha-site-key'] && $recaptcha['recaptcha-secret-key'] ) {
 							?>
 							var token = dataform.get('g-recaptcha-response');
 							if (!token) {
@@ -482,6 +490,21 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 							}
 							wpsc_authenticate_registration(el, dataform);
 							<?php
+						} elseif ( $recaptcha['captcha-provider'] === 'cloudflare-turnstile' && $recaptcha['cloudflare-site-key'] && $recaptcha['cloudflare-secret-key'] ) {
+							?>
+							var token = dataform.get('cf-turnstile-response');
+							if (!token) {
+								alert("<?php esc_attr_e( 'Security verification failed. Please refresh the page and try again.', 'supportcandy' ); ?>");
+								return;
+							}
+
+							dataform.set(
+								'cf-turnstile-response',
+								token
+							);
+							wpsc_authenticate_registration(el, dataform);
+							<?php
+
 						} else {
 							?>
 
