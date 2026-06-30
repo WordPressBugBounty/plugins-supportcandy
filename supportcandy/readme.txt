@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.9
+Stable tag: 3.5.0
 
 Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -211,6 +211,9 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.5.0 (June 30, 2026) =
+* Fix: Tickets going to archived unexpectedly
 
 = 3.4.9 (June 30, 2026) =
 * New: Added AI chatbot in Productivity Suite (Pro)
