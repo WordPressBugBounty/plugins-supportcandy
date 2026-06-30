@@ -183,27 +183,33 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 					break;
 			}
 
-			// Get tickets to be archive.
-			$tickets = WPSC_Ticket::find(
-				array(
-					'items_per_page' => 20,
-					'orderby'        => 'date_closed',
-					'order'          => 'ASC',
-					'meta_query'     => array(
-						'relation' => 'AND',
-						array(
-							'slug'    => 'status',
-							'compare' => 'IN',
-							'val'     => $ad_settings['closed-ticket-statuses'],
-						),
-						array(
-							'slug'    => 'date_closed',
-							'compare' => '<',
-							'val'     => $age->format( 'Y-m-d' ),
-						),
-					),
-				)
+			// Arguments for fetching closed tickets to be archived.
+			$args = array(
+				'items_per_page' => 20,
+				'orderby'        => 'date_closed',
+				'order'          => 'ASC',
 			);
+
+			// Add closed status condition in arguments.
+			$filters = array( 'relation' => 'AND' );
+			$filters[] = array(
+				array(
+					'slug'    => 'status',
+					'compare' => 'IN',
+					'val'     => $ad_settings['closed-ticket-statuses'],
+				),
+				array(
+					'slug'    => 'date_closed',
+					'compare' => '<',
+					'val'     => $age->format( 'Y-m-d' ),
+				),
+			);
+
+			$filters = array_merge( $args, array( 'meta_query' => $filters ) );
+			$filters = apply_filters( 'wpsc_auto_archive_closed_tickets_query', $filters );
+
+			// Get tickets to be archive.
+			$tickets = WPSC_Ticket::find( $filters );
 
 			// Archive tickets.
 			if ( $tickets['total_items'] > 0 ) {
@@ -317,23 +323,26 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 					break;
 			}
 
-			// get tickets to be deleted.
-			$tickets = WPSC_Ticket::find(
-				array(
-					'items_per_page' => 20,
-					'orderby'        => 'date_closed',
-					'order'          => 'ASC',
-					'is_active'      => 0,
-					'meta_query'     => array(
-						'relation' => 'AND',
-						array(
-							'slug'    => 'date_updated',
-							'compare' => '<',
-							'val'     => $age->format( 'Y-m-d' ),
-						),
-					),
-				)
+			$args = array(
+				'items_per_page' => 20,
+				'orderby'        => 'date_updated',
+				'order'          => 'ASC',
+				'is_active'      => 0,
 			);
+
+			$meta_query = array( 'relation' => 'AND' );
+
+			$meta_query[] = array(
+				'slug'    => 'date_updated',
+				'compare' => '<',
+				'val'     => $age->format( 'Y-m-d' ),
+			);
+
+			$filters = array_merge( $args, array( 'meta_query' => $meta_query ) );
+			$filters = apply_filters( 'wpsc_permanently_delete_tickets_query', $filters );
+
+			// get tickets to be deleted.
+			$tickets = WPSC_Ticket::find( $filters );
 
 			// Delete tickets.
 			if ( $tickets['total_items'] > 0 ) {

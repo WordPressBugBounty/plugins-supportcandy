@@ -165,6 +165,22 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 		}
 
 		/**
+		 * Return customer object by WordPress user ID.
+		 *
+		 * @param int $user_id - WordPress user ID.
+		 * @return WPSC_Customer
+		 */
+		public static function get_customer_by_user_id( $user_id ) {
+
+			$user_id = absint( $user_id );
+			if ( ! $user_id ) {
+				return new WPSC_Customer();
+			}
+
+			return WPSC_Customer::get_by_user_id( $user_id );
+		}
+
+		/**
 		 * Load current wpsc user
 		 *
 		 * @return void

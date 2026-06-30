@@ -1,5 +1,10 @@
 == Changelog ==
 
+= 3.4.9 (June 30, 2026) =
+* New: Added AI chatbot in Productivity Suite (Pro)
+* Fix: Addressed reported security vulnerability
+* New: Introduced new developer hook
+
 = 3.4.8 (June 04, 2026) =
 * New: Added Cloudflare CAPTCHA integration
 * Fix: Resolved PHP notice issues

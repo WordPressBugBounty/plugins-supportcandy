@@ -66,66 +66,130 @@ if ( ! class_exists( 'WPSC_REST_Attachment' ) ) :
 				return new WP_Error( 'rest_missing_callback_param', 'Missing parameter(s): file', array( 'status' => 400 ) );
 			}
 
-			$file = $file_parameters['file'];
+			$file          = $file_parameters['file'];
 			$file_settings = get_option( 'wpsc-gs-file-attachments' );
-			$filename      = time() . '_' . sanitize_file_name( $file['name'] );
+
+			$original_name = sanitize_file_name( $file['name'] );
+			$filename      = time() . '_' . $original_name;
 			$extension     = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
 			$today         = new DateTime();
-			$upload_dir    = wp_upload_dir();
 
-			// Allowed file extension.
+			// Allowed extensions.
 			$allowed_file_extensions = explode( ',', $file_settings['allowed-file-extensions'] );
 			$allowed_file_extensions = array_map( 'trim', $allowed_file_extensions );
 			$allowed_file_extensions = array_map( 'strtolower', $allowed_file_extensions );
-			if ( ! ( in_array( $extension, $allowed_file_extensions ) ) ) {
+
+			if ( ! in_array( $extension, $allowed_file_extensions, true ) ) {
 				wp_send_json_error( 'File extension not allowed!', 400 );
 			}
 
 			// Allowed file size.
 			$allowed_file_size = intval( $file_settings['attachments-max-filesize'] ) * 1000000;
-			if ( ! ( isset( $file['size'] ) && $file['size'] <= $allowed_file_size ) ) {
+			if ( ! isset( $file['size'] ) || $file['size'] > $allowed_file_size ) {
 				wp_send_json_error( 'File size exceeds allowed limit!', 400 );
 			}
 
-			// Init attachment data.
+			// Ensure wp_handle_upload is available.
+			if ( ! function_exists( 'wp_handle_upload' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			// Validate MIME using SAME custom mime rules.
+			add_filter( 'upload_mimes', array( 'WPSC_Attachment', 'wpsc_custom_upload_mimes' ) );
+			$wp_filetype = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'] );
+			remove_filter( 'upload_mimes', array( 'WPSC_Attachment', 'wpsc_custom_upload_mimes' ) );
+
+			if ( empty( $wp_filetype['ext'] ) || empty( $wp_filetype['type'] ) ) {
+				wp_send_json_error( 'Invalid file type!', 400 );
+			}
+
+			// Strict extension match check.
+			if ( strtolower( $wp_filetype['ext'] ) !== $extension ) {
+				wp_send_json_error( 'File extension mismatch detected!', 400 );
+			}
+
+			if ( ! in_array( strtolower( $wp_filetype['ext'] ), $allowed_file_extensions, true ) ) {
+				wp_send_json_error( 'File type does not match allowed extension!', 400 );
+			}
+
 			$data = array(
-				'name'         => sanitize_file_name( $file['name'] ),
+				'name'         => $original_name,
 				'date_created' => $today->format( 'Y-m-d H:i:s' ),
 			);
 
-			// Check for image type. Add a ".txt" extension to non-image file to prevent executing uploaded files on server.
-			$img_extensions = array( 'png', 'jpeg', 'jpg', 'bmp', 'pdf', 'gif' );
-			if ( ! in_array( $extension, $img_extensions ) ) {
-				$data['is_image'] = 0;
-			} else {
+			// List of safe image extensions.
+			$safe_images = array( 'png', 'jpeg', 'jpg', 'bmp', 'gif', 'webp' );
+
+			if ( in_array( $extension, $safe_images, true ) && ! wp_get_image_mime( $file['tmp_name'] ) ) {
+				wp_send_json_error( 'Invalid image file!', 400 );
+			}
+
+			// PDF validation.
+			if ( 'pdf' === $extension && 'application/pdf' !== $wp_filetype['type'] ) {
+				wp_send_json_error( 'Invalid PDF file!', 400 );
+			}
+
+			if ( in_array( $extension, $safe_images, true ) || 'pdf' === $extension ) {
 				$data['is_image'] = 1;
+			} else {
+				$data['is_image'] = 0;
 			}
 
-			// File path.
-			$file_path = $upload_dir['basedir'] . '/wpsc/' . $today->format( 'Y' ) . '/' . $today->format( 'm' );
-			if ( ! file_exists( $file_path ) ) {
-				mkdir( $file_path, 0755, true );
-			}
-			$file_path .= '/' . $filename;
+			$ext        = pathinfo( $filename, PATHINFO_EXTENSION );
+			$file_name  = substr( $filename, 0, -( strlen( $ext ) + 1 ) );
+			$filename   = $file_name . '.' . strtolower( $ext );
 
-			$filepath_short = '/wpsc/' . $today->format( 'Y' ) . '/' . $today->format( 'm' ) . '/' . $filename;
-			$data['file_path'] = $filepath_short;
+			$filepath_short     = '/wpsc/' . $today->format( 'Y' ) . '/' . $today->format( 'm' ) . '/' . $filename;
+			$data['file_path']  = $filepath_short;
 
-			// Insert record in database.
-			if ( move_uploaded_file( $file['tmp_name'], $file_path ) ) {
+			$upload_overrides = array(
+				'test_form' => false,
+			);
+
+			$file['name'] = $filename;
+
+			add_filter( 'upload_dir', array( 'WPSC_Attachment', 'wpsc_upload_dir' ) );
+			add_filter( 'upload_mimes', array( 'WPSC_Attachment', 'wpsc_custom_upload_mimes' ) );
+
+			$uploaded_file = wp_handle_upload( $file, $upload_overrides );
+
+			remove_filter( 'upload_dir', array( 'WPSC_Attachment', 'wpsc_upload_dir' ) );
+			remove_filter( 'upload_mimes', array( 'WPSC_Attachment', 'wpsc_custom_upload_mimes' ) );
+
+			if ( $uploaded_file && empty( $uploaded_file['error'] ) ) {
+
+				// Normalize path for cross-platform compatibility.
+				$normalized_path = wp_normalize_path( $uploaded_file['file'] );
+
+				$pos = strpos( $normalized_path, '/wpsc/' );
+				if ( $pos === false ) {
+					wp_send_json_error( 'Something went wrong!', 500 );
+				}
+
+				$new_path = substr( $normalized_path, $pos );
+
+				if ( $new_path[0] !== '/' ) {
+					$new_path = '/' . $new_path;
+				}
+
+				$data['file_path'] = $new_path;
 
 				$attachment = WPSC_Attachment::insert( $data );
 				if ( ! $attachment->id ) {
-					wp_send_json_error( 'Something went wrong, attachment record not created!', 500 );
+					wp_send_json_error( 'Something went wrong!', 500 );
 				}
-				$data = array(
-					'id'   => intval( $attachment->id ),
-					'name' => $attachment->name,
+
+				return new WP_REST_Response(
+					array(
+						'id'   => intval( $attachment->id ),
+						'name' => $attachment->name,
+					),
+					200
 				);
-				return new WP_REST_Response( $data, 200 );
 			}
 
-			wp_send_json_error( 'Something went wrong, file not saved!', 500 );
+			$error_message = isset( $uploaded_file['error'] ) ? $uploaded_file['error'] : 'Something went wrong!';
+			wp_send_json_error( $error_message, 500 );
 		}
 
 		/**

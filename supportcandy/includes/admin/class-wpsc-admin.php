@@ -127,128 +127,169 @@ if ( ! class_exists( 'WPSC_Admin' ) ) :
 				25
 			);
 
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Ticket List', 'supportcandy' ),
-				esc_attr__( 'Tickets', 'supportcandy' ),
-				'wpsc_agent',
-				'wpsc-tickets',
-				array( 'WPSC_Tickets', 'layout' )
-			);
-
-			if ( $current_user->is_agent && $current_user->agent->has_cap( 'at-access' ) ) {
-				add_submenu_page(
-					'wpsc-tickets',
-					esc_attr__( 'Archived', 'supportcandy' ),
-					esc_attr__( 'Archived', 'supportcandy' ),
-					'wpsc_agent',
-					'wpsc-archive-tickets',
-					array( 'WPSC_Archive_Ticket_List', 'layout' )
-				);
-			}
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Customers', 'supportcandy' ),
-				esc_attr__( 'Customers', 'supportcandy' ),
-				'manage_options',
-				'wpsc-customers',
-				array( 'WPSC_Customers', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Support Agents', 'supportcandy' ),
-				esc_attr__( 'Support Agents', 'supportcandy' ),
-				'manage_options',
-				'wpsc-support-agents',
-				array( 'WPSC_Support_Agents', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Custom Fields', 'supportcandy' ),
-				esc_attr__( 'Custom Fields', 'supportcandy' ),
-				'manage_options',
-				'wpsc-ticket-form',
-				array( 'WPSC_CF_Settings', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Ticket List', 'supportcandy' ),
-				esc_attr__( 'Ticket List', 'supportcandy' ),
-				'manage_options',
-				'wpsc-ticket-list',
-				array( 'WPSC_Ticket_List_Settings', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Email Notifications', 'supportcandy' ),
-				esc_attr__( 'Email Notifications', 'supportcandy' ),
-				'manage_options',
-				'wpsc-email-notifications',
-				array( 'WPSC_EN_Settings', 'layout' )
-			);
-
 			do_action( 'wpsc_before_setting_admin_menu' );
 
-			add_submenu_page(
+			$menu_slugs = array(
 				'wpsc-tickets',
-				esc_attr__( 'Settings', 'supportcandy' ),
-				esc_attr__( 'Settings', 'supportcandy' ),
-				'manage_options',
+				'wpsc-ai-chatbot',
+				'wpsc-archive-tickets',
+				'wpsc-ai-assistant',
+				'wpsc-customers',
+				'wpsc-support-agents',
+				'wpsc-ticket-form',
+				'wpsc-ticket-list',
+				'wpsc-email-notifications',
+				'wpsc-canned-reply',
+				'wpsc-reports',
+				'wpsc-customer-feedback',
 				'wpsc-settings',
-				array( 'WPSC_Settings', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Licenses', 'supportcandy' ),
-				esc_attr__( 'Licenses', 'supportcandy' ),
-				'manage_options',
 				'wpsc-license',
-				array( 'WPSC_License', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Pro Features', 'supportcandy' ),
-				'<strong style="color: #F1C40F;">' . esc_attr__( 'Pro Features', 'supportcandy' ) . '</strong>',
-				'manage_options',
 				'wpsc-add-ons',
-				array( 'WPSC_Addons', 'layout' )
-			);
-
-			add_submenu_page(
-				'wpsc-tickets',
-				esc_attr__( 'Other Plugins', 'supportcandy' ),
-				'<strong style="color: #F1C40F;">' . esc_attr__( 'Other Plugins', 'supportcandy' ) . '</strong>',
-				'manage_options',
 				'wpsc-other-plugins',
-				array( 'WPSC_Other_Plugins', 'layout' )
-			);
-
-			// hidden submenu page for manual scheduled tasks.
-			add_submenu_page(
-				' ',
-				esc_attr__( 'Task Manager', 'supportcandy' ),
-				'',
-				'manage_options',
 				'wpsc-task-manager',
-				array( 'WPSC_Task_Scheduler', 'perform_manual_scheduler' )
-			);
-
-			// hidden submenu page for recent activity.
-			add_submenu_page(
-				' ',
-				esc_attr__( 'Recent Activites', 'supportcandy' ),
-				'',
-				'manage_options',
 				'wpsc-recent-activities',
-				array( 'WPSC_RA_Logs', 'layout' )
 			);
+			$menu_slugs = apply_filters( 'wpsc_admin_menu_slugs', $menu_slugs );
+
+			$admin_submenus = array(
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Ticket List',
+					'menu_title'  => 'Tickets',
+					'capability'  => 'wpsc_agent',
+					'menu_slug'   => 'wpsc-tickets',
+					'callback'    => array( 'WPSC_Tickets', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Archived',
+					'menu_title'  => 'Archived',
+					'capability'  => 'wpsc_agent',
+					'menu_slug'   => 'wpsc-archive-tickets',
+					'callback'    => array( 'WPSC_Archive_Ticket_List', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Customers',
+					'menu_title'  => 'Customers',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-customers',
+					'callback'    => array( 'WPSC_Customers', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Support Agents',
+					'menu_title'  => 'Support Agents',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-support-agents',
+					'callback'    => array( 'WPSC_Support_Agents', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Custom Fields',
+					'menu_title'  => 'Custom Fields',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-ticket-form',
+					'callback'    => array( 'WPSC_CF_Settings', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Ticket List',
+					'menu_title'  => 'Ticket List',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-ticket-list',
+					'callback'    => array( 'WPSC_Ticket_List_Settings', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Email Notifications',
+					'menu_title'  => 'Email Notifications',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-email-notifications',
+					'callback'    => array( 'WPSC_EN_Settings', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Settings',
+					'menu_title'  => 'Settings',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-settings',
+					'callback'    => array( 'WPSC_Settings', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Licenses',
+					'menu_title'  => 'Licenses',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-license',
+					'callback'    => array( 'WPSC_License', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Pro Features',
+					'menu_title'  => '<strong style="color: #F1C40F;">Pro Features</strong>',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-add-ons',
+					'callback'    => array( 'WPSC_Addons', 'layout' ),
+				),
+				array(
+					'parent_slug' => 'wpsc-tickets',
+					'page_title'  => 'Other Plugins',
+					'menu_title'  => '<strong style="color: #F1C40F;">Other Plugins</strong>',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-other-plugins',
+					'callback'    => array( 'WPSC_Other_Plugins', 'layout' ),
+				),
+				array(
+					'parent_slug' => ' ',
+					'page_title'  => 'Task Manager',
+					'menu_title'  => '',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc - task - manager',
+					'callback'    => array( 'WPSC_Task_Scheduler', 'perform_manual_scheduler' ),
+				),
+				array(
+					'parent_slug' => ' ',
+					'page_title'  => 'Recent Activites',
+					'menu_title'  => '',
+					'capability'  => 'manage_options',
+					'menu_slug'   => 'wpsc-recent-activities',
+					'callback'    => array( 'WPSC_RA_Logs', 'layout' ),
+				),
+			);
+			$admin_submenus = apply_filters( 'wpsc_admin_submenus_data', $admin_submenus );
+
+			// Create a lookup array for submenus to improve performance.
+			$submenu_lookup = array_column( $admin_submenus, null, 'menu_slug' );
+			foreach ( $menu_slugs as $menu_slug ) {
+
+				// Menu slug not registered.
+				if ( ! isset( $submenu_lookup[ $menu_slug ] ) ) {
+					continue;
+				}
+
+				// Archive menu permission.
+				if ( 'wpsc-archive-tickets' === $menu_slug &&
+					! ( $current_user->is_agent && ! empty( $current_user->agent ) && $current_user->agent->has_cap( 'at-access' ) ) ) {
+					continue;
+				}
+
+				$submenu = $submenu_lookup[ $menu_slug ];
+
+				// Validate required keys.
+				if ( empty( $submenu['parent_slug'] ) || empty( $submenu['page_title'] ) || empty( $submenu['menu_slug'] ) || empty( $submenu['callback'] ) ) {
+					continue;
+				}
+
+				add_submenu_page(
+					(string) $submenu['parent_slug'],
+					esc_attr( $submenu['page_title'] ),
+					wp_kses_post( $submenu['menu_title'] ?? '' ),
+					$submenu['capability'] ?? 'manage_options',
+					(string) $submenu['menu_slug'],
+					$submenu['callback']
+				);
+			}
 		}
 
 		/**

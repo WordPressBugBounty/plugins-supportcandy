@@ -109,6 +109,9 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 						<?php
 						if ( $email_templates ) :
 							foreach ( $email_templates as $index => $et ) :
+								if ( ! array_key_exists( $et['event'], WPSC_Triggers::$triggers ) ) {
+									continue;
+								}
 								?>
 								<tr>
 									<td><?php echo esc_attr( $et['title'] ); ?></td>
@@ -260,7 +263,7 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 			}
 
 			$et = array(
-				'is_enable'  => 0,
+				'is_enable'  => 1,
 				'title'      => $title,
 				'event'      => $event,
 				'conditions' => '',

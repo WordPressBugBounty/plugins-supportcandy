@@ -1,11 +1,11 @@
-=== SupportCandy - Helpdesk & Customer Support Ticket System ===
+=== SupportCandy – AI Customer Support Ticket System & Live Chatbot Agent ===
 Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
 Tags: support, helpdesk, ticketing system, customer support, ticket
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.4.8
+Stable tag: 3.4.9
 
 Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -15,7 +15,9 @@ Enhance your WordPress site with our AI Powered customer support ticket system. 
 
 [Click here](https://supportcandy.net/) to visit our official website.
 
-[AI Assistant (PRO)](https://supportcandy.net/ai-assistant/) feature is available now!
+[AI Chatbot (PRO)](https://supportcandy.net/ai-chatbot/): Never miss a customer question. Our 24/7 AI Agent uses your knowledge base to resolve inquiries instantly, seamlessly escalating unknown issues to support tickets.
+
+[AI Assistant (PRO)](https://supportcandy.net/ai-assistant/): Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
 
 We stand as a remarkably versatile and feature-packed help desk and ticket management plugin. Elevate your customer support game by effortlessly handling and resolving customer queries directly from the comfort of your WordPress dashboard.
 
@@ -67,6 +69,7 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 
 = Pro Features : =
 * [AI Assistant](https://supportcandy.net/ai-assistant/) - Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
+* [AI Chatbot](https://supportcandy.net/ai-chatbot/) - 24/7 AI Agent that answer questions directly from your knowledge base (AI Training) and automatically create support tickets for everything else.
 * [Email Piping](https://supportcandy.net/email-piping/) - The Email Piping extension in SupportCandy revolutionizes WordPress customer support by enabling users to create and respond to tickets directly from their email inboxes. This streamlines communication, eliminating the need for repeated website visits. With three piping methods, including Basic IMAP, Gmail and Microsoft Exchange.
 * [WooCommerce Integration](https://supportcandy.net/woocommerce-integration/) - The WooCommerce integration transforms customer support by seamlessly linking WooCommerce functionalities with the WordPress helpdesk plugin. Customers can effortlessly select orders and products within the ticket form, enhancing the assistance-seeking process. Agents gain a comprehensive view of customer order details, including order history and total spent, directly within the ticket. Add a support tab on the My Account page and a help button for orders.
 * [Canned Reply](https://supportcandy.net/canned-reply/) - The Canned Reply extension streamlines customer support in the WordPress helpdesk plugin by enabling agents to save and quickly access frequently used responses. Agents can effortlessly store and organize multiple replies, utilizing macros for added versatility. With a simple click, agents can retrieve canned responses, eliminating the need to remember information each time and significantly saving time. The extension also allows administrators to create public canned responses for universal accessibility.
@@ -208,6 +211,11 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.4.9 (June 30, 2026) =
+* New: Added AI chatbot in Productivity Suite (Pro)
+* Fix: Addressed reported security vulnerability
+* New: Introduced new developer hook
 
 = 3.4.8 (June 04, 2026) =
 * New: Added Cloudflare CAPTCHA integration
