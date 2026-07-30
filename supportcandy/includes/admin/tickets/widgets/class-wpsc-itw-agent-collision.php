@@ -255,8 +255,9 @@ if ( ! class_exists( 'WPSC_ITW_Agent_Collision' ) ) :
 				}
 				$agt = new WPSC_Agent( $ag_id );
 
-				$html .= '<div class="wpsc-agent-avatar" title="' . esc_attr( $agt->name ) . '">' .
+				$html .= '<div class="wpsc-agent-avatar">' .
 					get_avatar( $agt->customer->email, 28 ) .
+					'<span class="wpsc-agent-name">' . esc_html( $agt->name ) . '</span>' .
 				'</div>';
 			}
 

@@ -1,0 +1,163 @@
+.wpsc-ai-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin: 5px 0px 0px 5px;
+  align-self: flex-start;
+}
+
+.wpsc-ai-action-buttons button {
+  background: #ffffff;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.wpsc-ai-action-buttons button:hover {
+  background-color: #f0f0f0;
+  border-color: #bbb;
+}
+.wpsc-input-group .extra-info {
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+
+.wpsc-input-group .wpsc-ps-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.label-container .required-indicator {
+  color: #ff0000;
+  margin-left: 5px;
+}
+
+.wpsc-modal-body {
+  display: flex;
+  flex-direction: column;
+  border-bottom: none !important;
+}
+
+.wpsc-ticket-summary-section {
+  margin-bottom: 15px;
+  margin-top: 20px;
+}
+
+.wpsc-ticket-summary-section ul {
+  list-style-type: disc !important;
+  padding-left: 40px !important;
+}
+
+.wpsc-ticket-summary-content h3 {
+  color: #ff8f2b;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.wpsc-ticket-summary-result {
+  font-size: 15px;
+  color: #333;
+}
+
+.wpsc-ai-assistance-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.wpsc-ai-assistance-header .wpsc-ai-assistance-header-close {
+  width: 12px;
+  cursor: pointer;
+}
+
+.wpsc-customer-reply-message {
+  align-self: flex-end;
+  background-color: #e3f2fd;
+  border-bottom-right-radius: 4px !important;
+  border: 1px solid #c2e2f9;
+  max-width: 80%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #000000;
+  word-wrap: break-word;
+  margin: 5px;
+}
+
+.wpsc-ai-reply-message {
+  align-self: flex-start;
+  background-color: #f1f1f1;
+  border-bottom-left-radius: 4px !important;
+  border: 1px solid #e0e0e0;
+  max-width: 80%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #000000;
+  word-wrap: break-word;
+  margin: 5px;
+}
+
+/* Loading div */
+.wpsc-ai-loader {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+.wpsc-ai-loader img {
+  width: 15px;
+}
+
+.wpsc-ai-assistance-chatbox{
+  display: flex;
+  flex-direction: column;
+}
+
+.wpsc-ticket-summary-btn-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 20px 20px 20px;
+}
+
+.wpsc-ticket-summary-container {
+  padding-bottom: 10px;
+}
+
+.wpsc-input-area {
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+
+.wpsc-improve-auto-draft-reply,
+.wpsc-ai-chat-textarea {
+  width: 100%;
+  height: 80px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: none; /* Keeps the UI clean */
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.wpsc-improve-auto-draft-reply:focus,
+.wpsc-ai-chat-textarea:focus {
+  border-color: #999;
+  background: #fff;
+}
+
+.wpsc-modal-body {
+  border-bottom: none !important;
+}

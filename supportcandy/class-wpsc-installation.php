@@ -323,6 +323,65 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					bg_color VARCHAR(50) NOT NULL,
 					PRIMARY KEY (id)
 				) $collate;
+				CREATE TABLE {$wpdb->prefix}psmsc_ai_logs (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    customer BIGINT NOT NULL,
+                    ticket BIGINT NOT NULL,
+                    provider VARCHAR(100) NOT NULL,
+                    model VARCHAR(100) NOT NULL,
+                    feature VARCHAR(50) NOT NULL,
+                    tokens INT NOT NULL,
+                    prompt LONGTEXT NOT NULL,
+                    date_created DATETIME NOT NULL,
+                    PRIMARY KEY (id)
+                ) $collate;
+                CREATE TABLE {$wpdb->prefix}psmsc_ai_training (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    status VARCHAR(20) NOT NULL,
+                    provider VARCHAR(50) NOT NULL,
+                    source VARCHAR(50) NOT NULL,
+					source_id BIGINT NOT NULL,
+                    doc_source VARCHAR(255) NULL,
+                    name VARCHAR(255) NOT NULL,
+                    file_path VARCHAR(500) NOT NULL,
+                    provider_file_id VARCHAR(255) NULL,
+					meta_data LONGTEXT NULL,
+                    post_updated_on DATETIME NOT NULL,
+                    date_updated DATETIME NOT NULL,
+                    date_created DATETIME NOT NULL,
+                    PRIMARY KEY (id),
+                    INDEX idx_status (status),
+                    INDEX idx_source (source),
+                    INDEX idx_status_source (status, source)
+                ) $collate;
+				CREATE TABLE {$wpdb->prefix}psmsc_acb_sessions (
+					id BIGINT NOT NULL AUTO_INCREMENT,
+					session_id CHAR(36) NOT NULL,
+					visitor_id CHAR(36) NOT NULL,
+					subject LONGTEXT NULL,
+ 					provider VARCHAR(20) NOT NULL DEFAULT '',
+ 					reaction tinyint(1) NULL,
+ 					ticket_id BIGINT NULL,
+					status tinyint(1) NOT NULL,
+					token_count INT UNSIGNED NOT NULL,
+					last_activity DATETIME NOT NULL,
+					date_created DATETIME NOT NULL,
+					PRIMARY KEY (id),
+					UNIQUE KEY session_id (session_id),
+					KEY visitor_id (visitor_id),
+					KEY status (status)
+				) $collate;
+				CREATE TABLE {$wpdb->prefix}psmsc_acb_messages (
+					id BIGINT NOT NULL AUTO_INCREMENT,
+					session_id CHAR(36) NOT NULL,
+					sender VARCHAR(10) NOT NULL,
+					message LONGTEXT NULL,
+					token_count INT UNSIGNED NOT NULL,
+					date_created DATETIME NOT NULL,
+					PRIMARY KEY (id),
+					KEY session_id (session_id),
+					KEY session_messages (session_id, date_created)
+				) $collate;
 			";
 
 			dbDelta( $tables );
@@ -335,6 +394,16 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			// Copy structure of psmsc_thread table to psmsc_archived_threads table.
 			if ( $wpdb->get_var( "SHOW TABLES LIKE '{$wpdb->prefix}psmsc_archived_threads'" ) !== "{$wpdb->prefix}psmsc_archived_threads" ) {
 				$wpdb->query( "CREATE TABLE {$wpdb->prefix}psmsc_archived_threads LIKE {$wpdb->prefix}psmsc_threads" );
+			}
+
+			// AI assistant feature: add 'ticket_summary' column to tickets and archived tickets table.
+			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM {$wpdb->prefix}psmsc_tickets LIKE 'ticket_summary'" );
+			if ( empty( $column_exists ) ) {
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_tickets ADD ticket_summary TEXT NULL" );
+			}
+			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM {$wpdb->prefix}psmsc_archived_tickets LIKE 'ticket_summary'" );
+			if ( empty( $column_exists ) ) {
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD ticket_summary TEXT NULL" );
 			}
 		}
 
@@ -1960,6 +2029,61 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 
 			// update string translations.
 			update_option( 'wpsc-string-translation', $string_translations );
+
+			// Add AI assistant option.
+			update_option(
+				'wpsc-ps-ai-assistant-settings',
+				array(
+					'status'                   => '0',
+					'provider'                 => 'openai',
+					'api_key'                  => '',
+					'model'                    => 'gpt-4o-mini',
+					'max-tokens'               => 500,
+					'auto-delete-ai-logs-time' => 1,
+					'auto-delete-ai-logs-unit' => 'year',
+					'custom-prompt'            => '',
+					'summary-custom-prompt'    => '',
+					'auto-draft-custom-prompt' => '',
+					'is-active'                => 0,
+					'last-error'               => '',
+					'ai-max-upload-file-size'  => 10,
+				)
+			);
+
+			// update AI training options.
+			update_option(
+				'wpsc-ps-ai-training-sources',
+				array(
+					array(
+						'slug'       => 'local',
+						'type'       => 'localhost',
+						'name'       => 'Local',
+						'api-url'    => rest_url(),
+						'post-types' => array(),
+					),
+				),
+			);
+
+			// default AI chatbot settings.
+			update_option(
+				'wpsc-ps-acb-chatbot-settings',
+				array(
+					'status'                  => '0',
+					'delete-acb-session-time' => 1,
+					'delete-acb-session-unit' => 'year',
+					'show-footer-branding'    => '1',
+					'sessions-per-page'       => 30,
+				)
+			);
+
+			// default chatbot appearance settings.
+			update_option(
+				'wpsc-acb-appearance-general',
+				array(
+					'background-color' => '#2271b1',
+					'icon-color'       => '#ffffff',
+				)
+			);
 		}
 
 		/**
@@ -2708,6 +2832,154 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				$recaptcha['cloudflare-secret-key'] = '';
 				unset( $recaptcha['allow-recaptcha'] );
 				update_option( 'wpsc-recaptcha-settings', $recaptcha );
+			}
+
+			if ( version_compare( self::$current_version, '3.5.1', '<' ) ) {
+
+				// AI assistant feature moved into core - seed defaults for sites upgrading from an older core version.
+				if ( false === get_option( 'wpsc-ps-ai-assistant-settings', false ) ) {
+					update_option(
+						'wpsc-ps-ai-assistant-settings',
+						array(
+							'status'                   => '0',
+							'provider'                 => 'openai',
+							'api_key'                  => '',
+							'model'                    => 'gpt-4o-mini',
+							'max-tokens'               => 500,
+							'auto-delete-ai-logs-time' => 1,
+							'auto-delete-ai-logs-unit' => 'year',
+							'custom-prompt'            => '',
+							'summary-custom-prompt'    => '',
+							'auto-draft-custom-prompt' => '',
+							'is-active'                => 0,
+							'last-error'               => '',
+							'ai-max-upload-file-size'  => 10,
+						)
+					);
+				}
+
+				if ( false === get_option( 'wpsc-ps-ai-training-sources', false ) ) {
+					update_option(
+						'wpsc-ps-ai-training-sources',
+						array(
+							array(
+								'slug'       => 'local',
+								'type'       => 'localhost',
+								'name'       => 'Local',
+								'api-url'    => rest_url(),
+								'post-types' => array(),
+							),
+						),
+					);
+				}
+
+				// AI chatbot feature moved into core - seed defaults for sites upgrading from an older core version.
+				if ( false === get_option( 'wpsc-ps-acb-chatbot-settings', false ) ) {
+					update_option(
+						'wpsc-ps-acb-chatbot-settings',
+						array(
+							'status'                  => '0',
+							'delete-acb-session-time' => 1,
+							'delete-acb-session-unit' => 'year',
+							'show-footer-branding'    => '1',
+							'sessions-per-page'       => 30,
+						)
+					);
+				}
+
+				if ( false === get_option( 'wpsc-acb-appearance-general', false ) ) {
+					update_option(
+						'wpsc-acb-appearance-general',
+						array(
+							'background-color' => '#2271b1',
+							'icon-color'       => '#ffffff',
+						)
+					);
+				}
+
+				// Migrate legacy AI training data - only for sites that already used AI assistant / AI chatbot via Productivity Suite.
+				$ps_settings = get_option( 'wpsc-ps-settings', array() );
+
+				$wpdb->query( "UPDATE {$wpdb->prefix}psmsc_ai_training SET doc_source = 'local' WHERE source NOT IN ( 'file', 'url', 'ticket' )" );
+				$wpdb->query( "UPDATE {$wpdb->prefix}psmsc_ai_training SET doc_source = '' WHERE source IN ( 'file', 'url', 'ticket' )" );
+
+				// update AI training options.
+				$local_post_types = array(
+					array(
+						'slug'     => 'post',
+						'name'     => 'Posts',
+						'status'   => 0,
+						'endpoint' => rest_url( 'wp/v2/posts' ),
+					),
+					array(
+						'slug'     => 'page',
+						'name'     => 'Pages',
+						'status'   => 0,
+						'endpoint' => rest_url( 'wp/v2/pages' ),
+					),
+				);
+
+				$bd_settings = get_option( 'wpsc-ps-ai-bd-settings', array() );
+				if ( isset( $bd_settings['bd-status'] ) && $bd_settings['bd-status'] == 1 ) {
+					$local_post_types[] = array(
+						'slug'     => 'docs',
+						'name'     => 'Betterdocs',
+						'status'   => 1,
+						'endpoint' => rest_url( 'wp/v2/docs' ),
+					);
+
+					// Update source column for betterdocs source.
+					$wpdb->query( "UPDATE {$wpdb->prefix}psmsc_ai_training SET source = 'docs' WHERE source = 'betterdocs'" );
+				}
+
+				update_option(
+					'wpsc-ps-ai-training-sources',
+					array(
+						array(
+							'slug'       => 'local',
+							'type'       => 'localhost',
+							'name'       => 'Local',
+							'api-url'    => rest_url(),
+							'post-types' => $local_post_types,
+						),
+					),
+				);
+
+				// wpsc_ps_ai_categories is no longer used - post-type training sources are
+				// now routed directly by source type instead of through a categories registry.
+				delete_option( 'wpsc_ps_ai_categories' );
+
+				// remove 'category', 'is_expire' and 'expiry_date' columns from AI training table.
+				foreach ( array( 'category', 'is_expire', 'expiry_date' ) as $column ) {
+					$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM {$wpdb->prefix}psmsc_ai_training LIKE '{$column}'" );
+					if ( ! empty( $column_exists ) ) {
+						$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_ai_training DROP COLUMN {$column}" );
+					}
+				}
+
+				// unschedule expired training cleanup cron, this feature has been removed.
+				wp_clear_scheduled_hook( 'wpsc_auto_delete_ai_training_expired_records' );
+
+				// remove 'manage-ai-training' capability, this is no longer used.
+				$roles = get_option( 'wpsc-agent-roles', array() );
+				foreach ( $roles as $key => $role ) {
+					unset( $role['caps']['manage-ai-training'] );
+					$roles[ $key ] = $role;
+				}
+				update_option( 'wpsc-agent-roles', $roles );
+
+				if ( isset( $ai_assistant['is-active'] ) ) {
+					$ai_assistant = get_option( 'wpsc-ps-ai-assistant-settings' );
+					$ai_assistant['status'] = $ai_assistant['is-active'] ? 1 : 0;
+					update_option( 'wpsc-ps-ai-assistant-settings', $ai_assistant );
+				}
+
+				// enable chatbot feature.
+				if ( isset( $ps_settings['ai-chatbot'] ) ) {
+					$chatbot = get_option( 'wpsc-ps-acb-chatbot-settings' );
+					$chatbot['status'] = $ps_settings['ai-chatbot'] ? 1 : 0;
+					update_option( 'wpsc-ps-acb-chatbot-settings', $chatbot );
+				}
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );

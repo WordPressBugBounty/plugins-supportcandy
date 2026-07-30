@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: SupportCandy 3.5.0\n"
+"Project-Id-Version: SupportCandy 3.5.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/core\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-30T15:32:07+00:00\n"
+"POT-Creation-Date: 2026-07-30T10:39:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: supportcandy\n"
@@ -36,13 +36,13 @@ msgstr ""
 msgid "https://wordpress.org/plugins/supportcandy/"
 msgstr ""
 
-#: class-wpsc-installation.php:352
+#: class-wpsc-installation.php:421
 #: includes/custom-field-types/class-wpsc-df-id.php:198
 msgid "ID"
 msgstr ""
 
-#: class-wpsc-installation.php:366
-#: class-wpsc-installation.php:1548
+#: class-wpsc-installation.php:435
+#: class-wpsc-installation.php:1617
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:611
 #: includes/admin/settings/general-settings/class-wpsc-gs-general.php:87
 #: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:120
@@ -54,11 +54,11 @@ msgstr ""
 msgid "Customer"
 msgstr ""
 
-#: class-wpsc-installation.php:367
+#: class-wpsc-installation.php:436
 msgid "Select customer for whom you wish to create a ticket"
 msgstr ""
 
-#: class-wpsc-installation.php:382
+#: class-wpsc-installation.php:451
 #: includes/admin/customers/class-wpsc-customers.php:115
 #: includes/admin/customers/class-wpsc-customers.php:318
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:91
@@ -83,11 +83,11 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: class-wpsc-installation.php:383
+#: class-wpsc-installation.php:452
 msgid "Please insert your name"
 msgstr ""
 
-#: class-wpsc-installation.php:400
+#: class-wpsc-installation.php:469
 #: includes/admin/customers/class-wpsc-customers.php:322
 #: includes/admin/tickets/class-wpsc-individual-archive-ticket.php:1053
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:2648
@@ -101,11 +101,11 @@ msgstr ""
 msgid "Email Address"
 msgstr ""
 
-#: class-wpsc-installation.php:401
+#: class-wpsc-installation.php:470
 msgid "Please insert your email address"
 msgstr ""
 
-#: class-wpsc-installation.php:418
+#: class-wpsc-installation.php:487
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:68
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:362
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:68
@@ -117,21 +117,21 @@ msgstr ""
 msgid "Subject"
 msgstr ""
 
-#: class-wpsc-installation.php:419
+#: class-wpsc-installation.php:488
 msgid "Short description of the ticket"
 msgstr ""
 
-#: class-wpsc-installation.php:436
+#: class-wpsc-installation.php:505
 #: includes/admin/settings/ticket-tags/class-wpsc-ticket-tags-list.php:56
 #: includes/custom-field-types/class-wpsc-df-description.php:202
 msgid "Description"
 msgstr ""
 
-#: class-wpsc-installation.php:437
+#: class-wpsc-installation.php:506
 msgid "Detailed description of the ticket"
 msgstr ""
 
-#: class-wpsc-installation.php:453
+#: class-wpsc-installation.php:522
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:104
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:112
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:208
@@ -139,56 +139,56 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: class-wpsc-installation.php:454
+#: class-wpsc-installation.php:523
 msgid "Please select status"
 msgstr ""
 
-#: class-wpsc-installation.php:471
+#: class-wpsc-installation.php:540
 #: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:209
 #: includes/custom-field-types/class-wpsc-df-priority.php:210
 msgid "Priority"
 msgstr ""
 
-#: class-wpsc-installation.php:472
+#: class-wpsc-installation.php:541
 msgid "Please select priority"
 msgstr ""
 
-#: class-wpsc-installation.php:489
+#: class-wpsc-installation.php:558
 #: includes/custom-field-types/class-wpsc-df-category.php:206
 msgid "Category"
 msgstr ""
 
-#: class-wpsc-installation.php:490
+#: class-wpsc-installation.php:559
 msgid "Please select category"
 msgstr ""
 
-#: class-wpsc-installation.php:507
-#: class-wpsc-installation.php:1550
+#: class-wpsc-installation.php:576
+#: class-wpsc-installation.php:1619
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:612
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:114
 msgid "Assignee"
 msgstr ""
 
-#: class-wpsc-installation.php:508
+#: class-wpsc-installation.php:577
 msgid "Please select an agent"
 msgstr ""
 
-#: class-wpsc-installation.php:524
+#: class-wpsc-installation.php:593
 #: includes/custom-field-types/class-wpsc-df-date-created.php:201
 msgid "Date Created"
 msgstr ""
 
-#: class-wpsc-installation.php:539
+#: class-wpsc-installation.php:608
 #: includes/custom-field-types/class-wpsc-df-date-updated.php:200
 msgid "Date Updated"
 msgstr ""
 
-#: class-wpsc-installation.php:554
+#: class-wpsc-installation.php:623
 #: includes/custom-field-types/class-wpsc-df-agent-created.php:207
 msgid "Agent Created"
 msgstr ""
 
-#: class-wpsc-installation.php:568
+#: class-wpsc-installation.php:637
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:577
 #: includes/admin/tickets/class-wpsc-individual-archive-ticket.php:1066
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:2661
@@ -196,16 +196,16 @@ msgstr ""
 msgid "IP Address"
 msgstr ""
 
-#: class-wpsc-installation.php:583
+#: class-wpsc-installation.php:652
 #: includes/admin/tickets/class-wpsc-individual-archive-ticket.php:1061
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:2656
 #: includes/custom-field-types/class-wpsc-df-source.php:210
-#: includes/models/class-wpsc-attachment.php:690
-#: includes/models/class-wpsc-attachment.php:863
+#: includes/models/class-wpsc-attachment.php:698
+#: includes/models/class-wpsc-attachment.php:871
 msgid "Source"
 msgstr ""
 
-#: class-wpsc-installation.php:597
+#: class-wpsc-installation.php:666
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:581
 #: includes/admin/tickets/class-wpsc-individual-archive-ticket.php:1071
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:2666
@@ -215,63 +215,63 @@ msgstr ""
 msgid "Browser"
 msgstr ""
 
-#: class-wpsc-installation.php:611
+#: class-wpsc-installation.php:680
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:585
 #: includes/admin/tickets/class-wpsc-individual-archive-ticket.php:1076
 #: includes/admin/tickets/class-wpsc-individual-ticket.php:2671
 msgid "Operating System"
 msgstr ""
 
-#: class-wpsc-installation.php:625
+#: class-wpsc-installation.php:694
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:623
 #: includes/custom-field-types/class-wpsc-df-additional-recipients.php:207
 msgid "Additional Recipients"
 msgstr ""
 
-#: class-wpsc-installation.php:626
+#: class-wpsc-installation.php:695
 msgid "Please insert email addresses (one per line)"
 msgstr ""
 
-#: class-wpsc-installation.php:642
+#: class-wpsc-installation.php:711
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:616
 #: includes/custom-field-types/class-wpsc-df-prev-assignee.php:201
 msgid "Previous Assignee"
 msgstr ""
 
-#: class-wpsc-installation.php:657
+#: class-wpsc-installation.php:726
 #: includes/custom-field-types/class-wpsc-df-date-closed.php:194
 msgid "Date Closed"
 msgstr ""
 
-#: class-wpsc-installation.php:673
+#: class-wpsc-installation.php:742
 #: includes/admin/customers/class-wpsc-customers.php:117
 #: includes/custom-field-types/class-wpsc-df-user-type.php:204
 msgid "User Type"
 msgstr ""
 
-#: class-wpsc-installation.php:688
+#: class-wpsc-installation.php:757
 #: includes/custom-field-types/class-wpsc-df-last-reply-on.php:194
 msgid "Last Reply On"
 msgstr ""
 
-#: class-wpsc-installation.php:704
+#: class-wpsc-installation.php:773
 #: includes/custom-field-types/class-wpsc-df-last-reply-by.php:194
 msgid "Last Reply By"
 msgstr ""
 
-#: class-wpsc-installation.php:719
-#: class-wpsc-installation.php:1555
-#: class-wpsc-installation.php:2193
+#: class-wpsc-installation.php:788
+#: class-wpsc-installation.php:1624
+#: class-wpsc-installation.php:2317
 msgid "Tags"
 msgstr ""
 
-#: class-wpsc-installation.php:734
-#: class-wpsc-installation.php:2498
+#: class-wpsc-installation.php:803
+#: class-wpsc-installation.php:2622
 #: includes/custom-field-types/class-wpsc-df-last-reply-source.php:210
 msgid "Last Reply Source"
 msgstr ""
 
-#: class-wpsc-installation.php:750
+#: class-wpsc-installation.php:819
 #: includes/admin/settings/appearence/class-wpsc-appearence-settings.php:51
 #: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-settings.php:55
 #: includes/admin/settings/general-settings/class-wpsc-gs.php:51
@@ -279,40 +279,40 @@ msgstr ""
 msgid "General"
 msgstr ""
 
-#: class-wpsc-installation.php:761
+#: class-wpsc-installation.php:830
 msgid "Open"
 msgstr ""
 
-#: class-wpsc-installation.php:773
+#: class-wpsc-installation.php:842
 msgid "Awaiting customer reply"
 msgstr ""
 
-#: class-wpsc-installation.php:785
+#: class-wpsc-installation.php:854
 msgid "Awaiting agent reply"
 msgstr ""
 
-#: class-wpsc-installation.php:797
-#: class-wpsc-installation.php:1110
-#: class-wpsc-installation.php:1158
-#: class-wpsc-installation.php:1792
-#: class-wpsc-installation.php:2281
+#: class-wpsc-installation.php:866
+#: class-wpsc-installation.php:1179
+#: class-wpsc-installation.php:1227
+#: class-wpsc-installation.php:1861
+#: class-wpsc-installation.php:2405
 msgid "Closed"
 msgstr ""
 
-#: class-wpsc-installation.php:810
+#: class-wpsc-installation.php:879
 msgid "Low"
 msgstr ""
 
-#: class-wpsc-installation.php:822
+#: class-wpsc-installation.php:891
 msgid "Medium"
 msgstr ""
 
-#: class-wpsc-installation.php:834
+#: class-wpsc-installation.php:903
 msgid "High"
 msgstr ""
 
-#: class-wpsc-installation.php:1106
-#: class-wpsc-installation.php:1156
+#: class-wpsc-installation.php:1175
+#: class-wpsc-installation.php:1225
 #: includes/admin/tickets/class-wpsc-archive-ticket-list.php:240
 #: includes/admin/tickets/class-wpsc-ticket-list.php:1783
 #: includes/admin/tickets/widgets/class-wpsc-itw-assigned-agents.php:166
@@ -325,63 +325,63 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: class-wpsc-installation.php:1107
-#: class-wpsc-installation.php:1157
-#: class-wpsc-installation.php:1790
-#: class-wpsc-installation.php:2279
+#: class-wpsc-installation.php:1176
+#: class-wpsc-installation.php:1226
+#: class-wpsc-installation.php:1859
+#: class-wpsc-installation.php:2403
 msgid "Unresolved"
 msgstr ""
 
-#: class-wpsc-installation.php:1108
-#: class-wpsc-installation.php:1791
-#: class-wpsc-installation.php:2280
+#: class-wpsc-installation.php:1177
+#: class-wpsc-installation.php:1860
+#: class-wpsc-installation.php:2404
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:168
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:577
 msgid "Unassigned"
 msgstr ""
 
-#: class-wpsc-installation.php:1109
-#: class-wpsc-installation.php:1793
-#: class-wpsc-installation.php:2282
+#: class-wpsc-installation.php:1178
+#: class-wpsc-installation.php:1862
+#: class-wpsc-installation.php:2406
 msgid "Mine"
 msgstr ""
 
-#: class-wpsc-installation.php:1111
-#: class-wpsc-installation.php:2643
+#: class-wpsc-installation.php:1180
+#: class-wpsc-installation.php:2767
 msgid "Deleted"
 msgstr ""
 
-#: class-wpsc-installation.php:1546
-#: class-wpsc-installation.php:2679
+#: class-wpsc-installation.php:1615
+#: class-wpsc-installation.php:2803
 msgid "Currently viewing"
 msgstr ""
 
-#: class-wpsc-installation.php:1547
+#: class-wpsc-installation.php:1616
 msgid "Ticket status"
 msgstr ""
 
-#: class-wpsc-installation.php:1549
+#: class-wpsc-installation.php:1618
 msgid "Ticket info"
 msgstr ""
 
-#: class-wpsc-installation.php:1551
+#: class-wpsc-installation.php:1620
 msgid "Ticket fields"
 msgstr ""
 
-#: class-wpsc-installation.php:1552
+#: class-wpsc-installation.php:1621
 msgid "Agent only fields"
 msgstr ""
 
-#: class-wpsc-installation.php:1553
+#: class-wpsc-installation.php:1622
 msgid "Additional recipients"
 msgstr ""
 
-#: class-wpsc-installation.php:1554
+#: class-wpsc-installation.php:1623
 msgid "Biographical Info"
 msgstr ""
 
 #. translators: %1$s: attachment max file size, %2$s: allowed file extenstions.
-#: class-wpsc-installation.php:1650
+#: class-wpsc-installation.php:1719
 #: includes/admin/settings/text-editor-settings/class-wpsc-te-agent.php:34
 #: includes/admin/settings/text-editor-settings/class-wpsc-te-guest-user.php:34
 #: includes/admin/settings/text-editor-settings/class-wpsc-te-registered-user.php:34
@@ -389,150 +389,154 @@ msgstr ""
 msgid "You can upload files maximum size %1$s mb of types %2$s."
 msgstr ""
 
-#: class-wpsc-installation.php:1789
-#: class-wpsc-installation.php:2278
+#: class-wpsc-installation.php:1858
+#: class-wpsc-installation.php:2402
 msgid "New Tickets"
 msgstr ""
 
-#: class-wpsc-installation.php:1846
-#: class-wpsc-installation.php:2335
+#: class-wpsc-installation.php:1915
+#: class-wpsc-installation.php:2459
 msgid "Ticket Statistics"
 msgstr ""
 
-#: class-wpsc-installation.php:1847
-#: class-wpsc-installation.php:2336
+#: class-wpsc-installation.php:1916
+#: class-wpsc-installation.php:2460
 msgid "Todays Trends"
 msgstr ""
 
-#: class-wpsc-installation.php:1848
-#: class-wpsc-installation.php:2337
+#: class-wpsc-installation.php:1917
+#: class-wpsc-installation.php:2461
 msgid "Agent Workload"
 msgstr ""
 
-#: class-wpsc-installation.php:1849
-#: class-wpsc-installation.php:2338
-#: includes/admin/customers/class-wpsc-customers.php:1093
+#: class-wpsc-installation.php:1918
+#: class-wpsc-installation.php:2462
+#: includes/admin/customers/class-wpsc-customers.php:1091
 #: includes/admin/recent-activities/class-wpsc-ra-logs.php:38
 msgid "Recent Activities"
 msgstr ""
 
-#: class-wpsc-installation.php:1850
-#: class-wpsc-installation.php:2339
+#: class-wpsc-installation.php:1919
+#: class-wpsc-installation.php:2463
 msgid "Recent Tickets"
 msgstr ""
 
-#: class-wpsc-installation.php:1851
+#: class-wpsc-installation.php:1920
 msgid "Tickets by Category"
 msgstr ""
 
-#: class-wpsc-installation.php:1852
+#: class-wpsc-installation.php:1921
 msgid "Tickets by Priority"
 msgstr ""
 
-#: class-wpsc-installation.php:1853
+#: class-wpsc-installation.php:1922
 msgid "Tickets by Status"
 msgstr ""
 
-#: class-wpsc-installation.php:1854
-#: class-wpsc-installation.php:2537
+#: class-wpsc-installation.php:1923
+#: class-wpsc-installation.php:2661
 msgid "Ticket statistics by day of week"
 msgstr ""
 
-#: class-wpsc-installation.php:2340
+#: class-wpsc-installation.php:2464
 msgid "Unresolved tickets by Category"
 msgstr ""
 
-#: class-wpsc-installation.php:2341
+#: class-wpsc-installation.php:2465
 msgid "Unresolved tickets by Priority"
 msgstr ""
 
-#: class-wpsc-installation.php:2342
+#: class-wpsc-installation.php:2466
 msgid "Unresolved tickets by Status"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:415
+#: framework/class-wpsc-framework.php:412
 msgid "Please wait..."
 msgstr ""
 
-#: framework/class-wpsc-framework.php:416
+#: framework/class-wpsc-framework.php:413
 msgid "Required fields missing!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:417
+#: framework/class-wpsc-framework.php:414
 msgid "Are you sure?"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:418
+#: framework/class-wpsc-framework.php:415
 msgid "Something went wrong!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:419
+#: framework/class-wpsc-framework.php:416
 msgid "View more!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:420
+#: framework/class-wpsc-framework.php:417
 msgid "View less!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:421
+#: framework/class-wpsc-framework.php:418
 msgid "There is unposted text in the reply area. Are you sure you want to discard and proceed?"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:422
+#: framework/class-wpsc-framework.php:419
 msgid "Incorrect username or password!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:423
+#: framework/class-wpsc-framework.php:420
 msgid "Incorrect password!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:424
+#: framework/class-wpsc-framework.php:421
 #: includes/class-wpsc-current-user.php:517
 msgid "Username is already taken!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:425
+#: framework/class-wpsc-framework.php:422
 #: includes/class-wpsc-current-user.php:541
 msgid "Email is already taken or not allowed!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:426
+#: framework/class-wpsc-framework.php:423
 msgid "Incorrect email address!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:427
+#: framework/class-wpsc-framework.php:424
 msgid "Ticket URL copied!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:428
+#: framework/class-wpsc-framework.php:425
 #: includes/admin/tickets/widgets/class-wpsc-itw-raisedby.php:436
 #: includes/class-wpsc-current-user.php:1009
 #: includes/custom-field-types/class-wpsc-df-customer-email.php:267
 msgid "Invalid email address!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:429
+#: framework/class-wpsc-framework.php:426
 msgid "Deleting a customer will permanently remove all associated customer information and tickets!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:430
+#: framework/class-wpsc-framework.php:427
 msgid "Please accept terms and conditions!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:431
+#: framework/class-wpsc-framework.php:428
 msgid "Please accept GDPR policy!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:432
+#: framework/class-wpsc-framework.php:429
 msgid "Deleting a ticket will permanently remove all associated information and cannot be undone!"
 msgstr ""
 
-#: framework/class-wpsc-framework.php:433
+#: framework/class-wpsc-framework.php:430
 msgid "Blocking notifications will stop all email alerts for this ticket."
 msgstr ""
 
-#: framework/class-wpsc-framework.php:434
+#: framework/class-wpsc-framework.php:431
 msgid "Unblocking notifications will resume email alerts for this ticket."
+msgstr ""
+
+#: framework/class-wpsc-framework.php:432
+msgid "Unauthorized value!"
 msgstr ""
 
 #: includes/admin/agent-settings/class-wpsc-agent-leaves.php:37
@@ -560,6 +564,21 @@ msgstr ""
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:788
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:941
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:1029
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training-actions.php:658
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:149
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:463
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-general.php:33
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-general.php:191
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-general.php:304
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-logs.php:45
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting.php:154
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:47
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:104
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:137
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-general-setting.php:33
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-general-setting.php:151
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-general-setting.php:210
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-setting.php:154
 #: includes/admin/custom-fields/class-wpsc-aof.php:65
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:309
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:432
@@ -768,8 +787,8 @@ msgstr ""
 #: includes/admin/tickets/class-wpsc-new-ticket.php:474
 #: includes/admin/tickets/widgets/class-wpsc-itw-additional-recipients.php:259
 #: includes/admin/tickets/widgets/class-wpsc-itw-additional-recipients.php:353
-#: includes/admin/tickets/widgets/class-wpsc-itw-agent-collision.php:280
-#: includes/admin/tickets/widgets/class-wpsc-itw-agent-collision.php:330
+#: includes/admin/tickets/widgets/class-wpsc-itw-agent-collision.php:281
+#: includes/admin/tickets/widgets/class-wpsc-itw-agent-collision.php:331
 #: includes/admin/tickets/widgets/class-wpsc-itw-agentonly-fields.php:296
 #: includes/admin/tickets/widgets/class-wpsc-itw-agentonly-fields.php:380
 #: includes/admin/tickets/widgets/class-wpsc-itw-assigned-agents.php:332
@@ -821,6 +840,11 @@ msgstr ""
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:78
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:185
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:331
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:46
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:158
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-general.php:50
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:56
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-general-setting.php:51
 #: includes/admin/custom-fields/class-wpsc-aof.php:78
 #: includes/admin/custom-fields/class-wpsc-cf.php:79
 #: includes/admin/custom-fields/class-wpsc-tf.php:75
@@ -870,6 +894,11 @@ msgstr ""
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:79
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:186
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:332
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:47
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:159
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-general.php:51
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:57
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-general-setting.php:52
 #: includes/admin/custom-fields/class-wpsc-aof.php:79
 #: includes/admin/custom-fields/class-wpsc-cf.php:80
 #: includes/admin/custom-fields/class-wpsc-tf.php:76
@@ -959,9 +988,9 @@ msgstr ""
 #: includes/admin/customers/class-wpsc-customers.php:483
 #: includes/admin/customers/class-wpsc-customers.php:541
 #: includes/admin/customers/class-wpsc-customers.php:546
-#: includes/admin/customers/class-wpsc-customers.php:880
-#: includes/admin/customers/class-wpsc-customers.php:1148
-#: includes/admin/customers/class-wpsc-customers.php:1153
+#: includes/admin/customers/class-wpsc-customers.php:878
+#: includes/admin/customers/class-wpsc-customers.php:1146
+#: includes/admin/customers/class-wpsc-customers.php:1151
 #: includes/admin/misc/class-wpsc-option-controller.php:36
 #: includes/admin/misc/class-wpsc-option-controller.php:70
 #: includes/admin/misc/class-wpsc-option-controller.php:75
@@ -1154,12 +1183,12 @@ msgstr ""
 #: includes/class-wpsc-ticket-conditions.php:282
 #: includes/class-wpsc-ticket-conditions.php:357
 #: includes/class-wpsc-ticket-conditions.php:366
-#: includes/models/class-wpsc-attachment.php:1038
-#: includes/models/class-wpsc-attachment.php:1057
-#: includes/models/class-wpsc-attachment.php:1066
-#: includes/models/class-wpsc-attachment.php:1121
-#: includes/models/class-wpsc-attachment.php:1158
-#: includes/models/class-wpsc-attachment.php:1191
+#: includes/models/class-wpsc-attachment.php:1046
+#: includes/models/class-wpsc-attachment.php:1065
+#: includes/models/class-wpsc-attachment.php:1074
+#: includes/models/class-wpsc-attachment.php:1129
+#: includes/models/class-wpsc-attachment.php:1166
+#: includes/models/class-wpsc-attachment.php:1199
 #: includes/models/class-wpsc-custom-field.php:778
 msgid "Bad request!"
 msgstr ""
@@ -1536,12 +1565,13 @@ msgstr ""
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:223
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:636
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:896
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:82
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:409
 #: includes/admin/custom-fields/class-wpsc-cf-settings.php:615
 #: includes/admin/custom-fields/class-wpsc-tff.php:280
 #: includes/admin/custom-fields/class-wpsc-tff.php:488
 #: includes/admin/customers/class-wpsc-customers.php:445
-#: includes/admin/customers/class-wpsc-customers.php:1072
+#: includes/admin/customers/class-wpsc-customers.php:1070
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:154
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:116
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:223
@@ -1626,8 +1656,8 @@ msgstr ""
 #: includes/custom-field-types/class-wpsc-df-subject.php:581
 #: includes/frontend/class-wpsc-shortcode-three.php:158
 #: includes/frontend/class-wpsc-shortcode-three.php:343
-#: includes/models/class-wpsc-attachment.php:809
-#: includes/models/class-wpsc-attachment.php:1002
+#: includes/models/class-wpsc-attachment.php:817
+#: includes/models/class-wpsc-attachment.php:1010
 #: includes/models/class-wpsc-holiday.php:532
 #: includes/models/class-wpsc-wh-exception.php:611
 #: includes/models/class-wpsc-wh-exception.php:837
@@ -1705,8 +1735,8 @@ msgstr ""
 #: includes/class-wpsc-current-user.php:978
 #: includes/custom-field-types/class-wpsc-df-subject.php:584
 #: includes/frontend/class-wpsc-shortcode-three.php:159
-#: includes/models/class-wpsc-attachment.php:812
-#: includes/models/class-wpsc-attachment.php:1005
+#: includes/models/class-wpsc-attachment.php:820
+#: includes/models/class-wpsc-attachment.php:1013
 #: includes/models/class-wpsc-holiday.php:535
 #: includes/models/class-wpsc-wh-exception.php:614
 #: includes/models/class-wpsc-wh-exception.php:840
@@ -1751,6 +1781,7 @@ msgstr ""
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:77
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:104
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:363
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:92
 #: includes/admin/custom-fields/class-wpsc-aof.php:106
 #: includes/admin/custom-fields/class-wpsc-cf.php:113
 #: includes/admin/custom-fields/class-wpsc-tf.php:105
@@ -1780,12 +1811,13 @@ msgstr ""
 #: includes/admin/agent-settings/class-wpsc-agent-roles.php:82
 #: includes/admin/agent-settings/class-wpsc-agent-settings.php:105
 #: includes/admin/agent-settings/class-wpsc-agent-working-hrs.php:364
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:96
 #: includes/admin/custom-fields/class-wpsc-aof.php:111
 #: includes/admin/custom-fields/class-wpsc-cf.php:118
 #: includes/admin/custom-fields/class-wpsc-tf.php:110
 #: includes/admin/custom-fields/class-wpsc-tff.php:106
 #: includes/admin/customers/class-wpsc-customers.php:249
-#: includes/admin/customers/class-wpsc-customers.php:891
+#: includes/admin/customers/class-wpsc-customers.php:889
 #: includes/admin/email-notifications/class-wpsc-en-settings-tn.php:134
 #: includes/admin/settings/class-wpsc-ticket-categories.php:76
 #: includes/admin/settings/class-wpsc-ticket-priorities.php:77
@@ -2102,13 +2134,73 @@ msgstr ""
 msgid "Support Agents"
 msgstr ""
 
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:171
+#: includes/admin/tickets/class-wpsc-archive-ticket-list.php:476
+#: includes/admin/tickets/class-wpsc-ticket-list.php:555
+msgid "Bulk Actions"
+msgstr ""
+
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:198
+#: includes/admin/customers/class-wpsc-customers.php:89
+#: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-agent-list.php:59
+#: includes/admin/tickets/class-wpsc-archive-ticket-list.php:233
+#: includes/admin/tickets/class-wpsc-ticket-list.php:401
+#: includes/admin/tickets/widgets/class-wpsc-itw-agentonly-fields.php:180
+#: includes/admin/tickets/widgets/class-wpsc-itw-raisedby.php:938
+#: includes/admin/tickets/widgets/class-wpsc-itw-ticket-fields.php:195
+msgid "Search..."
+msgstr ""
+
+#: includes/admin/ai-assistant/admin/settings/class-wpsc-ps-ai-setting-ai-training.php:638
+#: includes/admin/customers/class-wpsc-customers.php:884
+msgid "Back"
+msgstr ""
+
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:63
+msgid "Chatbot launcher background color"
+msgstr ""
+
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:69
+msgid "Chatbot launcher icon color"
+msgstr ""
+
+#: includes/admin/ai-chatbot/includes/settings/class-wpsc-acb-appearance-setting.php:86
+#: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:158
+#: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:120
+#: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:159
+#: includes/admin/settings/appearence/class-wpsc-appearence-agent-collision.php:87
+#: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:108
+#: includes/admin/settings/appearence/class-wpsc-appearence-general.php:112
+#: includes/admin/settings/appearence/class-wpsc-appearence-indidual-ticket.php:184
+#: includes/admin/settings/appearence/class-wpsc-appearence-modal-popup.php:125
+#: includes/admin/settings/appearence/class-wpsc-appearence-ticket-list.php:142
+#: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:196
+#: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:113
+#: includes/admin/settings/general-settings/class-wpsc-gs-general.php:269
+#: includes/admin/settings/general-settings/class-wpsc-gs-page-settings.php:253
+#: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:266
+#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:392
+#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:237
+#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-recaptcha.php:150
+#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-tac.php:204
+#: includes/admin/settings/text-editor-settings/class-wpsc-te-advanced.php:82
+#: includes/admin/settings/text-editor-settings/class-wpsc-te-agent.php:148
+#: includes/admin/settings/text-editor-settings/class-wpsc-te-guest-user.php:148
+#: includes/admin/settings/text-editor-settings/class-wpsc-te-registered-user.php:148
+#: includes/admin/settings/working-hrs/class-wpsc-wh-settings.php:92
+#: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:316
+#: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:511
+#: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:633
+msgid "Reset default"
+msgstr ""
+
 #: includes/admin/class-wpsc-admin.php:121
 #: includes/admin/class-wpsc-admin.php:122
 msgid "Support"
 msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:315
-#: includes/frontend/class-wpsc-frontend.php:146
+#: includes/frontend/class-wpsc-frontend.php:145
 msgid "Required fields can not be empty!"
 msgstr ""
 
@@ -2118,40 +2210,40 @@ msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:318
 #: includes/admin/class-wpsc-admin.php:319
+#: includes/frontend/class-wpsc-frontend.php:147
 #: includes/frontend/class-wpsc-frontend.php:148
-#: includes/frontend/class-wpsc-frontend.php:149
 msgid "No Records"
 msgstr ""
 
 #. translators: e.g. Showing 1 to 20 of 300 records
 #: includes/admin/class-wpsc-admin.php:322
-#: includes/frontend/class-wpsc-frontend.php:152
+#: includes/frontend/class-wpsc-frontend.php:151
 #, php-format
 msgid "Showing %1$s to %2$s of %3$s records"
 msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:331
-#: includes/frontend/class-wpsc-frontend.php:161
+#: includes/frontend/class-wpsc-frontend.php:160
 msgid "Search:"
 msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:333
-#: includes/frontend/class-wpsc-frontend.php:163
+#: includes/frontend/class-wpsc-frontend.php:162
 msgid "First"
 msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:334
-#: includes/frontend/class-wpsc-frontend.php:164
+#: includes/frontend/class-wpsc-frontend.php:163
 msgid "Previous"
 msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:335
-#: includes/frontend/class-wpsc-frontend.php:165
+#: includes/frontend/class-wpsc-frontend.php:164
 msgid "Next"
 msgstr ""
 
 #: includes/admin/class-wpsc-admin.php:336
-#: includes/frontend/class-wpsc-frontend.php:166
+#: includes/frontend/class-wpsc-frontend.php:165
 msgid "Last"
 msgstr ""
 
@@ -2412,16 +2504,6 @@ msgstr ""
 msgid "Customers"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:89
-#: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-agent-list.php:59
-#: includes/admin/tickets/class-wpsc-archive-ticket-list.php:233
-#: includes/admin/tickets/class-wpsc-ticket-list.php:401
-#: includes/admin/tickets/widgets/class-wpsc-itw-agentonly-fields.php:180
-#: includes/admin/tickets/widgets/class-wpsc-itw-raisedby.php:938
-#: includes/admin/tickets/widgets/class-wpsc-itw-ticket-fields.php:195
-msgid "Search..."
-msgstr ""
-
 #: includes/admin/customers/class-wpsc-customers.php:116
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:92
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:95
@@ -2507,49 +2589,45 @@ msgstr ""
 msgid "The %1$s has been changed"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:886
-msgid "Back"
-msgstr ""
-
-#: includes/admin/customers/class-wpsc-customers.php:911
+#: includes/admin/customers/class-wpsc-customers.php:909
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:457
 msgid "Tickets"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:912
+#: includes/admin/customers/class-wpsc-customers.php:910
 msgid "Custom fields"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:913
+#: includes/admin/customers/class-wpsc-customers.php:911
 msgid "Other"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:1075
+#: includes/admin/customers/class-wpsc-customers.php:1073
 msgid "View logs"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:1097
+#: includes/admin/customers/class-wpsc-customers.php:1095
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:59
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-tickets.php:55
 msgid "View All"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:1170
+#: includes/admin/customers/class-wpsc-customers.php:1168
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:119
 msgid "created a ticket"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:1174
+#: includes/admin/customers/class-wpsc-customers.php:1172
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:125
 msgid "replied to ticket"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:1178
+#: includes/admin/customers/class-wpsc-customers.php:1176
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:131
 msgid "added a note to ticket"
 msgstr ""
 
-#: includes/admin/customers/class-wpsc-customers.php:1198
+#: includes/admin/customers/class-wpsc-customers.php:1196
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:189
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-category-reports.php:219
 #: includes/admin/settings/dashboard-settings/widgets/class-wpsc-dbw-recent-activities.php:155
@@ -2606,35 +2684,6 @@ msgstr ""
 #: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:90
 #: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:90
 msgid "One time password"
-msgstr ""
-
-#: includes/admin/email-notifications/class-wpsc-en-guest-login-otp.php:158
-#: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:120
-#: includes/admin/email-notifications/class-wpsc-en-user-reg-otp.php:159
-#: includes/admin/settings/appearence/class-wpsc-appearence-agent-collision.php:87
-#: includes/admin/settings/appearence/class-wpsc-appearence-dashboard.php:108
-#: includes/admin/settings/appearence/class-wpsc-appearence-general.php:112
-#: includes/admin/settings/appearence/class-wpsc-appearence-indidual-ticket.php:184
-#: includes/admin/settings/appearence/class-wpsc-appearence-modal-popup.php:125
-#: includes/admin/settings/appearence/class-wpsc-appearence-ticket-list.php:142
-#: includes/admin/settings/dashboard-settings/class-wpsc-dashboard-general-setting.php:196
-#: includes/admin/settings/general-settings/class-wpsc-gs-file-attachments.php:113
-#: includes/admin/settings/general-settings/class-wpsc-gs-general.php:269
-#: includes/admin/settings/general-settings/class-wpsc-gs-page-settings.php:253
-#: includes/admin/settings/general-settings/class-wpsc-gs-thankyou-page-settings.php:266
-#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-advanced.php:392
-#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-gdpr.php:237
-#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-recaptcha.php:150
-#: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-tac.php:204
-#: includes/admin/settings/text-editor-settings/class-wpsc-te-advanced.php:82
-#: includes/admin/settings/text-editor-settings/class-wpsc-te-agent.php:148
-#: includes/admin/settings/text-editor-settings/class-wpsc-te-guest-user.php:148
-#: includes/admin/settings/text-editor-settings/class-wpsc-te-registered-user.php:148
-#: includes/admin/settings/working-hrs/class-wpsc-wh-settings.php:92
-#: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:316
-#: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:511
-#: includes/admin/ticket-list/class-wpsc-ticket-list-more-settings.php:633
-msgid "Reset default"
 msgstr ""
 
 #: includes/admin/email-notifications/class-wpsc-en-settings-gs.php:54
@@ -3911,8 +3960,8 @@ msgstr ""
 #: includes/admin/settings/miscellaneous-settings/class-wpsc-ms-recaptcha.php:331
 #: includes/admin/tickets/class-wpsc-current-user-profile.php:116
 #: includes/admin/tickets/class-wpsc-new-ticket.php:274
-#: includes/frontend/class-wpsc-frontend.php:334
-#: includes/frontend/class-wpsc-frontend.php:497
+#: includes/frontend/class-wpsc-frontend.php:333
+#: includes/frontend/class-wpsc-frontend.php:496
 msgid "Security verification failed. Please refresh the page and try again."
 msgstr ""
 
@@ -4204,11 +4253,6 @@ msgstr ""
 #: includes/admin/tickets/class-wpsc-archive-ticket-list.php:246
 #: includes/admin/tickets/class-wpsc-ticket-list.php:458
 msgid "Sort By"
-msgstr ""
-
-#: includes/admin/tickets/class-wpsc-archive-ticket-list.php:476
-#: includes/admin/tickets/class-wpsc-ticket-list.php:555
-msgid "Bulk Actions"
 msgstr ""
 
 #: includes/admin/tickets/class-wpsc-archive-ticket-list.php:494
@@ -4703,11 +4747,11 @@ msgstr ""
 msgid "New Customer"
 msgstr ""
 
-#: includes/class-wpsc-cron.php:42
+#: includes/class-wpsc-cron.php:43
 msgid "Every one minute"
 msgstr ""
 
-#: includes/class-wpsc-cron.php:47
+#: includes/class-wpsc-cron.php:48
 msgid "Every five minutes"
 msgstr ""
 
@@ -4737,7 +4781,7 @@ msgid "Email is available!"
 msgstr ""
 
 #: includes/class-wpsc-current-user.php:562
-#: includes/frontend/class-wpsc-frontend.php:201
+#: includes/frontend/class-wpsc-frontend.php:200
 msgid "Password"
 msgstr ""
 
@@ -4760,13 +4804,13 @@ msgstr ""
 
 #: includes/class-wpsc-current-user.php:974
 #: includes/class-wpsc-current-user.php:1029
-#: includes/frontend/class-wpsc-frontend.php:194
+#: includes/frontend/class-wpsc-frontend.php:193
 msgid "Please sign in"
 msgstr ""
 
 #: includes/class-wpsc-current-user.php:977
-#: includes/frontend/class-wpsc-frontend.php:242
-#: includes/frontend/class-wpsc-frontend.php:254
+#: includes/frontend/class-wpsc-frontend.php:241
+#: includes/frontend/class-wpsc-frontend.php:253
 msgid "Sign In"
 msgstr ""
 
@@ -5700,35 +5744,35 @@ msgstr ""
 msgid "OS"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:200
+#: includes/frontend/class-wpsc-frontend.php:199
 msgid "Username / Email address"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:204
+#: includes/frontend/class-wpsc-frontend.php:203
 msgid "Remember me"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:266
+#: includes/frontend/class-wpsc-frontend.php:265
 msgid "Forgot your password?"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:284
+#: includes/frontend/class-wpsc-frontend.php:283
 msgid "Register now"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:289
+#: includes/frontend/class-wpsc-frontend.php:288
 msgid "Sign-in using one time password"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:295
+#: includes/frontend/class-wpsc-frontend.php:294
 msgid "Create new ticket as guest"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:301
+#: includes/frontend/class-wpsc-frontend.php:300
 msgid "Open existing ticket using one time password"
 msgstr ""
 
-#: includes/frontend/class-wpsc-frontend.php:488
+#: includes/frontend/class-wpsc-frontend.php:487
 msgid "Captcha not set!"
 msgstr ""
 
@@ -5760,36 +5804,36 @@ msgstr ""
 msgid "Attachments"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:679
+#: includes/models/class-wpsc-attachment.php:687
 msgid "Insert/edit image"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:695
-#: includes/models/class-wpsc-attachment.php:868
+#: includes/models/class-wpsc-attachment.php:703
+#: includes/models/class-wpsc-attachment.php:876
 msgid "Upload"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:701
-#: includes/models/class-wpsc-attachment.php:874
+#: includes/models/class-wpsc-attachment.php:709
+#: includes/models/class-wpsc-attachment.php:882
 msgid "Dimentions"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:711
-#: includes/models/class-wpsc-attachment.php:884
+#: includes/models/class-wpsc-attachment.php:719
+#: includes/models/class-wpsc-attachment.php:892
 msgid "Constraint properties"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:836
+#: includes/models/class-wpsc-attachment.php:844
 msgid "Edit image"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:1092
-#: includes/models/class-wpsc-attachment.php:1147
-#: includes/models/class-wpsc-attachment.php:1179
+#: includes/models/class-wpsc-attachment.php:1100
+#: includes/models/class-wpsc-attachment.php:1155
+#: includes/models/class-wpsc-attachment.php:1187
 msgid "Unauthorized!"
 msgstr ""
 
-#: includes/models/class-wpsc-attachment.php:1214
+#: includes/models/class-wpsc-attachment.php:1222
 msgid "Invalid ticket type."
 msgstr ""
 

@@ -1,5 +1,17 @@
 == Changelog ==
 
+= 3.5.1 (July 30, 2026) =
+* New: Added AI assistant features (polish, draft, summary)
+* New: Introduced chatbot agent feature
+* Fix: Auto-archive closed tickets setting not working
+* Fix: Customer ticket count not updating
+* Fix: Agent collision widget shows names with avatars
+* Fix: WPML pages issue with custom script loading
+* Fix: Ticket list search not working
+
+= 3.5.0 (June 30, 2026) =
+* Fix: Tickets going to archived unexpectedly
+
 = 3.4.9 (June 30, 2026) =
 * New: Added AI chatbot in Productivity Suite (Pro)
 * Fix: Addressed reported security vulnerability

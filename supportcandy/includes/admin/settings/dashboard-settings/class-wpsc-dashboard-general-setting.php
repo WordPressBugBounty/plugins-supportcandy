@@ -115,7 +115,7 @@ if ( ! class_exists( 'WPSC_Dashboard_General_Setting' ) ) :
 				printf(
 					/* translators: Click here to see the documentation */
 					esc_attr__( '%s to see the documentation!', 'supportcandy' ),
-					'<a href="https://supportcandy.net/docs/general-3/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
+					'<a href="https://supportcandy.net/docs/dashboard-general-setting/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
 				);
 				?>
 			</div>

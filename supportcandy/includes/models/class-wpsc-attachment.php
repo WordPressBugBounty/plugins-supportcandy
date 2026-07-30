@@ -651,7 +651,15 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 				$attachments = self::find(
 					array(
 						'search'         => $search,
-						'items_per_page' => 0,
+						'items_per_page' => 500,
+						'meta_query'     => array(
+							'relation' => 'AND',
+							array(
+								'slug'    => 'is_active',
+								'compare' => '=',
+								'val'     => '1',
+							),
+						),
 					)
 				)['results'];
 				if ( $attachments ) {

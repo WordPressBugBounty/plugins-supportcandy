@@ -3588,6 +3588,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			$filters['meta_query'][] = $thread_types;
 
+			$filters = apply_filters( 'wpsc_it_load_older_threads_filters', $filters );
+
 			$response = WPSC_Thread::find( $filters );
 			$last_id  = $response['results'][ count( $response['results'] ) - 1 ]->id;
 

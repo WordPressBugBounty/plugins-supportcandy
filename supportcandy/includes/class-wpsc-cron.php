@@ -21,6 +21,7 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 			add_action( 'init', array( __CLASS__, 'schedule_events' ) );
 
 			// cron event callbacks.
+			add_action( 'wpsc_auto_archive_closed_tickets', array( __CLASS__, 'auto_archive_closed_tickets' ) );
 			add_action( 'wpsc_permanently_delete_archive_tickets', array( __CLASS__, 'permanently_delete_archive_tickets' ) );
 			add_action( 'wpsc_permanently_delete_tickets', array( __CLASS__, 'permanently_delete_tickets' ) );
 
@@ -86,8 +87,11 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 				);
 			}
 
-			// Auto-archive closed tickets cron has been disabled.
-			wp_clear_scheduled_hook( 'wpsc_auto_archive_closed_tickets' );
+			// Auto-archive closed tickets.
+			$auto_archive_time = isset( $advanced['auto-archive-tickets-time'] ) ? $advanced['auto-archive-tickets-time'] : 0;
+			if ( $auto_archive_time > 0 && ! wp_next_scheduled( 'wpsc_auto_archive_closed_tickets' ) ) {
+				wp_schedule_single_event( time(), 'wpsc_auto_archive_closed_tickets' );
+			}
 
 			// Permanently delete archive tickets.
 			$permanent_archive_time = isset( $advanced['permanent-archive-tickets-time'] ) ? $advanced['permanent-archive-tickets-time'] : 0;
@@ -130,9 +134,6 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 			if ( $timestamp ) {
 				wp_unschedule_event( $timestamp, 'wpsc_cron_daily' );
 			}
-
-			// Remove auto-archive closed tickets cron.
-			wp_clear_scheduled_hook( 'wpsc_auto_archive_closed_tickets' );
 		}
 
 		/**
@@ -183,30 +184,26 @@ if ( ! class_exists( 'WPSC_Cron' ) ) :
 			}
 
 			// Arguments for fetching closed tickets to be archived.
-			$args = array(
+			$filters = array(
 				'items_per_page' => 20,
 				'orderby'        => 'date_closed',
 				'order'          => 'ASC',
-			);
-
-			// Add closed status condition in arguments.
-			$filters = array( 'relation' => 'AND' );
-			$filters[] = array(
-				array(
-					'slug'    => 'status',
-					'compare' => 'IN',
-					'val'     => $ad_settings['closed-ticket-statuses'],
-				),
-				array(
-					'slug'    => 'date_closed',
-					'compare' => '<',
-					'val'     => $age->format( 'Y-m-d' ),
+				'meta_query'     => array(
+					'relation' => 'AND',
+					array(
+						'slug'    => 'status',
+						'compare' => 'IN',
+						'val'     => $ad_settings['closed-ticket-statuses'],
+					),
+					array(
+						'slug'    => 'date_closed',
+						'compare' => '<',
+						'val'     => $age->format( 'Y-m-d' ),
+					),
 				),
 			);
 
-			$filters = array_merge( $args, array( 'meta_query' => $filters ) );
 			$filters = apply_filters( 'wpsc_auto_archive_closed_tickets_query', $filters );
-
 			// Get tickets to be archive.
 			$tickets = WPSC_Ticket::find( $filters );
 

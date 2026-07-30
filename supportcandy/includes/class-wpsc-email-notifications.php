@@ -183,8 +183,13 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 
 			$en = get_option( 'wpsc-en-general' );
 			// headers.
-			$headers  = "From: {$this->from_name} <{$this->from_email}>\r\n";
-			$headers .= "Reply-To: {$this->reply_to}\r\n";
+			$headers = '';
+			if ( $this->from_name && $this->from_email ) {
+				$headers = "From: {$this->from_name} <{$this->from_email}>\r\n";
+			}
+			if ( $this->reply_to ) {
+				$headers .= "Reply-To: {$this->reply_to}\r\n";
+			}
 			foreach ( $this->cc as $email ) {
 				$headers .= "CC: {$email}\r\n";
 			}
@@ -257,12 +262,9 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 
 			// from name & email.
 			$en_general = get_option( 'wpsc-en-general' );
-			if ( ! $en_general['from-name'] || ! $en_general['from-email'] ) {
-				return false;
-			}
 
-			$this->from_name  = $en_general['from-name'];
-			$this->from_email = $en_general['from-email'];
+			$this->from_name  = $en_general['from-name'] ? $en_general['from-name'] : '';
+			$this->from_email = $en_general['from-email'] ? $en_general['from-email'] : '';
 			$this->reply_to   = $en_general['reply-to'] ? $en_general['reply-to'] : $this->from_email;
 
 			// subject.

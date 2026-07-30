@@ -51,8 +51,7 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 		public static function load_scripts() {
 
 			// Check load scripts setting to load script on perticular page.
-			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			if ( $page_settings['load-scripts'] == 'custom' && ! in_array( get_the_id(), $page_settings['load-script-pages'] ) ) {
+			if ( ! WPSC_Functions::is_load_scripts_page() ) {
 				return;
 			}
 

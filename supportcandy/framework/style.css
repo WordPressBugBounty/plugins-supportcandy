@@ -2161,33 +2161,39 @@ table.wpsc-working-hrs {
 /* Agent collision css starts */
 .wpsc-live-agents {
   display: flex;
+  flex-direction: column;
   gap: 5px;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: stretch;
 }
 
 .wpsc-agent-avatar {
     position: relative;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 2px 10px 2px 2px;
+    border-radius: 16px;
     cursor: pointer;
+    box-sizing: border-box;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Avatar image */
 .wpsc-agent-avatar img {
-    width: 100%;
-    height: 100%;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
     object-fit: cover;
     border-radius: 50%;
 }
 
-/* Hover effect */
-.wpsc-agent-avatar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+/* Agent name shown alongside avatar (also covers installs with avatars disabled) */
+.wpsc-agent-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
 }
 /* Agent collision css ends */
 

@@ -44,8 +44,7 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 		public static function print_snippets() {
 
 			// Check load scripts setting to load script on perticular page.
-			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			if ( ! is_admin() && $page_settings['load-scripts'] == 'custom' && ! in_array( get_the_id(), $page_settings['load-script-pages'] ) ) {
+			if ( ! is_admin() && ! WPSC_Functions::is_load_scripts_page() ) {
 				return;
 			}
 			?>
@@ -76,8 +75,7 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 		public static function js_events() {
 
 			// Check load scripts setting to load script on perticular page.
-			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			if ( ! is_admin() && $page_settings['load-scripts'] == 'custom' && ! in_array( get_the_id(), $page_settings['load-script-pages'] ) ) {
+			if ( ! is_admin() && ! WPSC_Functions::is_load_scripts_page() ) {
 				return;
 			}
 			?>
@@ -154,8 +152,7 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 		public static function dynamic_css() {
 
 			// Check load scripts setting to load script on perticular page.
-			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			if ( ! is_admin() && $page_settings['load-scripts'] == 'custom' && ! in_array( get_the_id(), $page_settings['load-script-pages'] ) ) {
+			if ( ! is_admin() && ! WPSC_Functions::is_load_scripts_page() ) {
 				return;
 			}
 
@@ -432,6 +429,7 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 			$localizations['translations']['delete_permanently'] = esc_attr__( 'Deleting a ticket will permanently remove all associated information and cannot be undone!', 'supportcandy' );
 			$localizations['translations']['block_notifications'] = esc_attr__( 'Blocking notifications will stop all email alerts for this ticket.', 'supportcandy' );
 			$localizations['translations']['unblock_notifications'] = esc_attr__( 'Unblocking notifications will resume email alerts for this ticket.', 'supportcandy' );
+			$localizations['translations']['unauthorized_value'] = esc_attr__( 'Unauthorized value!', 'supportcandy' );
 			return $localizations;
 		}
 
@@ -443,8 +441,7 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 		public static function js_frontend() {
 
 			// Check load scripts setting to load script on perticular page.
-			$page_settings = get_option( 'wpsc-gs-page-settings' );
-			if ( ! is_admin() && $page_settings['load-scripts'] == 'custom' && ! in_array( get_the_id(), $page_settings['load-script-pages'] ) ) {
+			if ( ! is_admin() && ! WPSC_Functions::is_load_scripts_page() ) {
 				return;
 			}
 			?>

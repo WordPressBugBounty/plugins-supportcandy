@@ -455,7 +455,7 @@ if ( ! class_exists( 'WPSC_Option' ) ) :
 				$options = self::find(
 					array(
 						'search'         => $search,
-						'items_per_page' => 0,
+						'items_per_page' => 500,
 					)
 				)['results'];
 				if ( $options ) {

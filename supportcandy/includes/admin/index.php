@@ -43,3 +43,6 @@ foreach ( glob( __DIR__ . '/recent-activities/*.php' ) as $filename ) {
 foreach ( glob( __DIR__ . '/customers/*.php' ) as $filename ) {
 	include_once $filename;
 }
+
+// AI Assistant / AI ChatBot are loaded by class-wpsc-ai-legacy-compat.php (auto-included
+// by the glob in supportcandy.php), which defers to Productivity Suite's copy if needed.

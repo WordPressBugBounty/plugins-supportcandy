@@ -1303,7 +1303,7 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 						get_permalink( $support_page )
 					);
 
-				} elseif ( $ticket_url_page === 'open-ticket-page' && $open_page && ! empty( $ticket->auth_code ) ) {
+				} elseif ( $ticket_url_page === 'open-ticket-page' && $open_page && $ticket->auth_code ) {
 
 					$url = add_query_arg(
 						array(
@@ -1315,7 +1315,7 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 				}
 			}
 
-			if ( empty( $url ) ) {
+			if ( ! $url ) {
 				$url = $admin_url;
 			}
 
@@ -1418,6 +1418,88 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 			$is_paid_customer = ! empty( array_intersect( $addon_plugins, $active_plugins ) );
 			update_option( $cache_key, $is_paid_customer ? 1 : 0 );
 			return (bool) $is_paid_customer;
+		}
+
+		/**
+		 * Whether SupportCandy front-end scripts/styles should load on the current page,
+		 * based on Settings -> General -> Page settings -> Load scripts.
+		 *
+		 * Translation aware: if the current page is a WPML or Polylang translation of a
+		 * page selected in the 'Custom' list, scripts still load - the settings screen can
+		 * only ever store the ID of the page in the language active while saving.
+		 *
+		 * @return bool
+		 */
+		public static function is_load_scripts_page() {
+
+			$page_settings = get_option( 'wpsc-gs-page-settings' );
+
+			$load = true;
+
+			if ( isset( $page_settings['load-scripts'] ) && $page_settings['load-scripts'] === 'custom' ) {
+
+				$current_id = get_the_id();
+				$pages      = isset( $page_settings['load-script-pages'] ) ? (array) $page_settings['load-script-pages'] : array();
+
+				$load = $current_id && self::page_id_in_pages_or_translations( $current_id, $pages );
+			}
+
+			return (bool) apply_filters( 'wpsc_load_frontend_scripts', $load, $page_settings );
+		}
+
+		/**
+		 * Check if given post id matches (directly or via translation) any of the given page ids.
+		 *
+		 * @param int   $current_id current post id.
+		 * @param array $page_ids   selected page ids from settings.
+		 * @return bool
+		 */
+		private static function page_id_in_pages_or_translations( $current_id, $page_ids ) {
+
+			if ( in_array( $current_id, $page_ids ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+				return true;
+			}
+
+			foreach ( $page_ids as $page_id ) {
+
+				// WPML.
+				if ( has_filter( 'wpml_object_id' ) ) {
+					$translated_id = apply_filters( 'wpml_object_id', $page_id, 'page', false );
+					if ( $translated_id && (int) $translated_id === (int) $current_id ) {
+						return true;
+					}
+				}
+
+				// Polylang.
+				if ( function_exists( 'pll_get_post_translations' ) ) {
+					$translations = pll_get_post_translations( $page_id );
+					if ( in_array( $current_id, $translations ) ) { // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Get current active language code, if a multilingual plugin is active.
+		 *
+		 * @return string|null
+		 */
+		public static function get_current_language_code() {
+
+			if ( has_filter( 'wpml_current_language' ) ) {
+				$lang = apply_filters( 'wpml_current_language', null );
+				return $lang ? $lang : null;
+			}
+
+			if ( function_exists( 'pll_current_language' ) ) {
+				$lang = pll_current_language();
+				return $lang ? $lang : null;
+			}
+
+			return null;
 		}
 	}
 endif;

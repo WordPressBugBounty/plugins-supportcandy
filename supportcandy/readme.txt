@@ -1,11 +1,11 @@
 === SupportCandy – AI Customer Support Ticket System & Live Chatbot Agent ===
 Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
-Tags: support, helpdesk, ticketing system, customer support, ticket
+Tags: support, helpdesk, ticketing system, customer support, ai chatbot agent
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.5.0
+Stable tag: 3.5.1
 
 Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -15,9 +15,9 @@ Enhance your WordPress site with our AI Powered customer support ticket system. 
 
 [Click here](https://supportcandy.net/) to visit our official website.
 
-[AI Chatbot (PRO)](https://supportcandy.net/ai-chatbot/): Never miss a customer question. Our 24/7 AI Agent uses your knowledge base to resolve inquiries instantly, seamlessly escalating unknown issues to support tickets.
+Never miss a customer question. Our 24/7 AI Agent uses your knowledge base to resolve inquiries instantly, seamlessly escalating unknown issues to support tickets.
 
-[AI Assistant (PRO)](https://supportcandy.net/ai-assistant/): Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
+Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
 
 We stand as a remarkably versatile and feature-packed help desk and ticket management plugin. Elevate your customer support game by effortlessly handling and resolving customer queries directly from the comfort of your WordPress dashboard.
 
@@ -36,6 +36,8 @@ In addition to ticket management, you can assign multiple specific permission le
 SupportCandy is a self-hosted support ticket plugin offers limitless tickets, support agents, users, tags, and more. There are no constraints, as you maintain ownership of your system and data.
 
 = Key features : =
+- AI Chatbot Agent
+- AI Assistant
 - Unlimited number of tickets
 - Unlimited number of agents and agent roles
 - Unlimited number of customers
@@ -68,8 +70,6 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 - Auto delete closed tickets
 
 = Pro Features : =
-* [AI Assistant](https://supportcandy.net/ai-assistant/) - Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
-* [AI Chatbot](https://supportcandy.net/ai-chatbot/) - 24/7 AI Agent that answer questions directly from your knowledge base (AI Training) and automatically create support tickets for everything else.
 * [Email Piping](https://supportcandy.net/email-piping/) - The Email Piping extension in SupportCandy revolutionizes WordPress customer support by enabling users to create and respond to tickets directly from their email inboxes. This streamlines communication, eliminating the need for repeated website visits. With three piping methods, including Basic IMAP, Gmail and Microsoft Exchange.
 * [WooCommerce Integration](https://supportcandy.net/woocommerce-integration/) - The WooCommerce integration transforms customer support by seamlessly linking WooCommerce functionalities with the WordPress helpdesk plugin. Customers can effortlessly select orders and products within the ticket form, enhancing the assistance-seeking process. Agents gain a comprehensive view of customer order details, including order history and total spent, directly within the ticket. Add a support tab on the My Account page and a help button for orders.
 * [Canned Reply](https://supportcandy.net/canned-reply/) - The Canned Reply extension streamlines customer support in the WordPress helpdesk plugin by enabling agents to save and quickly access frequently used responses. Agents can effortlessly store and organize multiple replies, utilizing macros for added versatility. With a simple click, agents can retrieve canned responses, eliminating the need to remember information each time and significantly saving time. The extension also allows administrators to create public canned responses for universal accessibility.
@@ -96,9 +96,9 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 * [Email Marketing Tools Integration](https://supportcandy.net/downloads/email-marketing-tools-integration/) - Elevate customer engagement by effortlessly connecting SupportCandy with leading email marketing tools like MailChimp,GetResponse and Brevo. Subscribe users during registration or ticket creation, and personalize interactions with subscriber tags.
 * [Webhooks](https://supportcandy.net/downloads/webhooks/) - Webhooks deliver real-time notifications, ensuring you stay informed during critical support events, from new ticket creation to closures and agent assignments.
 
-= AI Assistant (Pro) : =
-
-Enhance your support workflow with our powerful AI Assistant feature, designed to improve agent efficiency and response quality.
+= AI Assistant & Chatbot : =
+24/7 AI Agent that answer questions directly from your knowledge base (AI Training) and automatically create support tickets for everything else.
+Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
 
 Key capabilities include:
 * Ticket Summary - Instantly generate a concise summary of long or complex tickets, helping agents quickly understand the issue without reading the entire conversation.
@@ -147,6 +147,14 @@ Key capabilities include:
 This plugin is almost plug and play! Please [follow this](https://supportcandy.net/docs-category/getting-started/) getting started guide for basic installation instructions.
 
 == Frequently Asked Questions ==
+
+= What does the AI Chatbot Agent do? =
+
+The AI Chatbot Agent is a 24/7 AI-powered agent that answers customer questions directly from your knowledge base (AI Training). If it cannot resolve a query, it automatically creates a support ticket so a human agent can follow up, ensuring no customer request goes unanswered.
+
+= How does the AI Assistant help support agents? =
+
+The AI Assistant helps agents work faster and more consistently by generating instant ticket summaries, drafting replies, and polishing agent responses for grammar, tone, and clarity. Administrators can also define custom AI prompt instructions to align AI-generated replies with their brand voice and support guidelines.
 
 = Is it necessary to purchase the pro version of SupportCandy? =
 
@@ -211,6 +219,15 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.5.1 (July 30, 2026) =
+* New: Added AI assistant features (polish, draft, summary) as part of this core product for free.
+* New: Introduced chatbot agent feature
+* Fix: Auto-archive closed tickets setting not working
+* Fix: Customer ticket count not updating
+* Fix: Agent collision widget shows names with avatars
+* Fix: WPML pages issue with custom script loading
+* Fix: Ticket list search not working
 
 = 3.5.0 (June 30, 2026) =
 * Fix: Tickets going to archived unexpectedly

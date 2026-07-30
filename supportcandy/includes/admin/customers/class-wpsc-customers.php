@@ -684,7 +684,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 */
 		public static function customer_ticket_count_after_ticket_merge( $prev_ticket, $new_ticket ) {
 
-			if ( empty( $prev_ticket->customer ) ) {
+			if ( ! $prev_ticket->customer ) {
 				return;
 			}
 
@@ -694,7 +694,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				$customer = new WPSC_Customer( $customer );
 			}
 
-			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+			if ( $customer->id ) {
 				$customer->update_ticket_count();
 			}
 		}
@@ -710,7 +710,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 */
 		public static function customer_ticket_count_after_change_raised_by( $ticket, $prev, $new, $customer_id ) {
 
-			if ( empty( $ticket->customer ) ) {
+			if ( ! $ticket->customer ) {
 				return;
 			}
 
@@ -720,7 +720,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				$customer = new WPSC_Customer( $customer );
 			}
 
-			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+			if ( $customer->id ) {
 				$customer->update_ticket_count();
 			}
 		}
@@ -733,8 +733,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 * @return void
 		 */
 		public static function reset_customer_ticket_count( $ticket, $ar_ticket ) {
-
-			if ( empty( $ticket->customer ) ) {
+			if ( ! $ticket->customer ) {
 				return;
 			}
 
@@ -744,7 +743,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				$customer = new WPSC_Customer( $customer );
 			}
 
-			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+			if ( $customer->id ) {
 				$customer->update_ticket_count();
 			}
 		}
@@ -756,8 +755,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 * @return void
 		 */
 		public static function customer_ticket_count( $ticket ) {
-
-			if ( empty( $ticket->customer ) ) {
+			if ( ! $ticket->customer ) {
 				return;
 			}
 
@@ -767,7 +765,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				$customer = new WPSC_Customer( $customer );
 			}
 
-			if ( isset( $customer->id ) && method_exists( $customer, 'update_ticket_count' ) ) {
+			if ( $customer->id ) {
 				$customer->update_ticket_count();
 			}
 		}

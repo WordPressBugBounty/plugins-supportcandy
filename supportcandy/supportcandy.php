@@ -3,7 +3,7 @@
  * Plugin Name: SupportCandy
  * Plugin URI: https://supportcandy.net/
  * Description: Easy & Powerful support ticket system for WordPress
- * Version: 3.5.0
+ * Version: 3.5.1
  * Author: SupportCandy
  * Author URI: https://wordpress.org/plugins/supportcandy/
  * Requires at least: 5.6
@@ -32,7 +32,7 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 		 *
 		 * @var string
 		 */
-		public static $version = '3.5.0';
+		public static $version = '3.5.1';
 
 		/**
 		 * Database version
@@ -142,6 +142,9 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 			foreach ( glob( WPSC_ABSPATH . 'includes/frontend/*.php' ) as $filename ) {
 				include_once $filename;
 			}
+
+			// load deactivation feedback class.
+			self::init_deactivation_feedback();
 		}
 
 		/**
@@ -156,6 +159,35 @@ if ( ! class_exists( 'PSM_Support_Candy' ) ) :
 			if ( ! defined( $name ) ) {
 				define( $name, $value );
 			}
+		}
+
+
+
+		/**
+		 * Initialize deactivation feedback system.
+		 *
+		 * @return void
+		 */
+		public static function init_deactivation_feedback() {
+			require_once WPSC_ABSPATH . 'deactivation-feedback/class-psm-dfr.php';
+			PSM_DFR::init(
+				array(
+					'plugin_file'    => plugin_basename( __FILE__ ),
+					'plugin_name'    => 'SupportCandy',
+					'plugin_version' => WPSC_VERSION,
+					'endpoint'       => 'https://feedback.psmplugins.com/wp-json/psm/v1/feedback',
+					'api_key'        => 'b8p-MO>d}!aq<bY6nx]mRG~&ndXO=3jwIi{iX<YAt2#Z!>n-[.Q9](OZ--}#@C|',
+					'reasons'        => array(
+						'too_complex'       => 'Too complicated to set up',
+						'testing'           => 'Just testing / comparing plugins',
+						'found_alternative' => 'Found a better plugin',
+						'missing_features'  => 'Missing a feature I need',
+						'bugs_errors'       => 'Bugs or errors',
+						'temporary'         => 'Temporary deactivation',
+						'other'             => 'Other',
+					),
+				)
+			);
 		}
 	}
 endif;

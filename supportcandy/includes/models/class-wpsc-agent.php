@@ -1186,6 +1186,44 @@ if ( ! class_exists( 'WPSC_Agent' ) ) :
 
 			return (int) $wpdb->get_var( $sql );
 		}
+
+		/**
+		 * Check current user ticket access for capability
+		 *
+		 * @param WPSC_Ticket|WPSC_Archive_Ticket $ticket Ticket object.
+		 * @param string                          $cap - capability name.
+		 * @return boolean
+		 */
+		public static function has_ticket_cap( $ticket, $cap ) {
+
+			$current_user = WPSC_Current_User::$current_user;
+
+			$assigned_agents = array_map(
+				fn ( $agent ) => $agent->id,
+				$ticket->assigned_agent
+			);
+
+			$flag = false;
+			if (
+				(
+					! $ticket->assigned_agent &&
+					$current_user->agent->has_cap( $cap . '-unassigned' )
+				) ||
+				(
+					in_array( $current_user->agent->id, $assigned_agents ) &&
+					$current_user->agent->has_cap( $cap . '-assigned-me' )
+				) ||
+				(
+					$ticket->assigned_agent &&
+					! in_array( $current_user->agent->id, $assigned_agents ) &&
+					$current_user->agent->has_cap( $cap . '-assigned-others' )
+				)
+			) {
+				$flag = true;
+			}
+
+			return apply_filters( 'wpsc_it_has_ticket_cap', $flag, $ticket, $cap );
+		}
 	}
 endif;
 
