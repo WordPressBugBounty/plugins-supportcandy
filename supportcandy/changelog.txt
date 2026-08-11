@@ -1,5 +1,9 @@
 == Changelog ==
 
+= 3.5.2 (August 11, 2026) =
+* New: Added chatbot auto-popup setting
+* Fix: Addressed security vulnerability issue
+
 = 3.5.1 (July 30, 2026) =
 * New: Added AI assistant features (polish, draft, summary)
 * New: Introduced chatbot agent feature

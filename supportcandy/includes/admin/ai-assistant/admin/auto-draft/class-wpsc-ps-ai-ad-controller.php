@@ -19,17 +19,10 @@ if ( ! class_exists( 'WPSC_PS_AI_AD_Controller' ) ) :
 
 			$ticket_data = self::wpsc_extract_relevant_ticket_data_for_rag( $ticket );
 			$ticket_data = WPSC_PS_AI_Functions::wpsc_mask_sensitive_content( $ticket_data );
+
 			$base_prompt = sprintf(
-				'You are an AI support assistant.
-
-				Rules:
-				- Use ONLY the provided knowledge base.
-				- If no relevant answer is found, return exactly: [NO_KB_MATCH]
-				- Do NOT hallucinate.
-				- Keep responses clear, concise, and helpful.
-
-				Task:
-				- The ticket conversation is ordered ASC (earliest first).
+				'TASK:
+				- The ticket conversation below is ordered ASC (earliest first).
 				- Identify ALL user questions or intents from the conversation.
 				- If a question is already answered later in the conversation, ignore it.
 				- Extract ONLY unanswered questions.
@@ -39,13 +32,11 @@ if ( ! class_exists( 'WPSC_PS_AI_AD_Controller' ) ) :
 				- Do NOT merge questions.
 				- Treat each question independently.
 				- You MUST identify and process ALL questions.
-				- DO NOT output the questions.
+				- DO NOT output the questions themselves - only the answer.
 
-				Output:
+				OUTPUT FORMAT:
 				- If only one question exists → answer it directly.
 				- If multiple questions exist → answer each separately in numbered format.
-				- If no KB match → return exactly: [NO_KB_MATCH]
-				- Return ONLY the final HTML reply ready to send to the customer.
 
 				Ticket Data:
 				"""

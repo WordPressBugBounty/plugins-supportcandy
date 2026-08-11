@@ -2035,6 +2035,11 @@ table.wpsc-working-hrs {
   display: none;
 }
 
+.wpsc-recent-ticket-list td, .wpsc-db-agent-list td,
+.wpsc-db-user-todo td {
+  cursor: default !important;
+}
+
 /* User profile starts */
 .wpsc-up-section {
   width: 100%;

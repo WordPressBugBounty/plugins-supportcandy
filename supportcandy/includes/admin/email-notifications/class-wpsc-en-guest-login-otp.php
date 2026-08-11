@@ -231,7 +231,7 @@ if ( ! class_exists( 'WPSC_EN_Guest_Login_OTP' ) ) :
 		 * Send OTP
 		 *
 		 * @param WPSC_Email_OTP $otp - otp.
-		 * @return boolean
+		 * @return void
 		 */
 		public static function send_otp( $otp ) {
 
@@ -240,11 +240,8 @@ if ( ! class_exists( 'WPSC_EN_Guest_Login_OTP' ) ) :
 
 			// from name & email.
 			$en_general = get_option( 'wpsc-en-general' );
-			if ( ! $en_general['from-name'] || ! $en_general['from-email'] ) {
-				return false;
-			}
-			$en->from_name  = $en_general['from-name'];
-			$en->from_email = $en_general['from-email'];
+			$en->from_name  = $en_general['from-name'] ?? '';
+			$en->from_email = $en_general['from-email'] ?? '';
 			$en->reply_to   = $en_general['reply-to'] ? $en_general['reply-to'] : $en->from_email;
 
 			$subject = $settings['subject'] ? WPSC_Translations::get( 'wpsc-guest-otp-subject', stripslashes( $settings['subject'] ) ) : stripslashes( $settings['subject'] );

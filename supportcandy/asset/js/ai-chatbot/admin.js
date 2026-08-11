@@ -67,7 +67,31 @@ function wpsc_get_acb_general_setting() {
   jQuery.post(supportcandy.ajax_url, data, function (response) {
     jQuery(".wpsc-setting-section-body").html(response);
     wpsc_reset_responsive_style();
+    wpsc_acb_toggle_dependent_settings();
+    jQuery("#wpsc-acb-service-status").on(
+      "change",
+      wpsc_acb_toggle_dependent_settings,
+    );
+    jQuery("#wpsc-acb-sessions-popup-delay-status").on(
+      "change",
+      wpsc_acb_toggle_dependent_settings,
+    );
   });
+}
+
+/**
+ * Show/hide the AI chatbot general settings that only make sense while their
+ * governing status select is set to "Enable" - settings tied to AI Chatbot
+ * Status (session retention, footer branding, sessions per page) and
+ * settings tied to Popup Delay Status (Popup Delay, Popup Display Limit).
+ */
+function wpsc_acb_toggle_dependent_settings() {
+  jQuery(".wpsc-acb-status-dependent").toggle(
+    jQuery("#wpsc-acb-service-status").val() === "1",
+  );
+  jQuery(".wpsc-acb-popup-delay-dependent").toggle(
+    jQuery("#wpsc-acb-sessions-popup-delay-status").val() === "1",
+  );
 }
 
 /**

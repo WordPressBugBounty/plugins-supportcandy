@@ -2073,6 +2073,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					'delete-acb-session-unit' => 'year',
 					'show-footer-branding'    => '1',
 					'sessions-per-page'       => 30,
+					'popup-delay-status'      => '0',
+					'popup-delay'             => 10,
+					'popup-display-limit'     => 3,
 				)
 			);
 
@@ -2883,6 +2886,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 							'delete-acb-session-unit' => 'year',
 							'show-footer-branding'    => '1',
 							'sessions-per-page'       => 30,
+							'popup-delay-status'      => '0',
+							'popup-delay'             => 10,
+							'popup-display-limit'     => 3,
 						)
 					);
 				}
@@ -2980,6 +2986,15 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					$chatbot['status'] = $ps_settings['ai-chatbot'] ? 1 : 0;
 					update_option( 'wpsc-ps-acb-chatbot-settings', $chatbot );
 				}
+			}
+
+			if ( version_compare( self::$current_version, '3.5.2', '<' ) ) {
+
+				$chatbot = get_option( 'wpsc-ps-acb-chatbot-settings' );
+				$chatbot['popup-delay-status'] = '0';
+				$chatbot['popup-delay'] = 10;
+				$chatbot['popup-display-limit'] = 3;
+				update_option( 'wpsc-ps-acb-chatbot-settings', $chatbot );
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );

@@ -26,9 +26,10 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 		 * @param string $system_prompt The system prompt to guide the AI's response.
 		 * @param array  $conversation_history The conversation history to provide context to the AI.
 		 * @param array  $tools Optional tools to include in the request (e.g., file search).
+		 * @param array  $tool_context Optional agentic-loop continuation state; see WPSC_PS_AIBOT_Provider_Interface::wpsc_get_chat_response().
 		 * @return string|false The response from the AI provider or false on failure.
 		 */
-		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array() ) {
+		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array(), $tool_context = array() ) {
 
 			$fallback = array(
 				'success'       => false,
@@ -50,8 +51,69 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 				return $fallback;
 			}
 
-			$contents = $this->wpsc_get_api_formatted_chat_messages( $conversation_history, $message );
 			$gemini_tools = class_exists( 'WPSC_AIBOT_Tool_Utils' ) ? WPSC_AIBOT_Tool_Utils::build_gemini_tools( $store_name, $tools ) : array();
+
+			$known_tool_names = array();
+			foreach ( $gemini_tools as $tool_group ) {
+				foreach ( $tool_group['function_declarations'] ?? array() as $declaration ) {
+					if ( ! empty( $declaration['name'] ) ) {
+						$known_tool_names[] = sanitize_key( (string) $declaration['name'] );
+					}
+				}
+			}
+
+			$is_continuation = is_array( $tool_context ) && is_array( $tool_context['contents'] ?? null );
+
+			if ( $is_continuation ) {
+
+				// Continue an agentic tool-calling loop: replay the prior turn's
+				// contents, echo back the model's own functionCall, then append
+				// the tool's structured result as a functionResponse part.
+				$contents = $tool_context['contents'];
+				$tool_call = is_array( $tool_context['tool_call'] ?? null ) ? $tool_context['tool_call'] : array();
+				$tool_name = sanitize_key( (string) ( $tool_call['name'] ?? '' ) );
+
+				if ( '' !== $tool_name ) {
+
+					// Gemini's functionCall.args and functionResponse.response are
+					// proto Struct (object) fields, not repeating fields - wp_json_encode()
+					// serializes a PHP empty array as JSON `[]`, which the API rejects
+					// with "Proto field is not repeating, cannot start list." Force an
+					// object cast so an empty array always encodes as `{}` instead.
+					$arguments = is_array( $tool_call['arguments'] ?? null ) ? $tool_call['arguments'] : array();
+					$tool_result = is_array( $tool_context['tool_result'] ?? null ) ? $tool_context['tool_result'] : array();
+
+					$contents[] = array(
+						'role'  => 'model',
+						'parts' => array(
+							array(
+								'functionCall' => array(
+									'name' => $tool_name,
+									'args' => empty( $arguments ) ? (object) array() : $arguments,
+								),
+							),
+						),
+					);
+					$contents[] = array(
+						'role'  => 'function',
+						'parts' => array(
+							array(
+								'functionResponse' => array(
+									'name'     => $tool_name,
+									'response' => empty( $tool_result ) ? (object) array() : $tool_result,
+								),
+							),
+						),
+					);
+				}
+
+				$requested_choice = $tool_context['tool_choice'] ?? 'auto';
+				$function_calling_mode = 'none' === $requested_choice ? 'NONE' : 'AUTO';
+			} else {
+
+				$contents = $this->wpsc_get_api_formatted_chat_messages( $conversation_history, $message );
+				$function_calling_mode = ! empty( $gemini_tools ) ? 'ANY' : 'AUTO';
+			}
 
 			$request_body = array(
 				'system_instruction' => array(
@@ -69,12 +131,14 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 				'tools'              => $gemini_tools,
 				'toolConfig'         => array(
 					'function_calling_config' => array(
-						'mode' => 'ANY', // or REQUIRED (stronger).
+						'mode' => $function_calling_mode,
 					),
 				),
 			);
 
-			for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
+			$max_retries = isset( $tool_context['max_retries'] ) ? max( 1, (int) $tool_context['max_retries'] ) : 3;
+
+			for ( $attempt = 1; $attempt <= $max_retries; $attempt++ ) {
 
 				$attempt_model = WPSC_PS_AI_Gemini::resolve_retry_model(
 					$model,
@@ -103,16 +167,23 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 				if ( WPSC_PS_AI_Gemini::is_retryable_response( $response ) ) {
 
 					$status_code = wp_remote_retrieve_response_code( $response );
-					if ( $attempt < 3 ) {
+					if ( $attempt < $max_retries ) {
 						sleep( 1 );
 						continue;
 					}
 				}
 
-				return $this->process_chat_response(
+				$result = $this->process_chat_response(
 					$response,
-					$fallback
+					$fallback,
+					$known_tool_names
 				);
+
+				if ( ! empty( $result['success'] ) ) {
+					$result['contents'] = $contents;
+				}
+
+				return $result;
 			}
 
 			return $fallback;
@@ -123,9 +194,12 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 		 *
 		 * @param array $response The response from the Gemini API.
 		 * @param array $fallback The fallback response in case of errors.
+		 * @param array $known_tool_names Registered tool names for this turn, used to validate
+		 *                                a pseudocode-text tool-call fallback match; see
+		 *                                WPSC_AIBOT_Tool_Utils::extract_gemini_tool_call().
 		 * @return array The processed response or the fallback response on error.
 		 */
-		public function process_chat_response( $response, $fallback ) {
+		public function process_chat_response( $response, $fallback, $known_tool_names = array() ) {
 
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( is_wp_error( $response ) || 200 !== $status_code ) {
@@ -146,7 +220,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			}
 
 			$tool_call = class_exists( 'WPSC_AIBOT_Tool_Utils' )
-				? WPSC_AIBOT_Tool_Utils::extract_gemini_tool_call( $body )
+				? WPSC_AIBOT_Tool_Utils::extract_gemini_tool_call( $body, $known_tool_names )
 				: null;
 
 			if ( ! empty( $tool_call ) ) {
@@ -167,7 +241,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 
 			return array(
 				'success'           => true,
-				'response'          => '',
+				'response'          => self::extract_text_reply( $body ),
 				'create_ticket'     => false,
 				'tool_call'         => '',
 				'prompt_tokens'     => $prompt_tokens,
@@ -499,10 +573,13 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 		 */
 		public function search_knowledge_base( $ai_settings, $prompt, $query ) {
 
-			$fallback = array(
-				'success'          => false,
-				'response'         => '<p>' . esc_html__( 'I could not find a matching answer in the knowledge base. Would you like me to create a support ticket, or try again?', 'wpsc-ps' ) . '</p>',
-				'end_conversation' => false,
+			$not_found = array(
+				'success' => true,
+				'found'   => false,
+			);
+			$error = array(
+				'success' => false,
+				'error'   => 'knowledge_base_unavailable',
 			);
 
 			$store_name = $this->wpsc_provider_store_id( $ai_settings['api_key'] );
@@ -569,45 +646,49 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 
 				return $this->process_knowledge_base_response(
 					$response,
-					$fallback
+					$error,
+					$not_found
 				);
 			}
-			return $fallback;
+			return $error;
 		}
 
 		/**
 		 * Process the knowledge base response from the Gemini API and extract relevant information.
 		 *
+		 * Returns structured data only (no pre-rendered HTML) - this is itself a
+		 * nested LLM call whose synthesized answer is fed back as a tool result
+		 * into the outer agentic loop, which composes the final user-facing
+		 * reply in the user's own language.
+		 *
 		 * @param array $response The response from the Gemini API.
-		 * @param array $fallback The fallback response in case of errors.
-		 * @return array The processed response or the fallback response on error.
+		 * @param array $error The error response to use on request/parse failure.
+		 * @param array $not_found The response to use when no matching answer was found.
+		 * @return array
 		 */
-		private function process_knowledge_base_response( $response, $fallback ) {
+		private function process_knowledge_base_response( $response, $error, $not_found ) {
 
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( is_wp_error( $response ) || 200 !== $status_code ) {
-				return $fallback;
+				return $error;
 			}
 
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( ! empty( $body['promptFeedback']['blockReason'] ) ) {
-				return $fallback;
+				return $error;
 			}
 
 			$reply = self::extract_text_reply( $body );
-			$reply = wp_kses_post( trim( $reply ) );
-			$reply_check = strtoupper( trim( wp_strip_all_tags( $reply ) ) );
+			$reply = trim( wp_strip_all_tags( $reply ) );
+			$reply_check = strtoupper( $reply );
 			if ( '[NO_KB_FOUND]' === $reply_check || '' === $reply_check ) {
-				return $fallback;
+				return $not_found;
 			}
 
-			if ( 0 === preg_match( '/<\/?(p|ul|ol|li|strong|em|br)\b/i', $reply ) ) {
-				$reply = '<p>' . esc_html( $reply ) . '</p>';
-			}
 			return array(
-				'success'          => true,
-				'response'         => $reply,
-				'end_conversation' => false,
+				'success' => true,
+				'found'   => true,
+				'answer'  => $reply,
 			);
 		}
 

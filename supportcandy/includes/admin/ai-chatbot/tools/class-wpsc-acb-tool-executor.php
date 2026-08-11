@@ -23,12 +23,14 @@ if ( ! class_exists( 'WPSC_ACB_Tool_Executor' ) ) :
 
 			if ( '' === $handler || ! is_callable( array( $class, $handler ) ) ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'I can continue helping in chat. Please tell me what you need.', 'wpsc-ps' ) . '</p>',
+					'success' => false,
+					'error'   => 'unknown_tool',
 				);
 			}
 
-			return call_user_func( array( $class, $handler ), $args, $session_uuid );
+			$result = call_user_func( array( $class, $handler ), $args, $session_uuid );
+
+			return $result;
 		}
 	}
 endif;

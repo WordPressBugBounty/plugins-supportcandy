@@ -187,10 +187,18 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 		 */
 		public static function load_current_user() {
 
-			global $current_user;
+			// Use wp_get_current_user() rather than the raw global - the
+			// global is only populated once something has actually called
+			// wp_get_current_user() (or a function that does, like
+			// is_user_logged_in()) earlier in the request. Nothing guarantees
+			// that has happened yet by the 'init' hook (where this runs), so
+			// reading the raw global directly can see an empty, not-yet-resolved
+			// WP_User and wrongly treat a logged-in visitor as a guest for the
+			// rest of the request.
+			$wp_user = wp_get_current_user();
 
 			// wp logged-in user.
-			$email = $current_user && $current_user->ID ? $current_user->user_email : '';
+			$email = $wp_user && $wp_user->ID ? $wp_user->user_email : '';
 			if ( $email ) {
 				self::$current_user = new WPSC_Current_User( $email );
 				self::$login_type   = 'registered';
@@ -203,12 +211,12 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 			$login_auth = isset( $_COOKIE['wpsc_guest_login_auth'] ) ? sanitize_text_field( wp_unslash( $_COOKIE['wpsc_guest_login_auth'] ) ) : '';
 			$login_auth = $login_auth ? json_decode( $login_auth ) : false;
 
-			if ( ! $login_auth ) {
+			if ( ! $login_auth || ! is_object( $login_auth ) || ! isset( $login_auth->token ) || ! is_string( $login_auth->token ) ) {
 				self::$current_user = new WPSC_Current_User();
 				return;
 			}
 
-			$login_auth->email = $login_auth->email ? sanitize_email( $login_auth->email ) : '';
+			$login_auth->email = isset( $login_auth->email ) && is_string( $login_auth->email ) ? sanitize_email( $login_auth->email ) : '';
 			if ( ! $login_auth->email ) {
 				self::$current_user = new WPSC_Current_User();
 				return;
@@ -1184,9 +1192,12 @@ if ( ! class_exists( 'WPSC_Current_User' ) ) :
 			$data = json_decode( $otp->data );
 
 			if (
-				isset( $data->auth_type ) &&
+				isset( $data->auth_type, $data->auth_token, $login_auth->token ) &&
+				is_string( $data->auth_token ) && $data->auth_token !== '' &&
+				is_string( $login_auth->token ) &&
 				( ( $data->auth_type == 'login' && $page_settings['otp-login'] && in_array( 'guest', $gs['allow-create-ticket'] ) ) || $data->auth_type == 'open-ticket' ) &&
-				( $otp->date_expiry > $now && $data->auth_token == $login_auth->token )
+				$otp->date_expiry > $now &&
+				hash_equals( $data->auth_token, $login_auth->token )
 			) {
 				self::$login_type       = 'guest';
 				self::$guest_login_type = $data->auth_type;

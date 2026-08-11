@@ -281,6 +281,24 @@
   content: "\26A0";
 }
 
+.wpsc-ait-provider-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background-color: #fef8e7;
+  border: 1px solid #f0c33c;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a6100;
+}
+
+.wpsc-ait-provider-notice::before {
+  content: "\26A0";
+}
+
 .wpsc-ait-sync-progress-bar {
   width: 100%;
   height: 10px;
@@ -364,4 +382,45 @@
 .wpsc-ait-record-counts span strong {
   color: #222;
   font-weight: 600;
+}
+
+/* Edit screen: gap between the In Queue count and its "Retry Upload" link. */
+.wpsc-ait-retry-upload-link {
+  margin-left: 10px;
+}
+
+/* Sources list table: overall per-source upload status badge - see
+   WPSC_PS_AI_Setting_AI_Training::get_source_upload_status(). */
+.wpsc-ait-upload-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wpsc-ait-upload-status--completed {
+  background-color: #edfaef;
+  color: #1a7f37;
+}
+
+.wpsc-ait-upload-status--uploading {
+  background-color: #e3f2fd;
+  color: #2271b1;
+}
+
+.wpsc-ait-upload-status--queued {
+  background-color: #fef8e7;
+  color: #8a6100;
+}
+
+.wpsc-ait-upload-status--failed {
+  background-color: #fcedee;
+  color: #d63638;
+}
+
+.wpsc-ait-upload-status--not-synced {
+  background-color: #f1f1f1;
+  color: #666;
 }

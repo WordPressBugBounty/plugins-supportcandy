@@ -390,6 +390,16 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 		 */
 		public static function confirm_open_ticket_auth() {
 
+			// Rate limiting (mirrors WPSC_Current_User::confirm_guest_login()).
+			$ip_address  = WPSC_DF_IP_Address::get_current_user_ip();
+			$attempt_key = 'wpsc_otp_attempts_' . md5( $ip_address );
+			$attempts    = get_transient( $attempt_key );
+			$attempts    = $attempts ? $attempts : 1;
+
+			if ( $attempts >= 5 ) {
+				wp_send_json_error( 'Too many attempts. Please try again later.', 429 );
+			}
+
 			if ( check_ajax_referer( 'wpsc_confirm_open_ticket_auth', '_ajax_nonce', false ) != 1 ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
@@ -412,9 +422,28 @@ if ( ! class_exists( 'WPSC_Shortcode_Three' ) ) :
 			}
 
 			if ( ! $otp->is_valid( $verification_otp ) ) {
+
+				// Increment attempt counter.
+				++$attempts;
+				set_transient( $attempt_key, $attempts, 300 ); // 5 minute lockout.
+
+				// Add per-OTP attempt tracking.
+				$otp_attempt_key = 'wpsc_otp_' . $id . '_attempts';
+				$otp_attempts    = get_transient( $otp_attempt_key );
+				$otp_attempts    = $otp_attempts ? $otp_attempts + 1 : 1;
+				set_transient( $otp_attempt_key, $otp_attempts, 600 );
+
+				if ( $otp_attempts >= 3 ) {
+					WPSC_Email_OTP::destroy( $otp );
+					wp_send_json_error( 'OTP has been invalidated due to too many failed attempts', 403 );
+				}
+
 				echo wp_json_encode( array( 'isSuccess' => 0 ) );
 				wp_die();
 			}
+
+			// Clear rate limiting on success.
+			delete_transient( $attempt_key );
 
 			$data               = json_decode( $otp->data, true );
 			$data['auth_token'] = WPSC_Functions::get_random_string( 100 );

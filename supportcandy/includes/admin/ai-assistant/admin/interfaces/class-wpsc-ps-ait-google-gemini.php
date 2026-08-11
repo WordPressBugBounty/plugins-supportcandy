@@ -19,6 +19,16 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 		}
 
 		/**
+		 * Clear the cached file search store ID. See interface docblock.
+		 *
+		 * @return void
+		 */
+		public function wpsc_clear_provider_store_id() {
+
+			WPSC_PS_AI_Gemini::clear_stored_file_search_store_id();
+		}
+
+		/**
 		 * Extract metadata from the prompt for analytics or other purposes.
 		 *
 		 * @param array  $ai_settings AI settings array.
@@ -319,7 +329,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 						'X-Goog-Upload-Protocol' => 'multipart',
 					),
 					'body'    => $body,
-					'timeout' => 120,
+					'timeout' => 45,
 				)
 			);
 
@@ -351,6 +361,16 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 				$error_message = isset( $data['error']['message'] )
 					? $data['error']['message']
 					: __( 'Unknown API error.', 'wpsc-ps' );
+
+				// Google returns 404 when the configured file search store doesn't exist for
+				// this key/project (e.g. after a key rotation) — flagged with a distinct code
+				// so callers can auto-clear the cached store ID instead of just failing.
+				if ( 404 === $code ) {
+					return new WP_Error(
+						'file_search_store_not_found',
+						sanitize_text_field( $error_message )
+					);
+				}
 
 				return new WP_Error(
 					'gemini_upload_failed',

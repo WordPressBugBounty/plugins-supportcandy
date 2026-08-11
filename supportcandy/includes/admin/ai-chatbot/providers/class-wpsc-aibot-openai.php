@@ -26,9 +26,10 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 		 * @param string $system_prompt The system prompt to guide the AI's response.
 		 * @param array  $conversation_history The conversation history to provide context to the AI.
 		 * @param array  $tools Optional tools to include in the request (e.g., function calling).
+		 * @param array  $tool_context Optional agentic-loop continuation state; see WPSC_PS_AIBOT_Provider_Interface::wpsc_get_chat_response().
 		 * @return string|false The response from the AI provider or false on failure.
 		 */
-		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array() ) {
+		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array(), $tool_context = array() ) {
 
 			$fallback = array(
 				'success'       => false,
@@ -55,31 +56,65 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 				return $fallback;
 			}
 
-			$input = $this->wpsc_get_api_formatted_chat_messages( $conversation_history, $message );
-			array_unshift(
-				$input,
-				array(
-					'role'    => 'system',
+			$openai_tools = class_exists( 'WPSC_AIBOT_Tool_Utils' ) ? WPSC_AIBOT_Tool_Utils::build_openai_tools( $store_id, $tools ) : array();
+
+			$is_continuation = is_array( $tool_context ) && is_array( $tool_context['input'] ?? null );
+
+			if ( $is_continuation ) {
+
+				// Continue an agentic tool-calling loop: replay the prior turn's
+				// input, echo back the model's own function call, then append the
+				// tool's structured result so the model can observe it.
+				$input = $tool_context['input'];
+				$tool_call = is_array( $tool_context['tool_call'] ?? null ) ? $tool_context['tool_call'] : array();
+				$call_id = ! empty( $tool_call['call_id'] ) ? sanitize_text_field( (string) $tool_call['call_id'] ) : '';
+
+				if ( '' !== $call_id ) {
+					$input[] = array(
+						'type'      => 'function_call',
+						'call_id'   => $call_id,
+						'name'      => sanitize_key( (string) ( $tool_call['name'] ?? '' ) ),
+						'arguments' => wp_json_encode( is_array( $tool_call['arguments'] ?? null ) ? $tool_call['arguments'] : array() ),
+					);
+					$input[] = array(
+						'type'    => 'function_call_output',
+						'call_id' => $call_id,
+						'output'  => wp_json_encode( is_array( $tool_context['tool_result'] ?? null ) ? $tool_context['tool_result'] : array() ),
+					);
+				}
+
+				$requested_choice = $tool_context['tool_choice'] ?? 'auto';
+				$tool_choice = 'none' === $requested_choice ? 'none' : 'auto';
+			} else {
+
+				$input = $this->wpsc_get_api_formatted_chat_messages( $conversation_history, $message );
+				array_unshift(
+					$input,
+					array(
+						'role'    => 'system',
+						'content' => array(
+							array(
+								'type' => 'input_text',
+								'text' => (string) $system_prompt,
+							),
+						),
+					)
+				);
+				$input[] = array(
+					'role'    => 'user',
 					'content' => array(
 						array(
 							'type' => 'input_text',
-							'text' => (string) $system_prompt,
+							'text' => $message,
 						),
 					),
-				)
-			);
-			$input[] = array(
-				'role'    => 'user',
-				'content' => array(
-					array(
-						'type' => 'input_text',
-						'text' => $message,
-					),
-				),
-			);
-			$openai_tools = class_exists( 'WPSC_AIBOT_Tool_Utils' ) ? WPSC_AIBOT_Tool_Utils::build_openai_tools( $store_id, $tools ) : array();
-			$tool_choice = ! empty( $openai_tools ) ? 'required' : 'auto';
+				);
 
+				$tool_choice = ! empty( $openai_tools ) ? 'required' : 'auto';
+			}
+
+			// 'none' tells the model it must not call a function on this turn -
+			// used to force final synthesis once the agentic loop must stop.
 			$request_body = array(
 				'model'             => $model,
 				'input'             => $input,
@@ -110,7 +145,9 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 				'max_output_tokens' => $max_tokens,
 			);
 
-			for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
+			$max_retries = isset( $tool_context['max_retries'] ) ? max( 1, (int) $tool_context['max_retries'] ) : 3;
+
+			for ( $attempt = 1; $attempt <= $max_retries; $attempt++ ) {
 
 				$attempt_model = WPSC_PS_AI_OpenAI::resolve_retry_model(
 					$model,
@@ -136,16 +173,22 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 				);
 
 				if ( WPSC_PS_AI_OpenAI::is_retryable_response( $response ) ) {
-					if ( $attempt < 3 ) {
+					if ( $attempt < $max_retries ) {
 						sleep( 1 );
 						continue;
 					}
 				}
 
-				return $this->process_chat_response(
+				$result = $this->process_chat_response(
 					$response,
 					$fallback
 				);
+
+				if ( ! empty( $result['success'] ) ) {
+					$result['input'] = $input;
+				}
+
+				return $result;
 			}
 
 			return $fallback;
@@ -198,14 +241,43 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 				);
 			}
 
+			$parsed = self::extract_structured_chat_reply( $this->extract_text_from_openai_response( $body ) );
+
 			return array(
 				'success'           => true,
-				'response'          => '',
-				'create_ticket'     => false,
+				'response'          => $parsed['response'],
+				'create_ticket'     => $parsed['create_ticket'],
 				'tool_call'         => '',
 				'prompt_tokens'     => $prompt_tokens,
 				'completion_tokens' => $completion_tokens,
 				'total_tokens'      => $total_tokens,
+			);
+		}
+
+		/**
+		 * Parse the model's final text output against the 'chat_response'
+		 * json_schema requested in the request body ({response, create_ticket}).
+		 * Falls back to treating the raw text as the response if it isn't
+		 * valid JSON (defensive - shouldn't happen given the enforced schema).
+		 *
+		 * @param string $text Raw text output from the OpenAI response.
+		 * @return array{response: string, create_ticket: bool}
+		 */
+		private static function extract_structured_chat_reply( $text ) {
+
+			$text = trim( (string) $text );
+			$decoded = json_decode( $text, true );
+
+			if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) && isset( $decoded['response'] ) && is_string( $decoded['response'] ) ) {
+				return array(
+					'response'      => $decoded['response'],
+					'create_ticket' => ! empty( $decoded['create_ticket'] ),
+				);
+			}
+
+			return array(
+				'response'      => $text,
+				'create_ticket' => false,
 			);
 		}
 
@@ -219,6 +291,22 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 		public function wpsc_get_api_formatted_chat_messages( $conversation_history, $message ) {
 
 			$conversation_history = is_array( $conversation_history ) ? array_slice( $conversation_history, -6 ) : array();
+
+			// The current turn's message is cached before wpsc_get_chat_response()
+			// runs, so it is typically already the last history entry. Drop it here
+			// so the caller's own explicit "current message" turn isn't duplicated.
+			$message = is_string( $message ) ? trim( $message ) : '';
+			if ( '' !== $message && ! empty( $conversation_history ) ) {
+
+				$last_item = end( $conversation_history );
+				$last_role = sanitize_key( (string) ( $last_item['role'] ?? ( $last_item['sender'] ?? '' ) ) );
+				$last_content = trim( (string) ( $last_item['content'] ?? ( $last_item['message'] ?? '' ) ) );
+
+				if ( 'user' === $last_role && $last_content === $message ) {
+					array_pop( $conversation_history );
+				}
+			}
+
 			$input = array();
 
 			foreach ( $conversation_history as $history_item ) {
@@ -548,20 +636,23 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 		 */
 		public function search_knowledge_base( $ai_settings, $prompt, $query ) {
 
-			$fallback = array(
-				'success'          => false,
-				'response'         => '<p>' . esc_html__( 'I could not find a matching answer in the knowledge base. Would you like me to create a support ticket, or try again?', 'wpsc-ps' ) . '</p>',
-				'end_conversation' => false,
+			$not_found = array(
+				'success' => true,
+				'found'   => false,
+			);
+			$error = array(
+				'success' => false,
+				'error'   => 'knowledge_base_unavailable',
 			);
 
 			$api_key = isset( $ai_settings['api_key'] ) ? trim( $ai_settings['api_key'] ) : '';
 			if ( '' === $api_key ) {
-				return $fallback;
+				return $error;
 			}
 
 			$store_id = $this->wpsc_provider_store_id( $api_key );
 			if ( is_wp_error( $store_id ) || empty( $store_id ) ) {
-				return $fallback;
+				return $error;
 			}
 
 			$model = ! empty( $ai_settings['model'] ) ? sanitize_text_field( $ai_settings['model'] ) : 'gpt-4o-mini';
@@ -603,9 +694,9 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 					array(
 						'type'             => 'file_search',
 						'vector_store_ids' => array( sanitize_text_field( (string) $store_id ) ),
-						'max_num_results'  => 6,
+						'max_num_results'  => 8,
 						'ranking_options'  => array(
-							'score_threshold' => 0.5,
+							'score_threshold' => 0.4,
 						),
 					),
 				),
@@ -646,51 +737,54 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 
 				return $this->process_knowledge_base_response(
 					$response,
-					$fallback
+					$error,
+					$not_found
 				);
 			}
 
-			return $fallback;
+			return $error;
 		}
 
 		/**
 		 * Process the knowledge base response from the OpenAI API and extract relevant information.
 		 *
+		 * Returns structured data only (no pre-rendered HTML) - this is itself a
+		 * nested LLM call whose synthesized answer is fed back as a tool result
+		 * into the outer agentic loop, which composes the final user-facing
+		 * reply in the user's own language.
+		 *
 		 * @param array $response The response from the OpenAI API.
-		 * @param array $fallback The fallback response in case of errors.
-		 * @return array The processed response or the fallback response on error.
+		 * @param array $error The error response to use on request/parse failure.
+		 * @param array $not_found The response to use when no matching answer was found.
+		 * @return array
 		 */
-		private function process_knowledge_base_response( $response, $fallback ) {
+		private function process_knowledge_base_response( $response, $error, $not_found ) {
 
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( is_wp_error( $response ) || 200 !== $status_code ) {
-				return $fallback;
+				return $error;
 			}
 
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $body ) ) {
-				return $fallback;
+				return $error;
 			}
 
 			if ( ! empty( $body['error']['message'] ) ) {
-				return $fallback;
+				return $error;
 			}
 
 			$reply = $this->extract_text_from_openai_response( $body );
-			$reply = wp_kses_post( trim( $reply ) );
-			$reply_check = strtoupper( trim( wp_strip_all_tags( $reply ) ) );
+			$reply = trim( wp_strip_all_tags( $reply ) );
+			$reply_check = strtoupper( $reply );
 			if ( '[NO_KB_FOUND]' === $reply_check || '' === $reply_check ) {
-				return $fallback;
-			}
-
-			if ( 0 === preg_match( '/<\/?(p|ul|ol|li|strong|em|br)\b/i', $reply ) ) {
-				$reply = '<p>' . esc_html( $reply ) . '</p>';
+				return $not_found;
 			}
 
 			return array(
-				'success'          => true,
-				'response'         => $reply,
-				'end_conversation' => false,
+				'success' => true,
+				'found'   => true,
+				'answer'  => $reply,
 			);
 		}
 

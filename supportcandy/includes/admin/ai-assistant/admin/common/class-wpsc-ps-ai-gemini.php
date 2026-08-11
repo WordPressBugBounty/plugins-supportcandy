@@ -53,6 +53,21 @@ if ( ! class_exists( 'WPSC_PS_AI_Gemini' ) ) :
 		}
 
 		/**
+		 * Clear the cached file search store ID so the next call to wpsc_provider_store_id()
+		 * creates a fresh store under whichever API key/project is currently configured.
+		 * Needed because file search stores are project-scoped in Google AI: a cached ID
+		 * created under one project is not reachable from a key belonging to a different
+		 * project (e.g. after rotating to a new API key), and it is never re-validated on
+		 * its own.
+		 *
+		 * @return void
+		 */
+		public static function clear_stored_file_search_store_id() {
+
+			delete_option( 'wpsc_gemini_file_search_store_id' );
+		}
+
+		/**
 		 * Resolve the model to use for retry attempts based on the current attempt number.
 		 *
 		 * @param string $model The original model name.

@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ai chatbot agent
 Requires at least: 5.6
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 3.5.1
+Stable tag: 3.5.2
 
 Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -34,6 +34,15 @@ While we prioritize technical support for our paid users, we are committed to as
 In addition to ticket management, you can assign multiple specific permission levels to agents and customers. Gain access to detailed reports concerning your customers, agents, and the overall productivity of your customer support desk. By navigating through the ticket view, you can gain a comprehensive 360-degree perspective of your customers, including their past tickets, purchase history, membership levels, and more. Armed with this wealth of customer data alongside their queries, you can accomplish much more.
 
 SupportCandy is a self-hosted support ticket plugin offers limitless tickets, support agents, users, tags, and more. There are no constraints, as you maintain ownership of your system and data.
+
+= AI Assistant & Chatbot : =
+24/7 AI Agent that answer questions directly from your knowledge base (AI Training) and automatically create support tickets for everything else.
+Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
+
+Key capabilities include:
+* Ticket Summary - Instantly generate a concise summary of long or complex tickets, helping agents quickly understand the issue without reading the entire conversation.
+* Polish Agent Replies - Draft quickly and let the Polish (AI) button refine your grammar, tone, and clarity. The AI automatically analyzes the entire ticket thread for context, ensuring every response is pinpoint accurate. You can continue to provide follow-up prompts to tweak the suggestion until you’re satisfied, then simply click **Replace** or **Append** to the editor.
+* Custom AI Prompts - Administrators can define custom prompt instructions from the settings panel. The AI will follow these instructions while polishing replies, allowing you to align responses with your brand voice and support guidelines.
 
 = Key features : =
 - AI Chatbot Agent
@@ -95,15 +104,6 @@ SupportCandy is a self-hosted support ticket plugin offers limitless tickets, su
 * [LMS Integrations](https://supportcandy.net/downloads/lms-integration/) - Effortlessly integrate popular LMS (Learning Management System) plugins into SupportCandy with the LMS Integration add-on. This integration enhances the support process by allowing customers to specify a particular course or their course when creating a ticket. Agents can seamlessly access customer course details directly within the ticket, providing a more streamlined and efficient support experience. The supported LMS plugins include LifterLMS, Tutor LMS, and LearnPress LMS.
 * [Email Marketing Tools Integration](https://supportcandy.net/downloads/email-marketing-tools-integration/) - Elevate customer engagement by effortlessly connecting SupportCandy with leading email marketing tools like MailChimp,GetResponse and Brevo. Subscribe users during registration or ticket creation, and personalize interactions with subscriber tags.
 * [Webhooks](https://supportcandy.net/downloads/webhooks/) - Webhooks deliver real-time notifications, ensuring you stay informed during critical support events, from new ticket creation to closures and agent assignments.
-
-= AI Assistant & Chatbot : =
-24/7 AI Agent that answer questions directly from your knowledge base (AI Training) and automatically create support tickets for everything else.
-Empower your agents to resolve issues faster and deliver consistent, on-brand support with AI-driven summaries, draft generation, and response polishing.
-
-Key capabilities include:
-* Ticket Summary - Instantly generate a concise summary of long or complex tickets, helping agents quickly understand the issue without reading the entire conversation.
-* Polish Agent Replies - Draft quickly and let the Polish (AI) button refine your grammar, tone, and clarity. The AI automatically analyzes the entire ticket thread for context, ensuring every response is pinpoint accurate. You can continue to provide follow-up prompts to tweak the suggestion until you’re satisfied, then simply click **Replace** or **Append** to the editor.
-* Custom AI Prompts - Administrators can define custom prompt instructions from the settings panel. The AI will follow these instructions while polishing replies, allowing you to align responses with your brand voice and support guidelines.
 
 = Examples areas of use : =
 * Helpdesk
@@ -219,6 +219,10 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.5.2 (August 11, 2026) =
+* New: Added chatbot auto-popup setting
+* Fix: Addressed security vulnerability issue
 
 = 3.5.1 (July 30, 2026) =
 * New: Added AI assistant features (polish, draft, summary) as part of this core product for free.

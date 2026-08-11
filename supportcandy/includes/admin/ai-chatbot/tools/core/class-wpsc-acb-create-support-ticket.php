@@ -24,35 +24,41 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 		public static function register_tool( $registry ) {
 
 			$registry['create_support_ticket'] = array(
-				'name'        => 'create_support_ticket',
-				'description' => 'Create a support ticket. Use this tool only for ticket-confirmation decisions in any language. Set confirm_create_ticket=true when user asks to create/open/start/submit a ticket or clearly confirms in their language. Set confirm_create_ticket=false only when user explicitly declines ticket creation after the assistant has already asked a ticket-confirmation question in this conversation. Never call this tool with false for uncertainty, unrelated questions, or missing-knowledge fallback. Never fabricate identity values. After an explicit decline, continue helping in chat and do not ask for ticket creation again unless the customer asks for it.',
-				'parameters'  => array(
+				'name'                  => 'create_support_ticket',
+				'description'           => 'Create a support ticket. Requires user confirmation first: before ever calling this tool with confirm_create_ticket=true, you must already have asked the customer in a plain conversational reply (no tool call) whether they want a ticket created, and they must have affirmatively agreed in a later message. Once that confirmation has happened, it is fine (and expected) to call this tool with confirm_create_ticket=true again on later turns even before you have the customer\'s full name/email - if either is still missing, it will fail with error=missing_fields and a missing array naming exactly which field(s) to ask for next; use that to word your follow-up question, do not give up or move on without the customer\'s email. Never set confirm_create_ticket=false just because information is still incomplete or you are still gathering it - false must be reserved exclusively for a clear, explicit "no"/"don\'t"/"cancel" from the customer after you asked for confirmation; using false as a placeholder while waiting for name/email will incorrectly tell the customer their request was declined. Never call this tool to ask the confirmation question yourself, never call it for uncertainty or missing-knowledge fallback, and never fabricate identity values. For guest users, both customer_name and customer_email are mandatory - a ticket cannot be created without a valid email. After an explicit decline, continue helping in chat and do not ask again unless the customer asks for it.',
+				'parameters'            => array(
 					'type'                 => 'object',
 					'properties'           => array(
 						'confirm_create_ticket' => array(
 							'type'        => 'boolean',
-							'description' => 'true when user requested or confirmed ticket creation; false only for explicit decline after the assistant asked a ticket-confirmation question.',
+							'description' => 'true once the customer has affirmatively agreed to ticket creation (keep using true on later turns of the same request, even while still gathering name/email). false ONLY for an explicit decline - never as a placeholder for "not ready yet" or "still missing info".',
 						),
 						'customer_name'         => array(
 							'type'        => 'string',
-							'description' => __( 'Customer full name for guest users.', 'wpsc-ps' ),
+							'description' => __( 'Customer full name for guest users. Mandatory for guests - if not yet known, omit this argument rather than guessing; the tool will report it as missing.', 'wpsc-ps' ),
 						),
 						'customer_email'        => array(
 							'type'        => 'string',
-							'description' => __( 'Customer email for guest users.', 'wpsc-ps' ),
+							'description' => __( 'Customer email for guest users. Mandatory for guests - a ticket cannot be created without a valid email; if not yet known, omit this argument rather than guessing, and ask the customer for it based on the tool\'s missing_fields result.', 'wpsc-ps' ),
 						),
 					),
 					'required'             => array( 'confirm_create_ticket' ),
 					'additionalProperties' => false,
 				),
-				'handler'     => 'execute_tool_create_support_ticket',
-				'class'       => __CLASS__,
+				'handler'               => 'execute_tool_create_support_ticket',
+				'class'                 => __CLASS__,
+				'requires_confirmation' => true,
+				'side_effecting'        => true,
+				'max_calls_per_turn'    => 1,
 			);
 			return $registry;
 		}
 
 		/**
 		 * Execute create support ticket tool.
+		 *
+		 * Returns structured data only; the calling LLM turn composes the actual
+		 * user-facing reply (in the user's own language) from this result.
 		 *
 		 * @param array  $args Tool arguments.
 		 * @param string $session_uuid Session ID.
@@ -63,15 +69,16 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			$confirm = self::normalize_tool_boolean( $args['confirm_create_ticket'] ?? null );
 			if ( null === $confirm ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'Do you want me to create a support ticket now?', 'wpsc-ps' ) . '</p>',
+					'success' => false,
+					'error'   => 'missing_confirmation',
 				);
 			}
 
 			if ( ! $confirm ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'No problem. I can continue helping you here.', 'wpsc-ps' ) . '</p>',
+					'success'        => true,
+					'ticket_created' => false,
+					'declined'       => true,
 				);
 			}
 
@@ -85,8 +92,8 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 
 				if ( '' === $name || '' === $email || ! is_email( $email ) ) {
 					return array(
-						'success'  => true,
-						'response' => '<p>' . esc_html__( 'I found your account but your profile name/email is incomplete. Please share your name and email to create the ticket.', 'wpsc-ps' ) . '</p>',
+						'success' => false,
+						'error'   => 'incomplete_profile',
 					);
 				}
 			} else {
@@ -97,55 +104,41 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 
 				$missing_fields = array();
 				if ( '' === $name ) {
-					$missing_fields[] = esc_html__( 'name', 'wpsc-ps' );
+					$missing_fields[] = 'name';
 				}
 
 				if ( '' === $raw_email || ! is_email( $raw_email ) ) {
-					$missing_fields[] = esc_html__( 'email', 'wpsc-ps' );
+					$missing_fields[] = 'email';
 				}
 
 				if ( ! empty( $missing_fields ) ) {
 					return array(
-						'success'  => true,
-						'response' => '<p>' . sprintf(
-							/* translators: %s: comma separated missing fields. */
-							esc_html__( 'Before I create your ticket, please share your %s', 'wpsc-ps' ),
-							esc_html( implode( ', ', $missing_fields ) )
-						) . '?</p>',
+						'success' => false,
+						'error'   => 'missing_fields',
+						'missing' => $missing_fields,
 					);
 				}
 
 				if ( self::is_placeholder_identity( $name, $email ) ) {
 					return array(
-						'success'  => true,
-						'response' => '<p>' . esc_html__( 'Before I create your ticket, please provide your real name and email in this chat message.', 'wpsc-ps' ) . '</p>',
+						'success' => false,
+						'error'   => 'placeholder_identity',
 					);
 				}
 			}
 
-			$result = self::create_ticket_from_chat_session( $session_uuid, $name, $email );
-			if ( ! $result['success'] ) {
-				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html( $result['message'] ) . '</p>',
-				);
-			}
-
-			$message = wp_kses_post( (string) $result['message'] );
-			if ( 0 === preg_match( '/<\\/?(p|ul|ol|li|br)\\b/i', $message ) ) {
-				$message = '<p>' . esc_html( $message ) . '</p>';
-			}
-
-			return array(
-				'success'          => true,
-				'response'         => wp_kses_post( $message ),
-				'end_conversation' => true,
-			);
+			return self::create_ticket_from_chat_session( $session_uuid, $name, $email );
 		}
 
 
 		/**
 		 * Shared ticket creation from chatbot session.
+		 *
+		 * Returns structured data only (ticket_id/error code), never pre-rendered
+		 * message text - callers compose their own user-facing text: the chat
+		 * tool layer feeds this back into the LLM for multi-language
+		 * composition, while the plain (non-AI) manual ticket-form AJAX handler
+		 * builds its own fixed WP-i18n string from the 'error'/success fields.
 		 *
 		 * @param string $session_uuid Session UUID.
 		 * @param string $name Customer name.
@@ -162,7 +155,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			if ( '' === $name || '' === $raw_email || ! is_email( $raw_email ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'Valid name and email are required.', 'wpsc-ps' ),
+					'error'   => 'invalid_identity',
 				);
 			}
 
@@ -170,13 +163,9 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			if ( empty( $ai_settings['is-active'] ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'Unauthorized request!', 'wpsc-ps' ),
+					'error'   => 'unauthorized',
 				);
 			}
-
-			$page_settings = get_option( 'wpsc-gs-page-settings', array() );
-			$provider = WPSC_AIBOT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
-			$customer = WPSC_DF_Customer::get_customer_record( $name, $email );
 
 			$filter = array(
 				'meta_query' => array(
@@ -198,7 +187,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			if ( empty( $session ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'No active chat session found.', 'wpsc-ps' ),
+					'error'   => 'no_active_session',
 				);
 			}
 
@@ -206,9 +195,41 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			if ( '' !== $request_visitor_id && (string) $session->visitor_id !== $request_visitor_id ) {
 				return array(
 					'success' => false,
-					'message' => __( 'Unauthorized request!', 'wpsc-ps' ),
+					'error'   => 'unauthorized',
 				);
 			}
+
+			// Idempotency guard: bail out if this session already has a ticket,
+			// in case the model calls the tool again within the same turn (the
+			// agentic loop also caps this tool at 1 call/turn generically, this
+			// is the data-level backstop).
+			if ( ! empty( $session->ticket_id ) ) {
+
+				$existing_ticket = new WPSC_Ticket( (int) $session->ticket_id );
+				if ( $existing_ticket->id ) {
+
+					// Safe to clear here: the later feedback-reaction popup
+					// (chatbot_end_conversation()) looks the session up by UUID
+					// straight from the DB (no status filter) and rebuilds the
+					// transcript from psmsc_acb_messages if the transient cache
+					// is empty - it never depends on this transient surviving.
+					WPSC_ACB_Cache::clear_acb_cache( $session->id );
+					WPSC_ACB_Cookies::delete_session_cookie( 'wpsc_acb_session_id' );
+					return array(
+						'success'           => true,
+						'ticket_created'    => true,
+						'already_created'   => true,
+						'ticket_id'         => $existing_ticket->id,
+						'ticket_display_id' => self::format_ticket_display_id( $existing_ticket->id ),
+						'end_conversation'  => true,
+						'session_expired'   => true,
+						'reason'            => 'ticket_created',
+					);
+				}
+			}
+
+			$provider = WPSC_AIBOT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			$customer = WPSC_DF_Customer::get_customer_record( $name, $email );
 
 			$subject = WPSC_ACB_Chats::generate_session_subject_and_summary( 'subject', $provider, $ai_settings, $session->id );
 			if ( '' === $subject ) {
@@ -231,12 +252,13 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			$data['ip_address']    = WPSC_DF_IP_Address::get_current_user_ip();
 			$data['browser']       = WPSC_DF_Browser::get_user_browser();
 			$data['os']            = WPSC_DF_OS::get_user_platform();
+			$data['misc']          = wp_json_encode( array( 'chat_session_id' => $session->id ) );
 
 			$ticket = WPSC_Ticket::insert( $data );
 			if ( ! $ticket->id ) {
 				return array(
 					'success' => false,
-					'message' => __( 'Error creating ticket.', 'wpsc-ps' ),
+					'error'   => 'ticket_creation_failed',
 				);
 			}
 
@@ -265,18 +287,40 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			do_action( 'wpsc_create_new_ticket', $ticket );
 			WPSC_Email_Notifications::send_background_emails();
 
-			$message = '<p>' . esc_html__( 'Your support ticket has been created successfully. Our support team will review your issue and get back to you as soon as possible.', 'wpsc-ps' ) . '</p>';
-			$general_settings = get_option( 'wpsc-gs-general' );
-			$ticket_alice     = $general_settings['ticket-alice'];
-			$message .= '<p>' . esc_html__( 'Your ticket ID is:', 'wpsc-ps' ) . ' ' . esc_html( $ticket_alice ) . esc_html( $ticket->id ) . '</p>';
-
+			// Safe to clear here: the later feedback-reaction popup
+			// (chatbot_end_conversation()) looks the session up by UUID
+			// straight from the DB (no status filter) and rebuilds the
+			// transcript from psmsc_acb_messages if the transient cache is
+			// empty - it never depends on this transient surviving. This
+			// also drops the now-stale memoized known_user_context (see
+			// WPSC_ACB_Cache::get/set_known_user_context()) instead of
+			// letting it sit around for up to an hour after the session
+			// has already been handed off to a ticket.
+			WPSC_ACB_Cache::clear_acb_cache( $session->id );
 			WPSC_ACB_Cookies::delete_session_cookie( 'wpsc_acb_session_id' );
 			return array(
-				'success'          => true,
-				'session_expired'  => true,
-				'message'          => $message,
-				'end_conversation' => true,
+				'success'           => true,
+				'ticket_created'    => true,
+				'ticket_id'         => $ticket->id,
+				'ticket_display_id' => self::format_ticket_display_id( $ticket->id ),
+				'end_conversation'  => true,
+				'session_expired'   => true,
+				'reason'            => 'ticket_created',
 			);
+		}
+
+		/**
+		 * Format a ticket ID with the site's configured ticket ID prefix.
+		 *
+		 * @param int $ticket_id Ticket ID.
+		 * @return string
+		 */
+		private static function format_ticket_display_id( $ticket_id ) {
+
+			$general_settings = get_option( 'wpsc-gs-general' );
+			$ticket_alice = $general_settings['ticket-alice'] ?? '';
+
+			return $ticket_alice . (string) $ticket_id;
 		}
 
 		/**
@@ -369,20 +413,33 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 		}
 
 		/**
-		 * Resolve logged-in identity for chatbot ticket creation.
+		 * Resolve the current visitor's identity if they are logged in.
 		 *
-		 * @return array
+		 * Must use the exact same "known customer" condition as
+		 * WPSC_ACB_Chats::get_known_user_context() (is_customer + customer
+		 * record on the canonical WPSC_Current_User::$current_user instance) -
+		 * NOT a raw WP_User/wp_get_current_user() check. Those can disagree
+		 * (e.g. if WPSC_Current_User resolved the visitor as a guest for this
+		 * request before WordPress lazily populated the current user), which
+		 * previously let the model converse with the customer as a guest
+		 * (asking for name/email) while this tool silently created the ticket
+		 * under a different, real account it detected on its own - discarding
+		 * whatever guest identity the customer had just typed.
+		 *
+		 * @return array{is_logged_in: bool, name: string, email: string}
 		 */
 		private static function get_logged_in_identity() {
 
 			$current_user = WPSC_Current_User::$current_user;
-			$user = isset( $current_user->user ) ? $current_user->user : null;
 
-			if ( ! $user || empty( $user->ID ) ) {
-				$user = wp_get_current_user();
-			}
-
-			if ( ! $user || empty( $user->ID ) ) {
+			// Note: WPSC_Customer exposes 'id' via a magic __get() with no
+			// __isset(), and empty( $current_user->customer->id ) always
+			// evaluates true regardless of the actual value in that case -
+			// verified directly (empty() on a magic-getter-only property
+			// short-circuits before ever calling __get()). Read the value
+			// out first via a plain property access and test that instead.
+			$customer_id = empty( $current_user ) || empty( $current_user->is_customer ) || empty( $current_user->customer ) ? '' : $current_user->customer->id;
+			if ( ! $customer_id ) {
 				return array(
 					'is_logged_in' => false,
 					'name'         => '',
@@ -390,15 +447,21 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 				);
 			}
 
-			$name = trim( (string) $user->display_name );
-			if ( '' === $name ) {
-				$name = trim( (string) $user->user_login );
+			$name = sanitize_text_field( (string) $current_user->customer->name );
+			$email = sanitize_email( (string) $current_user->customer->email );
+
+			if ( '' === $name || '' === $email || ! is_email( $email ) ) {
+				return array(
+					'is_logged_in' => false,
+					'name'         => '',
+					'email'        => '',
+				);
 			}
 
 			return array(
 				'is_logged_in' => true,
-				'name'         => sanitize_text_field( $name ),
-				'email'        => sanitize_email( (string) $user->user_email ),
+				'name'         => $name,
+				'email'        => $email,
 			);
 		}
 

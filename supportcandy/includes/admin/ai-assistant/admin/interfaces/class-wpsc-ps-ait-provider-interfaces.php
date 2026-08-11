@@ -16,6 +16,16 @@ if ( ! interface_exists( 'WPSC_PS_AIT_Provider_Interface' ) ) :
 		public function wpsc_provider_store_id( $api_key );
 
 		/**
+		 * Clear this provider's cached vector/file-search store ID so the next call to
+		 * wpsc_provider_store_id() creates a fresh one under whichever key/project is
+		 * currently configured. Needed because these stores are project-scoped and never
+		 * re-validated on their own once cached (e.g. after an API key rotation).
+		 *
+		 * @return void
+		 */
+		public function wpsc_clear_provider_store_id();
+
+		/**
 		 * Extract AI metadata from a prompt.
 		 *
 		 * @param array  $ai_settings The AI settings array.

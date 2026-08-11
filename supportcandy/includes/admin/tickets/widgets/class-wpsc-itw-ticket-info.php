@@ -70,6 +70,8 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Info' ) ) :
 			$title = $settings['title']
 					? WPSC_Translations::get( 'wpsc-twt-ticket-info', stripslashes( $settings['title'] ) )
 					: stripslashes( $settings['title'] );
+
+			global $current_user;
 			?>
 			<div class="wpsc-it-widget wpsc-itw-ticket-info">
 				<div class="wpsc-widget-header">
@@ -97,6 +99,16 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Info' ) ) :
 						<div class="info-label"><?php echo esc_attr( $cf->name ); ?>:</div>
 						<div class="info-val"><?php echo esc_attr( $cf->type::print_widget_ticket_field_val( $cf, $ticket ) ); ?></div>
 					</div>
+					<?php
+					$misc = is_array( $ticket->misc ) ? $ticket->misc : array();
+					if ( ! empty( $misc['chat_session_id'] && $current_user->has_cap( 'manage_options' ) ) ) :
+						$chat_session_url = admin_url( 'admin.php?page=wpsc-ai-chatbot&session_id=' . absint( $misc['chat_session_id'] ) );
+						?>
+						<div class="info-list-item">
+							<div class="info-label"><?php esc_attr_e( 'Chat session', 'supportcandy' ); ?>:</div>
+							<div class="info-val"><a class="wpsc-link" href="<?php echo esc_url( $chat_session_url ); ?>" target="_blank"><?php echo esc_html( $misc['chat_session_id'] ); ?></a></div>
+						</div>
+					<?php endif; ?>
 					<?php do_action( 'wpsc_itw_ticket_info', $ticket ); ?>
 				</div>
 			</div>

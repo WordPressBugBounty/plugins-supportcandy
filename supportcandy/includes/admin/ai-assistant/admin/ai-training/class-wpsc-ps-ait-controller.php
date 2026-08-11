@@ -17,6 +17,21 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 		 */
 		public static function upload_file_to_training( $ai_settings ) {
 
+			// Database synchronization takes priority over uploading to the AI provider.
+			// A source's sync can start concurrently with an already-scheduled/in-flight
+			// upload tick (see WPSC_PS_AI_Setting_AI_Training_Actions::start_sync_for_source()),
+			// so this is checked here too rather than only at schedule time - without it, a
+			// row could still be picked up and uploaded while its own sync is still inserting
+			// the rest of that post type's pages. Nothing has been touched yet at this point,
+			// so deferring is safe: no row, no cron state. The event that triggered this call
+			// was a one-off wp_schedule_single_event() and is already consumed by WP-Cron, so
+			// simply returning here does not lose it or leave a duplicate behind - the pending
+			// records get picked up again once every active sync finishes (see the finalize
+			// step of WPSC_PS_AI_Setting_AI_Training_Actions::process_sync_tick()).
+			if ( WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
+				return;
+			}
+
 			$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
 			$store_id = $provider->wpsc_provider_store_id( $ai_settings['api_key'] );
 
@@ -95,6 +110,17 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 				$upload = array();
 				$upload = $provider->wpsc_upload_file( $file_path, $ai_settings['api_key'] );
 
+				// The store this upload targeted no longer exists for the configured key/project
+				// (e.g. an API key rotation moved to a different project). Vector/file-search
+				// stores are never re-validated on their own, so without this the row would just
+				// fail forever. Clear the cached store so a fresh one gets created, and requeue
+				// this row instead of discarding it.
+				if ( is_wp_error( $upload ) && 'file_search_store_not_found' === $upload->get_error_code() ) {
+					$provider->wpsc_clear_provider_store_id();
+					self::wpsc_requeue_for_stale_store( $training, $upload->get_error_message() );
+					return;
+				}
+
 				if ( is_wp_error( $upload ) || empty( $upload['id'] ) ) {
 					// Mark as deleted, do not output JSON in cron context.
 					self::wpsc_mark_delete( $training, 'Failed to upload file to ' . ucfirst( $ai_settings['provider'] ) );
@@ -105,6 +131,13 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 
 				// Attach file.
 				$attach = $provider->wpsc_attach_file( $store_id, $file_id, $ai_settings['api_key'] );
+
+				// Same stale-store scenario as above, but surfaced at attach time (OpenAI).
+				if ( is_wp_error( $attach ) && 'vector_store_not_found' === $attach->get_error_code() ) {
+					$provider->wpsc_clear_provider_store_id();
+					self::wpsc_requeue_for_stale_store( $training, $attach->get_error_message(), $file_id );
+					return;
+				}
 
 				if ( is_wp_error( $attach ) || empty( $attach ) ) {
 					// File was uploaded to the provider but failed to attach to the vector/file search store
@@ -174,6 +207,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 		 */
 		private static function wpsc_mark_delete( $data, $message = '' ) {
 
+			self::wpsc_set_failure_reason( $data, $message );
 			$data->status = WPSC_PS_AIT_Status::DELETE;
 			$data->save();
 		}
@@ -190,11 +224,100 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 		 */
 		private static function wpsc_mark_failed( $data, $message = '', $provider_file_id = '' ) {
 
+			self::wpsc_set_failure_reason( $data, $message );
 			$data->status = WPSC_PS_AIT_Status::FAILED;
 			if ( $provider_file_id ) {
 				$data->provider_file_id = $provider_file_id;
 			}
 			$data->save();
+		}
+
+		/**
+		 * Requeue a training row after detecting that its target vector/file-search store no
+		 * longer exists for the currently configured API key (e.g. the key was rotated to a
+		 * different provider project — stores are project-scoped and never re-validated on
+		 * their own, see WPSC_PS_AI_OpenAI::clear_stored_vector_store_id()). The caller is
+		 * expected to have already cleared the stale cached store ID, so a fresh store gets
+		 * created under the currently configured key on retry.
+		 *
+		 * Capped like reset_stale_processing_files()'s stall retries, so a permanently broken
+		 * key/project (e.g. lacking permission to create a store at all) eventually lands on
+		 * FAILED instead of requeuing to NEW forever. Rescheduling the upload cron is left to
+		 * the caller's surrounding finally block (wpsc_schedule_training_upload_if_pending()).
+		 *
+		 * @param WPSC_RAG_Training_File $training The training data model instance.
+		 * @param string                 $message The reason to persist for admin visibility.
+		 * @param string                 $provider_file_id Provider-side file ID, if one was created.
+		 * @return void
+		 */
+		private static function wpsc_requeue_for_stale_store( $training, $message = '', $provider_file_id = '' ) {
+
+			$retry_count = self::wpsc_get_training_meta( $training, 'stale_store_retry_count', 0 ) + 1;
+
+			if ( $retry_count > 3 ) {
+				self::wpsc_mark_failed( $training, $message, $provider_file_id );
+				return;
+			}
+
+			self::wpsc_set_training_meta( $training, 'stale_store_retry_count', $retry_count );
+			self::wpsc_set_failure_reason( $training, $message );
+			if ( $provider_file_id ) {
+				$training->provider_file_id = $provider_file_id;
+			}
+			$training->status = WPSC_PS_AIT_Status::NEW;
+			$training->save();
+		}
+
+		/**
+		 * Persist a human-readable failure/status reason into the row's meta_data. Surfaced as
+		 * a tooltip in the training list UI — see
+		 * WPSC_PS_AI_Setting_AI_Training::get_aia_file_upload_training_list().
+		 *
+		 * @param WPSC_RAG_Training_File $training The training data model instance.
+		 * @param string                 $message Reason to store; ignored if empty.
+		 * @return void
+		 */
+		private static function wpsc_set_failure_reason( $training, $message ) {
+
+			if ( '' === trim( (string) $message ) ) {
+				return;
+			}
+
+			self::wpsc_set_training_meta( $training, 'failure_reason', sanitize_text_field( $message ) );
+		}
+
+		/**
+		 * Read a single key out of a training row's meta_data JSON.
+		 *
+		 * @param WPSC_RAG_Training_File $training The training data model instance.
+		 * @param string                 $key Meta key to read.
+		 * @param mixed                  $default_value Value to return if the key isn't set.
+		 * @return mixed
+		 */
+		private static function wpsc_get_training_meta( $training, $key, $default_value = null ) {
+
+			$meta = json_decode( $training->meta_data, true );
+			return ( is_array( $meta ) && isset( $meta[ $key ] ) ) ? $meta[ $key ] : $default_value;
+		}
+
+		/**
+		 * Write a single key into a training row's meta_data JSON, preserving any other keys
+		 * already stored there (e.g. stale_retry_count alongside failure_reason). Does not
+		 * save() — callers set this alongside other field changes and save once.
+		 *
+		 * @param WPSC_RAG_Training_File $training The training data model instance.
+		 * @param string                 $key Meta key to write.
+		 * @param mixed                  $value Value to store.
+		 * @return void
+		 */
+		private static function wpsc_set_training_meta( $training, $key, $value ) {
+
+			$meta = json_decode( $training->meta_data, true );
+			if ( ! is_array( $meta ) ) {
+				$meta = array();
+			}
+			$meta[ $key ]         = $value;
+			$training->meta_data = wp_json_encode( $meta );
 		}
 
 		/**
@@ -249,7 +372,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 				$training->save();
 			}
 
-			if ( ! wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
+			if ( ! wp_next_scheduled( 'wpsc_ai_training_upload' ) && ! WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
 				wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
 			}
 		}
@@ -262,8 +385,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 		 */
 		private static function wpsc_get_stale_retry_count( $training ) {
 
-			$meta = json_decode( $training->meta_data, true );
-			return ( is_array( $meta ) && ! empty( $meta['stale_retry_count'] ) ) ? (int) $meta['stale_retry_count'] : 0;
+			return (int) self::wpsc_get_training_meta( $training, 'stale_retry_count', 0 );
 		}
 
 		/**
@@ -275,12 +397,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 		 */
 		private static function wpsc_set_stale_retry_count( $training, $count ) {
 
-			$meta = json_decode( $training->meta_data, true );
-			if ( ! is_array( $meta ) ) {
-				$meta = array();
-			}
-			$meta['stale_retry_count'] = $count;
-			$training->meta_data = wp_json_encode( $meta );
+			self::wpsc_set_training_meta( $training, 'stale_retry_count', $count );
 		}
 
 		/**
@@ -309,7 +426,10 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 				)
 			);
 
-			if ( $pending > 0 && ! wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
+			// Do not requeue while a sync is active - if one started while this file was
+			// uploading, the finalize step of process_sync_tick() will schedule the next
+			// upload run once every source's sync has finished instead.
+			if ( $pending > 0 && ! wp_next_scheduled( 'wpsc_ai_training_upload' ) && ! WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
 				wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
 			}
 		}

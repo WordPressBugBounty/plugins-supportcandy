@@ -47,6 +47,9 @@ if ( ! class_exists( 'WPSC_ACB_Detect_Spam' ) ) :
 		/**
 		 * Execute detect spam tool.
 		 *
+		 * Returns structured intent data only; the calling LLM turn composes the
+		 * actual user-facing reply (in the user's own language) from this result.
+		 *
 		 * @param array  $args Tool arguments.
 		 * @param string $session_uuid Session UUID.
 		 * @return array
@@ -57,8 +60,8 @@ if ( ! class_exists( 'WPSC_ACB_Detect_Spam' ) ) :
 
 			if ( true !== $is_spam ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'I can continue helping you with your support questions.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'intent'  => 'not_spam',
 				);
 			}
 
@@ -73,13 +76,12 @@ if ( ! class_exists( 'WPSC_ACB_Detect_Spam' ) ) :
 
 			WPSC_ACB_Cookies::delete_session_cookie( 'wpsc_acb_session_id' );
 
-			$end_message = __( 'This chat has been closed due to spam activity.', 'wpsc-ps' );
 			return array(
-				'success'               => true,
-				'response'              => '<p>' . esc_html__( 'This chat session has been ended. If you need support, please start a new conversation with your real issue.', 'wpsc-ps' ) . '</p>',
-				'end_conversation'      => true,
-				'session_expired'       => true,
-				'disable_input_message' => $end_message,
+				'success'          => true,
+				'intent'           => 'spam',
+				'end_conversation' => true,
+				'session_expired'  => true,
+				'reason'           => 'spam_closed',
 			);
 		}
 

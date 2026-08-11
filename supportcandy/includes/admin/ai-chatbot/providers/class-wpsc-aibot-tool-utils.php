@@ -125,14 +125,25 @@ if ( ! class_exists( 'WPSC_AIBOT_Tool_Utils' ) ) :
 		/**
 		 * Extract tool call from Gemini response body.
 		 *
+		 * Some Gemini models occasionally ignore the native function-calling
+		 * protocol and instead write the intended call out as pseudocode text
+		 * (e.g. 'print(default_api.search_knowledge_base(query="..."))'). If no
+		 * structured functionCall part is present, fall back to detecting that
+		 * pattern in the response text so the call still executes instead of
+		 * leaking raw pseudocode to the customer - see parse_pseudocode_tool_call().
+		 *
 		 * @param array $body Response body.
+		 * @param array $known_tool_names Registered tool names for this turn, used
+		 *                                to validate a pseudocode-text fallback match.
 		 * @return array|null
 		 */
-		public static function extract_gemini_tool_call( $body ) {
+		public static function extract_gemini_tool_call( $body, $known_tool_names = array() ) {
 
 			if ( ! is_array( $body ) || empty( $body['candidates'] ) || ! is_array( $body['candidates'] ) ) {
 				return null;
 			}
+
+			$text_parts = array();
 
 			foreach ( $body['candidates'] as $candidate ) {
 				$parts = $candidate['content']['parts'] ?? array();
@@ -149,6 +160,9 @@ if ( ! class_exists( 'WPSC_AIBOT_Tool_Utils' ) ) :
 					}
 
 					if ( empty( $call['name'] ) ) {
+						if ( ! empty( $part['text'] ) && is_string( $part['text'] ) ) {
+							$text_parts[] = $part['text'];
+						}
 						continue;
 					}
 
@@ -172,7 +186,64 @@ if ( ! class_exists( 'WPSC_AIBOT_Tool_Utils' ) ) :
 				}
 			}
 
+			if ( ! empty( $text_parts ) ) {
+				return self::parse_pseudocode_tool_call( implode( "\n", $text_parts ), $known_tool_names );
+			}
+
 			return null;
+		}
+
+		/**
+		 * Best-effort recovery for a tool call written out as pseudocode text
+		 * instead of a native functionCall - e.g.
+		 * 'print(default_api.search_knowledge_base(query="trial period"))' or
+		 * 'default_api.detect_spam(is_spam=true)'. Only tool arguments matching
+		 * the flat string/boolean shape our tools use are supported; anything
+		 * else is left unparsed (returns null) rather than guessed at.
+		 *
+		 * @param string $text Candidate response text.
+		 * @param array  $known_tool_names Registered tool names to validate the match against.
+		 * @return array|null
+		 */
+		private static function parse_pseudocode_tool_call( $text, $known_tool_names = array() ) {
+
+			$text = trim( (string) $text );
+			if ( '' === $text ) {
+				return null;
+			}
+
+			// Unwrap a single optional print( ... ) wrapper.
+			if ( 1 === preg_match( '/^print\s*\((.*)\)\s*$/s', $text, $unwrapped ) ) {
+				$text = trim( $unwrapped[1] );
+			}
+
+			if ( 1 !== preg_match( '/^default_api\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$/s', $text, $matches ) ) {
+				return null;
+			}
+
+			$name = sanitize_key( $matches[1] );
+			if ( ! empty( $known_tool_names ) && ! in_array( $name, $known_tool_names, true ) ) {
+				return null;
+			}
+
+			$arguments = array();
+			if ( 1 === preg_match_all( '/([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("(?:[^"\\\\]|\\\\.)*"|\'(?:[^\'\\\\]|\\\\.)*\'|[^,]+)/', $matches[2], $pairs, PREG_SET_ORDER ) ) {
+
+				foreach ( $pairs as $pair ) {
+					$key = sanitize_key( $pair[1] );
+					$value = trim( $pair[2] );
+					if ( strlen( $value ) >= 2 && ( ( '"' === $value[0] && '"' === substr( $value, -1 ) ) || ( "'" === $value[0] && "'" === substr( $value, -1 ) ) ) ) {
+						$value = substr( $value, 1, -1 );
+					}
+					$arguments[ $key ] = stripslashes( $value );
+				}
+			}
+
+			return array(
+				'name'      => $name,
+				'arguments' => $arguments,
+				'call_id'   => '',
+			);
 		}
 
 		/**

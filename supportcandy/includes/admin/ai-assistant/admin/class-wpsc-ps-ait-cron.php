@@ -71,6 +71,13 @@ if ( ! class_exists( 'WPSC_PS_AIT_Cron' ) ) :
 		 */
 		public static function stale_processing_check() {
 
+			// Resume or give up on any post-type sync jobs stuck mid-chain (a lost cron
+			// tick, a crashed request) regardless of whether an admin has the training
+			// source's settings screen open - see recover_all_stalled_syncs(). This does
+			// not depend on the AI assistant being active, since a sync can be left running
+			// from before it was disabled.
+			WPSC_PS_AI_Setting_AI_Training_Actions::recover_all_stalled_syncs();
+
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( empty( $ai_settings['is-active'] ) ) {
 				return;

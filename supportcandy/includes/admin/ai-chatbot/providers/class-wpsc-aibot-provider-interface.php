@@ -18,14 +18,26 @@ if ( ! interface_exists( 'WPSC_PS_AIBOT_Provider_Interface' ) ) :
 		/**
 		 * Get a chat response from OpenAI API based on the provided message.
 		 *
+		 * Supports a multi-iteration agentic tool-calling loop via $tool_context.
+		 * On the first call (no $tool_context), the provider builds a fresh
+		 * request and returns its provider-native running conversation state in
+		 * the response (e.g. 'input' for OpenAI, 'contents' for Gemini). To
+		 * continue the loop after executing a tool, the caller passes that state
+		 * back along with the executed tool call and its structured result via
+		 * $tool_context = array('input'|'contents' => ..., 'tool_call' => array,
+		 * 'tool_result' => array, 'tool_choice' => 'auto'|'none', 'max_retries' => int).
+		 * The provider appends the tool call/result turn in its own native
+		 * format and calls the model again.
+		 *
 		 * @param array  $ai_settings AI settings array.
 		 * @param string $message The user message to send to the AI.
 		 * @param string $system_prompt The system prompt to guide the AI's response.
 		 * @param array  $conversation_history The conversation history to provide context to the AI.
 		 * @param array  $tools Optional tool/function definitions for providers that support function-calling.
+		 * @param array  $tool_context Optional agentic-loop continuation state (see above). Empty for the first call in a turn.
 		 * @return array|false The response payload (e.g. success/response/token usage) from the AI provider or false on failure.
 		 */
-		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array() );
+		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array(), $tool_context = array() );
 
 		/**
 		 * Generate a subject line for a chat conversation based on the provided system prompt and conversation history.

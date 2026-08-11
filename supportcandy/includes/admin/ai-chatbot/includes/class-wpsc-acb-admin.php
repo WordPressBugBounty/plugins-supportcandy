@@ -161,18 +161,26 @@ if ( ! class_exists( 'WPSC_ACB_Admin' ) ) :
 		 * Resolve the current visitor's identity if they are logged in, so the chatbot's
 		 * ticket-creation forms can be prefilled instead of asking a known user to retype it.
 		 *
+		 * Must use the same "known customer" condition as
+		 * WPSC_ACB_Chats::get_known_user_context() (is_customer + customer
+		 * record on WPSC_Current_User::$current_user) rather than a raw
+		 * WP_User/wp_get_current_user() check, so this prefill can never
+		 * disagree with what the model was told about the visitor.
+		 *
 		 * @return array{is_logged_in: bool, name: string, email: string}
 		 */
 		private static function get_logged_in_identity() {
 
 			$current_user = WPSC_Current_User::$current_user;
-			$user = isset( $current_user->user ) ? $current_user->user : null;
 
-			if ( ! $user || empty( $user->ID ) ) {
-				$user = wp_get_current_user();
-			}
-
-			if ( ! $user || empty( $user->ID ) ) {
+			// Note: WPSC_Customer exposes 'id' via a magic __get() with no
+			// __isset(), and empty( $current_user->customer->id ) always
+			// evaluates true regardless of the actual value in that case -
+			// verified directly (empty() on a magic-getter-only property
+			// short-circuits before ever calling __get()). Read the value
+			// out first via a plain property access and test that instead.
+			$customer_id = empty( $current_user ) || empty( $current_user->is_customer ) || empty( $current_user->customer ) ? '' : $current_user->customer->id;
+			if ( ! $customer_id ) {
 				return array(
 					'is_logged_in' => false,
 					'name'         => '',
@@ -180,15 +188,21 @@ if ( ! class_exists( 'WPSC_ACB_Admin' ) ) :
 				);
 			}
 
-			$name = trim( (string) $user->display_name );
-			if ( '' === $name ) {
-				$name = trim( (string) $user->user_login );
+			$name = sanitize_text_field( (string) $current_user->customer->name );
+			$email = sanitize_email( (string) $current_user->customer->email );
+
+			if ( '' === $name || '' === $email || ! is_email( $email ) ) {
+				return array(
+					'is_logged_in' => false,
+					'name'         => '',
+					'email'        => '',
+				);
 			}
 
 			return array(
 				'is_logged_in' => true,
-				'name'         => sanitize_text_field( $name ),
-				'email'        => sanitize_email( (string) $user->user_email ),
+				'name'         => $name,
+				'email'        => $email,
 			);
 		}
 
@@ -215,21 +229,38 @@ if ( ! class_exists( 'WPSC_ACB_Admin' ) ) :
 			$dependency = array();
 			$config_js = 'window.WPSC_AI_Chatbot_Config = ' . wp_json_encode( self::frontend_config() ) . ';';
 			$identity = self::get_logged_in_identity();
+			$acb_settings = get_option( 'wpsc-ps-acb-chatbot-settings', array() );
 			$ajax_data = array(
-				'ajax_url'           => admin_url( 'admin-ajax.php' ),
-				'nonce'              => wp_create_nonce( 'general' ),
-				'current_user_name'  => $identity['name'],
-				'current_user_email' => $identity['email'],
+				'ajax_url'            => admin_url( 'admin-ajax.php' ),
+				'nonce'               => wp_create_nonce( 'general' ),
+				'current_user_name'   => $identity['name'],
+				'current_user_email'  => $identity['email'],
+				'popup_delay_status'  => isset( $acb_settings['popup-delay-status'] ) ? intval( $acb_settings['popup-delay-status'] ) : 1,
+				'popup_delay'         => isset( $acb_settings['popup-delay'] ) ? intval( $acb_settings['popup-delay'] ) : 10,
+				'popup_display_limit' => isset( $acb_settings['popup-display-limit'] ) ? intval( $acb_settings['popup-display-limit'] ) : 3,
+				// Mirrors the server's WP_DEBUG-gated [WPSC ACB] error_log tracing
+				// (see WPSC_ACB_Chats) so the browser console can be turned on/off
+				// the same way, for tracing the send-message flow end to end.
+				'debug'               => defined( 'WP_DEBUG' ) && WP_DEBUG,
 			);
 
 			foreach ( $files as $index => $file ) {
 
 				$handle = 'wpsc-acb-' . str_replace( '.js', '', $file );
+				$file_path = WPSC_ABSPATH . 'asset/js/ai-chatbot/' . $file;
+
+				// Bust the browser cache on every file change (not just a
+				// plugin version bump) - during active development these
+				// scripts change far more often than WPSC_VERSION does, and
+				// a static version string lets browsers keep serving a
+				// stale cached copy indefinitely after an edit.
+				$version = file_exists( $file_path ) ? (string) filemtime( $file_path ) : WPSC_VERSION;
+
 				wp_enqueue_script(
 					$handle,
 					WPSC_PLUGIN_URL . 'asset/js/ai-chatbot/' . $file,
 					$dependency,
-					WPSC_VERSION,
+					$version,
 					true
 				);
 

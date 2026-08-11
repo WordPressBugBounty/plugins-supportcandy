@@ -71,6 +71,35 @@ function wpsc_get_aia_general_setting() {
 }
 
 /**
+ * Load AI assistant tab ui
+ */
+function wpsc_get_aia_assistant_setting() {
+  supportcandy.current_tab = "assistant";
+  jQuery(".wpsc-setting-tab-container button").removeClass("active");
+  jQuery(
+    ".wpsc-setting-tab-container button." + supportcandy.current_tab,
+  ).addClass("active");
+
+  window.history.replaceState(
+    {},
+    null,
+    "admin.php?page=wpsc-settings&section=" +
+      supportcandy.current_section +
+      "&tab=" +
+      supportcandy.current_tab,
+  );
+  jQuery(".wpsc-setting-section-body").html(supportcandy.loader_html);
+
+  wpsc_scroll_top();
+
+  const data = { action: "wpsc_get_aia_assistant_setting" };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    jQuery(".wpsc-setting-section-body").html(response);
+    wpsc_reset_responsive_style();
+  });
+}
+
+/**
  * Load AI logs tab ui
  */
 function wpsc_get_aia_logs_setting() {
@@ -141,6 +170,27 @@ function wpsc_set_ai_settings(el) {
     alert(supportcandy.translations.req_fields_missing);
     return;
   }
+
+  jQuery(el).text(supportcandy.translations.please_wait);
+  jQuery
+    .ajax({
+      url: supportcandy.ajax_url,
+      type: "POST",
+      data: dataform,
+      processData: false,
+      contentType: false,
+    })
+    .done(function (res) {
+      window.location.reload();
+    });
+}
+
+/**
+ * Save AI assistant tab settings
+ */
+function wpsc_set_ai_assistant_settings(el) {
+  var form = jQuery(".wpsc-frm-ai-assistant-settings")[0];
+  var dataform = new FormData(form);
 
   jQuery(el).text(supportcandy.translations.please_wait);
   jQuery

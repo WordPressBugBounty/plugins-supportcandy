@@ -78,6 +78,7 @@ if ( ! class_exists( 'WPSC_ACB_Setting' ) ) :
 			$icons['headphone'] = file_get_contents( WPSC_ABSPATH . 'asset/icons/headphone.svg' ); //phpcs:ignore
 			$icons['expand'] = file_get_contents( WPSC_ABSPATH . 'asset/icons/expand.svg' ); //phpcs:ignore
 			$icons['compress'] = file_get_contents( WPSC_ABSPATH . 'asset/icons/compress.svg' ); //phpcs:ignore
+			$icons['minimize'] = file_get_contents( WPSC_ABSPATH . 'asset/icons/minimize.svg' ); //phpcs:ignore
 			$icons['poweroff'] = file_get_contents( WPSC_ABSPATH . 'asset/icons/poweroff.svg' ); //phpcs:ignore
 			$icons['sc_logo'] = file_get_contents( WPSC_ABSPATH . 'asset/icons/sc-logo.svg' ); //phpcs:ignore
 			return $icons;

@@ -531,6 +531,7 @@ if ( ! class_exists( 'WPSC_CF_Text_Field' ) ) :
 				$current_user = WPSC_Current_User::$current_user;
 				$val          = $current_user->is_customer && $current_user->customer->{$cf->slug} ? $current_user->customer->{$cf->slug} : '';
 			}
+			$val = apply_filters( 'wpsc_default_text_field_value', $val, $cf, $tff );
 
 			ob_start();
 			?>

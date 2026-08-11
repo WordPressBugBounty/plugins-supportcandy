@@ -11,8 +11,8 @@
 /* Launcher */
 .wpsc-chatbot-launcher {
 	position: fixed;
-	bottom: 20px;
-	right: 20px;
+	bottom: var(--wpsc-chatbot-offset-bottom, 20px);
+	right: var(--wpsc-chatbot-offset-right, 20px);
 	width: 56px;
 	height: 56px;
 	border-radius: 50%;
@@ -31,8 +31,8 @@
 /* Widget */
 .wpsc-chatbot {
 	position: fixed;
-	bottom: 20px;
-	right: 20px;
+	bottom: var(--wpsc-chatbot-offset-bottom, 20px);
+	right: var(--wpsc-chatbot-offset-right, 20px);
 	width: min(400px, calc(100vw - 40px));
 	height: min(700px, calc(100vh - 120px));
 	display: flex;
@@ -224,6 +224,7 @@
 .wpsc-chatbot__body {
 	background: #f5f5f5;
 	flex: 1;
+	min-height: 0;
 	display: flex;
 	flex-direction: column;
 	padding: 15px;
@@ -377,21 +378,22 @@
 /* Send Button */
 .wpsc-chatbot__send {
 	display: none;
-	color: #9ca3af;
+	color: var(--wpsc-chatbot-header-fg, #ffffff);
+	background-color: var(--wpsc-chatbot-header-bg, #2271b1);
 	flex-shrink: 0;
-	padding: 10px 10px;
+	padding: 8px;
 	align-content: center;
 	cursor: pointer;
-	border-color: #2271b1;
-    border-radius: 5px;
+	border-color: var(--wpsc-chatbot-header-bg, #2271b1);
+	border-radius: 50%;
 }
 
 @media (hover: hover) {
 	.wpsc-chatbot__send:hover {
-		color: #fff;
-		border-color: #135e96;
-		background-color: #135e96;
-		box-shadow: 0 0 0 3px #135e96;
+		color: var(--wpsc-chatbot-header-fg, #ffffff);
+		border-color: color-mix(in srgb, var(--wpsc-chatbot-header-bg, #2271b1) 85%, black);
+		background-color: color-mix(in srgb, var(--wpsc-chatbot-header-bg, #2271b1) 85%, black);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--wpsc-chatbot-header-bg, #2271b1) 25%, transparent);
 	}
 }
 
@@ -525,6 +527,15 @@
 		max-height: none;
 		border-radius: 0;
 		z-index: 9999;
+		/* Height/top are kept in sync with window.visualViewport via JS while the on-screen
+		   keyboard is open/closing, so a transition here would fight that and lag/jitter. */
+		transition: transform .3s ease, opacity .3s ease, visibility .3s ease;
+	}
+
+	/* Prevent iOS Safari from auto-zooming the page when the textarea receives focus -
+	   it requires the focused field's font-size to be at least 16px. */
+	.wpsc-chatbot__input {
+		font-size: 16px;
 	}
 
 	.wpsc-chatbot--fullscreen {
@@ -541,21 +552,18 @@
 	}
 	
 	.wpsc-chatbot--expanded .wpsc-chatbot__body {
-		width: fit-content;
-		margin: 0 auto;
         padding-left: 2vw;
         padding-right: 2vw;
 	}
-	
+
 	.wpsc-chatbot--expanded .wpsc-chatbot__footer {
-		margin: 0;
         padding-left: 2vw;
         padding-right: 2vw;
 	}
 
 	.wpsc-chatbot-launcher {
-		bottom: 16px;
-		right: 16px;
+		bottom: var(--wpsc-chatbot-offset-bottom, 16px);
+		right: var(--wpsc-chatbot-offset-right, 16px);
 	}
 
 	.wpsc-chatbot__header {

@@ -25,13 +25,13 @@ if ( ! class_exists( 'WPSC_ACB_Search_Knowledge_Base' ) ) :
 
 			$registry['search_knowledge_base'] = array(
 				'name'        => 'search_knowledge_base',
-				'description' => 'Search the knowledge base for information relevant to the user question. Use this tool for informational questions, troubleshooting, setup steps, policy/process questions, and product capability queries when an action tool does not fit. Provide a focused natural-language query and optional category filters. Do not use this tool for ticket-confirmation decisions or spam moderation decisions (use detect_spam for spam).',
+				'description' => 'Search the knowledge base for information relevant to the user question. Use this tool for informational questions, troubleshooting, setup steps, policy/process questions, and product capability queries when an action tool does not fit. Do not use this tool for ticket-confirmation decisions or spam moderation decisions (use detect_spam for spam).',
 				'parameters'  => array(
 					'type'                 => 'object',
 					'properties'           => array(
 						'query' => array(
 							'type'        => 'string',
-							'description' => __( 'Focused search query derived from the user request.', 'wpsc-ps' ),
+							'description' => __( 'A focused, standalone search query derived from the user request. If the customer message is a follow-up that relies on earlier conversation context (for example "how do I set it up?" or "what about email notifications?"), resolve any pronouns or vague references using the conversation history and write the query as a fully self-contained question naming the actual topic - never pass an ambiguous reference as-is.', 'wpsc-ps' ),
 						),
 					),
 					'required'             => array( 'query' ),
@@ -70,10 +70,13 @@ if ( ! class_exists( 'WPSC_ACB_Search_Knowledge_Base' ) ) :
 				'You are a support knowledge search assistant.',
 
 				'STRICT RESPONSE RULES:',
-				'- Use ONLY information from file_search results.',
-				'- Only use a result if it directly addresses the specific question asked, not merely the same general product/category.',
+				'- Use ONLY information from file_search results. Never use outside knowledge, and never guess, infer, or fill gaps with assumptions.',
+				'- A result counts as a match if it addresses the same underlying question or intent the customer is asking, even if the exact wording, phrasing, or terminology differs (synonyms, rephrasing, abbreviations) - do not require literal keyword overlap.',
+				'- Do not use a result just because it mentions the same general product/feature/category without actually answering what was asked - being loosely or generically related is not enough.',
 				'- If multiple results are only loosely or generically related, prefer the single most specific one over blending them.',
-				'- If no result is a direct topical match, respond EXACTLY with: [NO_KB_FOUND]',
+				'- If no result actually answers the question, even after considering rephrasing and synonyms, respond EXACTLY with: [NO_KB_FOUND]. Never invent an answer instead.',
+				'- Never state a phone number, email address, physical address, or other contact detail unless that exact detail appears verbatim in the file_search results - never invent, complete, guess, or "helpfully" fill in one, even if it seems plausible or typical for a support context.',
+				'- Never state any other specific fact (a number, date, price, or named detail) that does not appear verbatim in the file_search results - if the results only support a general statement, give the general statement rather than a more specific-sounding invented one.',
 				'- Output must be valid HTML only.',
 				'- DO NOT use Markdown in any form.',
 				'- DO NOT use **, __, #, backticks, or any Markdown symbols.',

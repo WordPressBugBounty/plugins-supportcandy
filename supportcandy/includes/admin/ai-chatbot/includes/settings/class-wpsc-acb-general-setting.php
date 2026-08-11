@@ -42,6 +42,18 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 			if ( ! isset( $acb_settings['status'] ) ) {
 				$acb_settings['status'] = '0';
 			}
+
+			if ( ! isset( $acb_settings['popup-delay-status'] ) ) {
+				$acb_settings['popup-delay-status'] = '1';
+			}
+
+			if ( ! isset( $acb_settings['popup-delay'] ) ) {
+				$acb_settings['popup-delay'] = 10;
+			}
+
+			if ( ! isset( $acb_settings['popup-display-limit'] ) ) {
+				$acb_settings['popup-display-limit'] = 3;
+			}
 			?>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-acb-settings">
 				<div class="wpsc-dock-container">
@@ -68,7 +80,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 				</div>
 				
 
-				<div class="wpsc-input-group">
+				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
 						<label for="wpsc-acb-delete-session"><?php esc_attr_e( 'Auto delete AI chatbot sessions', 'wpsc-ps' ); ?></label>
 					</div>
@@ -85,7 +97,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 					</span>
 				</div>
 
-				<div class="wpsc-input-group">
+				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
 						<label for="wpsc-acb-chat-show-footer-branding"><?php esc_attr_e( 'Show footer branding', 'wpsc-ps' ); ?></label>
 					</div>
@@ -100,15 +112,49 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 					</span>
 				</div>
 
-				<div class="wpsc-input-group">
+				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
 						<label for="wpsc-acb-sessions-per-page"><?php esc_attr_e( 'Number of sessions per page', 'wpsc-ps' ); ?></label>
 					</div>
-					<input type="number" id="wpsc-acb-sessions-per-page" name="sessions-per-page" value="<?php echo esc_attr( $acb_settings['sessions-per-page'] ); ?>" min="1" placeholder="<?php esc_attr_e( 'Enter number', 'wpsc-ps' ); ?> " style="max-width: 100px;" />
+					<input type="number" id="wpsc-acb-sessions-per-page" name="sessions-per-page" value="<?php echo esc_attr( $acb_settings['sessions-per-page'] ); ?>" min="1" style="max-width: 100px;" />
 					<span class="extra-info">
 						<?php esc_attr_e( 'Set the number of chat sessions to display per page.', 'wpsc-ps' ); ?>
 					</span>
 				</div>
+
+				<div class="wpsc-input-group">
+					<div class="label-container">
+						<label for="wpsc-acb-sessions-popup-delay-status"><?php esc_attr_e( 'Popup Delay Status', 'wpsc-ps' ); ?></label>
+					</div>
+					<select id="wpsc-acb-sessions-popup-delay-status" name="popup-delay-status" style="max-width: 250px;">
+						<option value="1" <?php selected( $acb_settings['popup-delay-status'], '1' ); ?>><?php esc_html_e( 'Enable', 'wpsc-ps' ); ?></option>
+						<option value="0" <?php selected( $acb_settings['popup-delay-status'], '0' ); ?>><?php esc_html_e( 'Disable', 'wpsc-ps' ); ?></option>
+					</select>
+					<span class="extra-info">
+						<?php esc_attr_e( 'Enable to automatically show the chatbot popup after the Popup Delay below, up to the Popup Display Limit. Disable to turn off the automatic popup entirely - visitors can still open the chatbot manually.', 'wpsc-ps' ); ?>
+					</span>
+				</div>
+
+				<div class="wpsc-input-group wpsc-acb-popup-delay-dependent" <?php echo '0' === (string) $acb_settings['popup-delay-status'] ? 'style="display:none;"' : ''; ?>>
+					<div class="label-container">
+						<label for="wpsc-acb-sessions-popup-delay"><?php esc_attr_e( 'Popup Delay', 'wpsc-ps' ); ?></label>
+					</div>
+					<input type="number" id="wpsc-acb-sessions-popup-delay" name="popup-delay" value="<?php echo esc_attr( $acb_settings['popup-delay'] ); ?>" min="1" style="max-width: 100px;" />
+					<span class="extra-info">
+						<?php esc_attr_e( 'Time to wait before showing the chatbot popup after a visitor lands on the site. (e.g., after 10 seconds of site visit).', 'wpsc-ps' ); ?>
+					</span>
+				</div>
+
+				<div class="wpsc-input-group wpsc-acb-popup-delay-dependent" <?php echo '0' === (string) $acb_settings['popup-delay-status'] ? 'style="display:none;"' : ''; ?>>
+					<div class="label-container">
+						<label for="wpsc-acb-sessions-popup-display-limit"><?php esc_attr_e( 'Popup Display Limit', 'wpsc-ps' ); ?></label>
+					</div>
+					<input type="number" id="wpsc-acb-sessions-popup-display-limit" name="popup-display-limit" value="<?php echo esc_attr( $acb_settings['popup-display-limit'] ); ?>" min="1" style="max-width: 100px;" />
+					<span class="extra-info">
+						<?php esc_attr_e( 'Maximum number of times the chatbot popup is shown to the same visitor within 24 hours, shared across all of their open browser tabs. (e.g., show only 3 times, then stop until the 24 hours are up)', 'wpsc-ps' ); ?>
+					</span>
+				</div>
+
 				<input type="hidden" name="action" value="wpsc_set_acb_settings">
 				<input type="hidden" name="_ajax_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpsc_set_acb_settings' ) ); ?>">
 			
@@ -178,12 +224,30 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 				wp_send_json_error( __( 'Invalid or missing sessions per page!', 'wpsc-ps' ), 400 );
 			}
 
+			$popup_delay_status = isset( $_POST['popup-delay-status'] ) ? sanitize_text_field( wp_unslash( $_POST['popup-delay-status'] ) ) : '';
+			if ( '' === $popup_delay_status || ! in_array( $popup_delay_status, array( '1', '0' ), true ) ) {
+				wp_send_json_error( __( 'Invalid or missing popup delay status!', 'wpsc-ps' ), 400 );
+			}
+
+			$popup_delay = isset( $_POST['popup-delay'] ) ? intval( $_POST['popup-delay'] ) : '';
+			if ( empty( $popup_delay ) || ! is_numeric( $popup_delay ) || $popup_delay < 1 ) {
+				wp_send_json_error( __( 'Invalid or missing popup delay!', 'wpsc-ps' ), 400 );
+			}
+
+			$popup_display_limit = isset( $_POST['popup-display-limit'] ) ? intval( $_POST['popup-display-limit'] ) : '';
+			if ( empty( $popup_display_limit ) || ! is_numeric( $popup_display_limit ) || $popup_display_limit < 1 ) {
+				wp_send_json_error( __( 'Invalid or missing popup display limit!', 'wpsc-ps' ), 400 );
+			}
+
 			$acb_settings = array(
 				'status'                  => $status,
 				'delete-acb-session-time' => $retention_policy_time,
 				'delete-acb-session-unit' => $retention_policy_unit,
 				'show-footer-branding'    => $show_footer_branding,
 				'sessions-per-page'       => $sessions_per_page,
+				'popup-delay-status'      => $popup_delay_status,
+				'popup-delay'             => $popup_delay,
+				'popup-display-limit'     => $popup_display_limit,
 			);
 			update_option( 'wpsc-ps-acb-chatbot-settings', $acb_settings );
 
@@ -218,6 +282,9 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 					'delete-acb-session-unit' => 'year',
 					'show-footer-branding'    => '1',
 					'sessions-per-page'       => 30,
+					'popup-delay-status'      => '0',
+					'popup-delay'             => 10,
+					'popup-display-limit'     => 3,
 				)
 			);
 

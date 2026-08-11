@@ -1,5 +1,23 @@
 window.WPSC_AI_Chatbot = window.WPSC_AI_Chatbot || {};
 
+// Trace one hop of the send-message flow to the browser console. Silent
+// unless the server is running with WP_DEBUG on (see wpsc_ai_chatbot.debug,
+// localized in WPSC_ACB_Admin::enqueue_frontend_scripts()) - mirrors the
+// server's WP_DEBUG-gated [WPSC ACB] error_log tracing so a full turn (type
+// -> send -> backend -> render) can be followed from one console.
+window.WPSC_AI_Chatbot.debugLog =
+
+	function( step, message, data ) {
+		if ( typeof wpsc_ai_chatbot === 'undefined' || ! wpsc_ai_chatbot.debug ) {
+			return;
+		}
+		if ( arguments.length > 2 ) {
+			console.debug( '[WPSC ACB DEBUG] ' + step + ' | ' + message, data );
+		} else {
+			console.debug( '[WPSC ACB DEBUG] ' + step + ' | ' + message );
+		}
+	};
+
 document.addEventListener(
 	'DOMContentLoaded',
 	function () {
@@ -13,6 +31,7 @@ window.WPSC_AI_Chatbot.init =
 	function () {
 		const host = document.getElementById( 'wpsc-chatbot-root' );
 		if (!host) {
+			this.debugLog( 'INIT', '#wpsc-chatbot-root not found in DOM; widget will not render' );
 			return;
 		}
 
@@ -20,10 +39,22 @@ window.WPSC_AI_Chatbot.init =
 		this.isLimitReached = false;
 		this.isCreatingTicket = false;
 
+		// One-time cleanup of the pre-cross-tab auto-popup key (per-tab shown COUNT).
+		// It's superseded by wpsc_acb_popup_shown_in_tab (a per-tab boolean flag) and
+		// wpsc_acb_popup_state in localStorage (the cross-tab count) - see scheduleAutoPopup().
+		try {
+			window.sessionStorage.removeItem( 'wpsc_acb_popup_shown_count' );
+		} catch ( error ) {
+			// Ignore storage failures (e.g. private browsing with storage disabled).
+		}
+
 		this.shadowRoot = host.shadowRoot || host.attachShadow( { mode: 'open' } );
 		this.render();
 		this.cacheElements();
 		this.bindEvents();
+		this.scheduleAutoPopup();
+		this.bindMobileKeyboardResize();
+		this.debugLog( 'INIT', 'chatbot widget rendered and events bound' );
 
 		if ( ! this.nonceRefreshStarted ) {
 			this.nonceRefreshStarted = true;
@@ -31,6 +62,7 @@ window.WPSC_AI_Chatbot.init =
 			// Keep chat input disabled until the first nonce refresh resolves, so a
 			// guest can't send a message on a stale, cached-page nonce.
 			this.disableChatInput( 'Preparing chat...' );
+			this.debugLog( 'INIT', 'chat input disabled pending initial nonce refresh' );
 			this.refreshNonce( true );
 		}
 	};
@@ -114,6 +146,7 @@ window.WPSC_AI_Chatbot.bindEvents =
 		const chatbot = this.shadowRoot.querySelector( '.wpsc-chatbot' );
 		const closeBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__close' );
         const expandBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__expand' );
+        const minimizeBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__minimize' );
         const compressBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__compress' );
 		const dropdownBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__dropdown' );
 		const drawer = this.shadowRoot.querySelector( '.wpsc-chatbot__drawer' );
@@ -149,13 +182,19 @@ window.WPSC_AI_Chatbot.bindEvents =
 		launcher?.addEventListener(
 			'click',
 			function () {
+				if ( self.autoPopupTimer ) {
+					clearTimeout( self.autoPopupTimer );
+				}
 				footer.querySelector( '.wpsc-chatbot__input-conversation-end' )?.remove();
 				chatbot?.classList.add( 'wpsc-chatbot--active' );
 				launcher?.classList.add( 'wpsc-chatbot-launcher--hidden' );
 				inputGroup?.classList.remove( 'wpsc-chatbot__input-group--hidden' );
 				self.enableChatInput();
 				/* self.getPreviousMessages(); */
-				body.innerHTML = self.getWelcomeMessageTemplate();
+				const activeSessionId = launcher?.getAttribute( 'data-sessionid' ) || '';
+				if ( ! activeSessionId ) {
+					body.innerHTML = self.getWelcomeMessageTemplate();
+				}
 			}
 		);
 
@@ -169,6 +208,7 @@ window.WPSC_AI_Chatbot.bindEvents =
 					if ( ! buttonSessionId ) {
 						chatbot?.classList.remove( 'wpsc-chatbot--active' );
 						launcher?.classList.remove( 'wpsc-chatbot-launcher--hidden' );
+						self.scheduleAutoPopup();
 					}  else {
 						self.openModal();
 					}
@@ -188,11 +228,32 @@ window.WPSC_AI_Chatbot.bindEvents =
             );
         }
 
-		// On small screens, clicking chatbot container should open it in fullscreen expanded mode.
+		// Minimize chatbot
+        if (minimizeBtn) {
+
+            minimizeBtn.addEventListener(
+                'click',
+                function () {
+                    chatbot?.classList.remove( 'wpsc-chatbot--active' );
+                    launcher?.classList.remove( 'wpsc-chatbot-launcher--hidden' );
+                    self.scheduleAutoPopup();
+                }
+            );
+        }
+
+		// On small screens, tapping the conversation area should open it in fullscreen expanded mode.
 		chatbot?.addEventListener(
 			'click',
-			function () {
+			function ( event ) {
 				if ( ! window.matchMedia( '(max-width: 768px)' ).matches ) {
+					return;
+				}
+
+				// Header (expand/minimize/compress/close) and footer (message input/send)
+				// manage their own state or must stay interactive without forcing
+				// fullscreen - tapping to focus the textarea is a click too, and
+				// shouldn't flip the widget into expanded mode along with the keyboard.
+				if ( event.target.closest( '.wpsc-chatbot__header, .wpsc-chatbot__footer' ) ) {
 					return;
 				}
 
@@ -244,6 +305,7 @@ window.WPSC_AI_Chatbot.bindEvents =
 			sendBtn.addEventListener(
 				'click',
 				function() {
+					self.debugLog( 'STEP 1: USER_ACTION', 'send button clicked' );
 					self.sendMessage();
 				}
 			);
@@ -260,6 +322,7 @@ window.WPSC_AI_Chatbot.bindEvents =
 						! e.shiftKey
 					) {
 						e.preventDefault();
+						self.debugLog( 'STEP 1: USER_ACTION', 'Enter key pressed in input (no shift)' );
 						self.sendMessage();
 					}
 				}
@@ -335,13 +398,292 @@ window.WPSC_AI_Chatbot.bindEvents =
 		);
 	};
 
-// Get previous messages if session exists.
-window.WPSC_AI_Chatbot.getPreviousMessages =
+// --- Auto-popup storage helpers -------------------------------------------
+//
+// Two independent pieces of state decide whether the auto-popup can show:
+//
+// 1. A per-TAB flag (sessionStorage, key below) - "has THIS tab already auto-
+//    shown the popup?". sessionStorage is naturally scoped to one tab and
+//    survives reloads within it, but a brand new tab/window always starts
+//    fresh - exactly the "once per tab" semantics we want.
+//
+// 2. A cross-TAB counter with a 24h rolling window (localStorage, key below)
+//    - "how many times has ANY tab shown the popup in the current 24h
+//    period?". localStorage is shared by every same-origin tab, so this is
+//    the single source of truth for the display limit.
+//
+// Concurrency note: localStorage has no built-in atomic read-modify-write,
+// so two tabs could both read count=2 (limit 3) before either writes back
+// 3, and each would believe it won the last slot - a classic
+// check-then-act race. Where the browser supports the Web Locks API
+// (https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API - current
+// Chrome/Edge/Firefox/Safari), consumeGlobalPopupSlot() uses it to make the
+// read-check-increment sequence a genuine cross-tab critical section, which
+// closes this race entirely. On older browsers without Web Locks, the same
+// function falls back to a best-effort read-then-write - there remains a
+// small theoretical window where two timers firing at the exact same
+// instant could both succeed, but this is a client-side popup nicety, not
+// a security or billing boundary, so the practical risk (occasionally
+// showing one extra popup out of many tabs closing in the same millisecond)
+// is an acceptable trade-off for staying purely client-side.
+
+// Namespaced (not top-level const) so re-including this script never risks a
+// "duplicate declaration" error - assigning object properties is idempotent.
+window.WPSC_AI_Chatbot.POPUP_TAB_KEY = 'wpsc_acb_popup_shown_in_tab';
+window.WPSC_AI_Chatbot.POPUP_STATE_KEY = 'wpsc_acb_popup_state';
+window.WPSC_AI_Chatbot.POPUP_LOCK_NAME = 'wpsc_acb_popup_lock';
+window.WPSC_AI_Chatbot.POPUP_PERIOD_MS = 24 * 60 * 60 * 1000;
+
+// Has this tab already auto-shown the popup once?
+window.WPSC_AI_Chatbot.hasTabShownPopup =
+
+	function() {
+		try {
+			return window.sessionStorage.getItem( this.POPUP_TAB_KEY ) === '1';
+		} catch ( error ) {
+			// Storage unavailable (e.g. private browsing) - fail open so at least
+			// this tab can still show the popup once.
+			return false;
+		}
+	};
+
+// Mark this tab as having auto-shown the popup, so it never shows again for
+// the lifetime of this tab.
+window.WPSC_AI_Chatbot.markTabShownPopup =
+
+	function() {
+		try {
+			window.sessionStorage.setItem( this.POPUP_TAB_KEY, '1' );
+		} catch ( error ) {
+			// Ignore - worst case this tab could show the popup again later.
+		}
+	};
+
+// Read the cross-tab popup state from localStorage, resetting it (and
+// persisting the reset) if the 24h period has elapsed. Never throws - falls
+// back to a fresh, valid state if storage is unavailable or the stored
+// value is missing/corrupt, so a bad value can never permanently break the
+// popup.
+window.WPSC_AI_Chatbot.readPopupState =
+
+	function() {
+		const freshState = function() {
+			return { count: 0, periodStartedAt: Date.now() };
+		};
+
+		let state;
+		try {
+			const parsed = JSON.parse( window.localStorage.getItem( this.POPUP_STATE_KEY ) );
+			state = ( parsed && typeof parsed.count === 'number' && typeof parsed.periodStartedAt === 'number' )
+				? parsed
+				: freshState();
+		} catch ( error ) {
+			state = freshState();
+		}
+
+		if ( Date.now() - state.periodStartedAt >= this.POPUP_PERIOD_MS ) {
+			this.debugLog( 'AUTO_POPUP', '24h period elapsed - resetting cross-tab popup count' );
+			state = freshState();
+		}
+
+		try {
+			window.localStorage.setItem( this.POPUP_STATE_KEY, JSON.stringify( state ) );
+		} catch ( error ) {
+			// Ignore storage failures - the in-memory state below is still usable for this call.
+		}
+
+		return state;
+	};
+
+// Try to consume one of the shared display slots for this 24h period.
+// Returns a Promise<boolean> - true if a slot was available and has now
+// been consumed (the caller should show the popup), false if the limit was
+// already reached (by this tab or another one).
+window.WPSC_AI_Chatbot.consumeGlobalPopupSlot =
+
+	function( limit ) {
+		const self = this;
+
+		const tryConsume = function() {
+			const state = self.readPopupState();
+			if ( state.count >= limit ) {
+				self.debugLog( 'AUTO_POPUP', 'global display limit already reached for this 24h period', state );
+				return false;
+			}
+
+			state.count += 1;
+			try {
+				window.localStorage.setItem( self.POPUP_STATE_KEY, JSON.stringify( state ) );
+			} catch ( error ) {
+				// Ignore storage failures - proceed as consumed so this visitor still sees
+				// the popup once, even if the count can't be persisted for other tabs.
+			}
+			self.debugLog( 'AUTO_POPUP', 'consumed global display slot', state );
+			return true;
+		};
+
+		if ( window.navigator && navigator.locks && typeof navigator.locks.request === 'function' ) {
+			return navigator.locks.request( self.POPUP_LOCK_NAME, function() {
+				return tryConsume();
+			} );
+		}
+
+		// Web Locks API unavailable - best-effort fallback, see concurrency note above.
+		return Promise.resolve( tryConsume() );
+	};
+
+// Automatically open the chatbot after the configured delay (if Popup Delay
+// Status is enabled - otherwise immediately), capped to a display limit
+// shared across browser tabs within a rolling 24h period, with each tab
+// showing the popup at most once. See the storage helpers above for the
+// exact mechanics and their concurrency guarantees.
+window.WPSC_AI_Chatbot.scheduleAutoPopup =
 
 	function() {
 		const self = this;
+
+		if ( this.autoPopupTimer ) {
+			clearTimeout( this.autoPopupTimer );
+			this.autoPopupTimer = null;
+		}
+
+		const launcher = this.shadowRoot.querySelector( '.wpsc-chatbot-launcher' );
+		const chatbot = this.shadowRoot.querySelector( '.wpsc-chatbot' );
+
+		// Don't auto-open on top of an already active/ongoing conversation.
+		if ( ! launcher || ! chatbot || launcher.getAttribute( 'data-sessionid' ) ) {
+			self.debugLog( 'AUTO_POPUP', 'skip: missing widget elements or an active session already exists' );
+			return;
+		}
+
+		// Popup Delay Status is the master switch for the whole auto-popup feature -
+		// when it's off, Popup Delay and Popup Display Limit must not be acted on at
+		// all: no timer is armed, and the display-limit counter is never touched, so
+		// turning it back on later starts from a limit that wasn't silently consumed
+		// while it was off. Defaults to enabled (matches pre-existing behavior) when
+		// the setting is missing, e.g. on an older/unmigrated install.
+		const delayStatusEnabled = typeof wpsc_ai_chatbot?.popup_delay_status === 'undefined'
+			? true
+			: !! parseInt( wpsc_ai_chatbot.popup_delay_status, 10 );
+		if ( ! delayStatusEnabled ) {
+			self.debugLog( 'AUTO_POPUP', 'skip: popup delay status is disabled - auto-popup is off' );
+			return;
+		}
+
+		// A display limit of 0 (or unset) means the popup is disabled entirely.
+		const limit = parseInt( wpsc_ai_chatbot?.popup_display_limit, 10 ) || 0;
+		if ( limit <= 0 ) {
+			self.debugLog( 'AUTO_POPUP', 'skip: popup display limit is 0/unset' );
+			return;
+		}
+
+		// Once this tab has auto-shown the popup, it never shows again in this tab.
+		if ( self.hasTabShownPopup() ) {
+			self.debugLog( 'AUTO_POPUP', 'skip: this tab already auto-showed the popup once' );
+			return;
+		}
+
+		// Cheap up-front check so a timer isn't even armed when the global limit is
+		// already exhausted. The authoritative check happens again right before the
+		// popup is shown (below), since another tab can consume the remaining slots
+		// while this tab is waiting out its delay.
+		if ( self.readPopupState().count >= limit ) {
+			self.debugLog( 'AUTO_POPUP', 'skip: global display limit already reached for this period' );
+			return;
+		}
+
+		const delaySeconds = parseInt( wpsc_ai_chatbot?.popup_delay, 10 ) || 0;
+
+		self.debugLog( 'AUTO_POPUP', 'arming timer', { delaySeconds, delayStatusEnabled, limit } );
+
+		this.autoPopupTimer = setTimeout(
+			function() {
+				self.autoPopupTimer = null;
+
+				// Visitor may have already opened (or otherwise dismissed) the launcher before the timer fired.
+				if ( chatbot.classList.contains( 'wpsc-chatbot--active' ) || launcher.classList.contains( 'wpsc-chatbot-launcher--hidden' ) ) {
+					self.debugLog( 'AUTO_POPUP', 'skip at fire time: chat already opened' );
+					return;
+				}
+
+				if ( self.hasTabShownPopup() ) {
+					self.debugLog( 'AUTO_POPUP', 'skip at fire time: this tab already auto-showed the popup once' );
+					return;
+				}
+
+				// Re-check and consume the shared slot atomically (where supported) right
+				// before displaying - another tab may have used up the remaining slots
+				// while this tab was waiting out its delay.
+				self.consumeGlobalPopupSlot( limit ).then(
+					function( consumed ) {
+						if ( ! consumed ) {
+							self.debugLog( 'AUTO_POPUP', 'skip at fire time: global limit reached by another tab' );
+							return;
+						}
+
+						self.markTabShownPopup();
+
+						chatbot.classList.add( 'wpsc-chatbot--active' );
+						launcher.classList.add( 'wpsc-chatbot-launcher--hidden' );
+						self.enableChatInput();
+						self.debugLog( 'AUTO_POPUP', 'popup shown' );
+					}
+				);
+			},
+			delaySeconds * 1000
+		);
+	};
+
+// On mobile, the chatbot fills the screen (100dvh) - but `dvh` doesn't reliably shrink
+// for the on-screen keyboard across mobile browsers, so the footer/input can end up hidden
+// behind it. Track the real visible area via visualViewport and resize the widget to match,
+// the same way native chat apps (e.g. WhatsApp) keep header + messages + input all in view.
+window.WPSC_AI_Chatbot.bindMobileKeyboardResize =
+
+	function() {
+		const self = this;
+		const viewport = window.visualViewport;
+		if ( ! viewport ) {
+			return;
+		}
+
+		const chatbot = this.shadowRoot.querySelector( '.wpsc-chatbot' );
+		if ( ! chatbot ) {
+			return;
+		}
+
+		const isMobile = () => window.matchMedia( '(max-width: 768px)' ).matches;
+
+		const adjustForViewport = function() {
+			if ( ! isMobile() || ! chatbot.classList.contains( 'wpsc-chatbot--active' ) ) {
+				chatbot.style.height = '';
+				chatbot.style.top = '';
+				return;
+			}
+
+			chatbot.style.top = viewport.offsetTop + 'px';
+			chatbot.style.height = viewport.height + 'px';
+
+			// Keep the latest message in view once the visible area shrinks/grows.
+			const body = self.elements?.body;
+			if ( body ) {
+				body.scrollTop = body.scrollHeight;
+			}
+		};
+
+		viewport.addEventListener( 'resize', adjustForViewport );
+		viewport.addEventListener( 'scroll', adjustForViewport );
+	};
+
+// Get previous messages if session exists.
+window.WPSC_AI_Chatbot.getPreviousMessages =
+
+	function( isRetry ) {
+		const self = this;
 		self.cacheElements();
 		const body = self.elements?.body;
+
+		self.debugLog( 'HISTORY_LOAD', 'requesting previous messages for existing session cookie (isRetry=' + !! isRetry + ')' );
 
 		jQuery.post(
 			wpsc_ai_chatbot.ajax_url, {
@@ -351,19 +693,48 @@ window.WPSC_AI_Chatbot.getPreviousMessages =
 		).done(
 			function( response ) {
 				if ( ! response.success ) {
+					self.debugLog( 'HISTORY_LOAD', 'response.success false; leaving chat body untouched' );
 					return;
 				}
 				if ( ! body ) {
 					return;
 				}
+				self.debugLog( 'HISTORY_LOAD', 'rendering ' + ( response.data?.length || 0 ) + ' previous message(s)' );
 				body.innerHTML = self.getWelcomeMessageTemplate();
 				response.data.forEach( ( message ) => {
 					self.appendMessage( message.role, message.content );
 				} );
-			} 
+			}
 		).fail(
-			function() {
-				return;
+			function( jqXHR ) {
+
+				// This call runs on page load, before the periodic nonce
+				// refresh (see refreshNonce()) has had a chance to run - on
+				// a long-lived full-page-cached copy of the page, the nonce
+				// baked into that cached HTML can already be stale, so the
+				// very first request here gets rejected with 401. Refresh
+				// the nonce once and retry, instead of silently leaving the
+				// chatbox empty even though the session and its history are
+				// still there server-side.
+				if ( isRetry || ! jqXHR || 401 !== jqXHR.status ) {
+					return;
+				}
+
+				jQuery.post(
+					wpsc_ai_chatbot.ajax_url, {
+						action: 'wpsc_chatbot_get_nonce',
+					}
+				).done(
+					function( nonceResponse ) {
+						if ( nonceResponse && nonceResponse.success && nonceResponse.data && nonceResponse.data.nonce ) {
+							wpsc_ai_chatbot.nonce = nonceResponse.data.nonce;
+						}
+					}
+				).always(
+					function() {
+						self.getPreviousMessages( true );
+					}
+				);
 			}
 		);
 	};
@@ -378,13 +749,21 @@ window.WPSC_AI_Chatbot.sendMessage =
 		const input = self.elements?.input;
 		const sendBtn = self.elements?.sendBtn;
 		if ( this.isSending || this.isLimitReached || ! input || input.disabled ) {
+			self.debugLog(
+				'STEP 2: SEND_MESSAGE_GUARD',
+				'sendMessage() aborted early',
+				{ isSending: this.isSending, isLimitReached: this.isLimitReached, hasInput: !! input, inputDisabled: input?.disabled }
+			);
 			return;
 		}
 
 		const message = input.value.trim();
 		if ( ! message ) {
+			self.debugLog( 'STEP 2: SEND_MESSAGE_GUARD', 'sendMessage() aborted: empty message' );
 			return;
 		}
+
+		self.debugLog( 'STEP 2: SEND_MESSAGE_START', 'user message captured, length=' + message.length, message );
 
 		input.value = '';
 		self.appendMessage( 'user', message );
@@ -402,6 +781,12 @@ window.WPSC_AI_Chatbot.sendMessage =
 		const submitBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__ticket-submit' );
 		const cancelBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__ticket-cancel' );
 
+		self.debugLog(
+			'STEP 3: AJAX_REQUEST',
+			'POST wpsc_chatbot_send_message -> ' + wpsc_ai_chatbot.ajax_url,
+			{ action: 'wpsc_chatbot_send_message', message_length: message.length }
+		);
+
 		jQuery.post(
 			wpsc_ai_chatbot.ajax_url, {
 				action: 'wpsc_chatbot_send_message',
@@ -411,13 +796,17 @@ window.WPSC_AI_Chatbot.sendMessage =
 		).done(
 			function( response ) {
 				self.isSending = false;
+				self.debugLog( 'STEP 4: AJAX_RESPONSE_RECEIVED', 'raw response from wpsc_chatbot_send_message', response );
+
 				if ( ! response || ! response.data ) {
+					self.debugLog( 'STEP 4: AJAX_RESPONSE_RECEIVED', 'response missing or has no data payload; aborting render' );
 					self.hideTyping();
 					self.enableChatInput();
 					return;
 				}
 
 				if ( ! response.success ) {
+					self.debugLog( 'STEP 4: AJAX_RESPONSE_RECEIVED', 'response.success is false; aborting render', response.data );
 					self.hideTyping();
 					if ( ! self.isLimitReached ) {
 						self.enableChatInput();
@@ -448,8 +837,15 @@ window.WPSC_AI_Chatbot.sendMessage =
 				// Handle ticket creation / limit reached / session expiration.
 				if ( limit_reached || create_ticket || session_expired ) {
 
+					self.debugLog(
+						'STEP 5: RESPONSE_BRANCH',
+						'limit_reached/create_ticket/session_expired branch',
+						{ limit_reached, create_ticket, session_expired, chat_end_message }
+					);
+
 					if ( chat_end_message ) {
 						self.hideTyping();
+						self.debugLog( 'STEP 6: RENDER', 'chat_end_message present -> handleTicketCreated()', ai_response );
 						self.handleTicketCreated( {
 							chat_end_message,
 							message: ai_response,
@@ -458,6 +854,7 @@ window.WPSC_AI_Chatbot.sendMessage =
 					}
 
 					self.isLimitReached = true;
+					self.debugLog( 'STEP 6: RENDER', 'appendMessage(assistant) [limit reached/ticket path, no chat_end_message]', ai_response );
 					self.appendMessage( 'assistant', ai_response );
 					// self.showTicketForm( disable_input_message );
 					self.hideTyping();
@@ -468,20 +865,29 @@ window.WPSC_AI_Chatbot.sendMessage =
 				// Handle chat end.
 				if ( chat_end_message ) {
 					self.hideTyping();
+					self.debugLog( 'STEP 5: RESPONSE_BRANCH', 'chat_end_message branch -> handleTicketCreated()', ai_response );
 					self.handleTicketCreated( {
 						chat_end_message,
 						message: ai_response,
 					} );
 					return;
 				}
-				
+
+				self.debugLog( 'STEP 5: RESPONSE_BRANCH', 'normal assistant reply branch' );
+				self.debugLog( 'STEP 6: RENDER', 'appendMessage(assistant)', response.data.ai_response );
 				self.appendMessage( 'assistant', response.data.ai_response );
 				self.hideTyping();
 				self.enableChatInput();
-			} 
+				self.debugLog( 'STEP 7: TURN_COMPLETE', 'typing indicator hidden, input re-enabled; user now sees the response' );
+			}
 		).fail(
-			function() {
+			function( jqXHR, textStatus, errorThrown ) {
 				self.isSending = false;
+				self.debugLog(
+					'STEP 4: AJAX_RESPONSE_FAILED',
+					'wpsc_chatbot_send_message request failed',
+					{ status: jqXHR?.status, textStatus, errorThrown }
+				);
 				self.hideTyping();
 				if ( ! self.isLimitReached ) {
 					self.enableChatInput();
@@ -497,6 +903,7 @@ window.WPSC_AI_Chatbot.appendMessage =
 		this.cacheElements();
 		const body = this.elements?.body;
 		if ( ! body ) {
+			this.debugLog( 'APPEND_MESSAGE', 'aborted: .wpsc-chatbot__body not found in shadow DOM', { type } );
 			return;
 		}
 
@@ -536,6 +943,7 @@ window.WPSC_AI_Chatbot.appendMessage =
 
 		body.appendChild( wrapper );
 		body.scrollTop = body.scrollHeight;
+		this.debugLog( 'APPEND_MESSAGE', 'message node appended to DOM, sender=' + sender + ', length=' + formattedMessage.length );
 	};
 
 // Escape HTML to prevent XSS attacks.
@@ -569,6 +977,7 @@ window.WPSC_AI_Chatbot.showTyping =
 			<span></span>\
 			<span></span>';
 
+		this.debugLog( 'TYPING_INDICATOR', 'typing indicator shown, waiting for AI response' );
 		body.appendChild( typing );
 		body.scrollTop = body.scrollHeight;
 	};
@@ -580,6 +989,7 @@ window.WPSC_AI_Chatbot.hideTyping =
 		const typing = this.shadowRoot.querySelector( '#wpsc-chatbot-typing' );
 		if ( typing ) {
 			typing.remove();
+			this.debugLog( 'TYPING_INDICATOR', 'typing indicator removed' );
 		}
 	};
 
@@ -700,6 +1110,7 @@ window.WPSC_AI_Chatbot.skipFeedback =
 window.WPSC_AI_Chatbot.removeSessionCookie =
 				
 	function( sessionId ) {
+		const self = this;
 
 		// Remove session id from all elements that have it.
 		const launcher = this.shadowRoot.querySelector( '.wpsc-chatbot-launcher' );
@@ -727,6 +1138,10 @@ window.WPSC_AI_Chatbot.removeSessionCookie =
 				modalReactionBtns?.forEach( btn => btn.removeAttribute( 'data-sessionid' ) );
 				submitBtn?.removeAttribute( 'data-sessionid' );
 				cancelBtn?.removeAttribute( 'data-sessionid' );
+
+				// Session ended without a page reload - the visitor is back to a fresh, pre-conversation
+				// state, so give the auto-popup a chance to show again (still capped by the display limit).
+				self.scheduleAutoPopup();
 			}
 		).fail(
 			function() {
@@ -994,7 +1409,7 @@ window.WPSC_AI_Chatbot.createTicket =
 				}
 		
 				// Restore focus to the input field after closing the modal and clear textarea content.
-				const textarea = this.shadowRoot.querySelector( '.wpsc-chatbot__input' );
+				const textarea = self.shadowRoot.querySelector( '.wpsc-chatbot__input' );
 				if ( textarea ) {
 					textarea.value = '';
 					textarea.disabled = false;

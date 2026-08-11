@@ -38,9 +38,6 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				wp_send_json_error( __( 'Something went wrong.', 'wpsc-ps' ), 404 );
 			}
 
-			if ( ! isset( $ai_settings['status'] ) ) {
-				$ai_settings['status'] = '0';
-			}
 			?>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-ai-settings">
 				<div class="wpsc-dock-container">
@@ -52,19 +49,6 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 					);
 					?>
 				</div>
-				<div class="wpsc-input-group">
-					<div class="label-container">
-						<label for="wpsc-ai-service-status"><?php esc_attr_e( 'AI Assistant Status', 'wpsc-ps' ); ?></label>
-					</div>
-					<select id="wpsc-ai-service-status" name="wpsc-ai-service-status">
-						<option value="1" <?php selected( $ai_settings['status'], '1' ); ?>><?php esc_html_e( 'Enable', 'wpsc-ps' ); ?></option>
-						<option value="0" <?php selected( $ai_settings['status'], '0' ); ?>><?php esc_html_e( 'Disable', 'wpsc-ps' ); ?></option>
-					</select>
-					<span class="extra-info">
-						<?php esc_attr_e( 'Enable this to help agents draft responses, polish replies, and summarize tickets faster.', 'wpsc-ps' ); ?>
-					</span>
-				</div>
-
 				<div class="wpsc-input-group">
 					<div class="label-container">
 						<label for="wpsc-ai-service-provider"><?php esc_attr_e( 'AI Service Provider', 'wpsc-ps' ); ?></label>
@@ -96,53 +80,6 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 					<input type="number" id="wpsc-ai-max-tokens" value="<?php echo esc_attr( $ai_settings['max-tokens'] ); ?>" name="wpsc-ai-max-tokens" placeholder="<?php esc_attr_e( 'Enter the maximum number of tokens', 'wpsc-ps' ); ?> "/>
 					<span class="extra-info">
 						<?php esc_attr_e( 'Sets the maximum length of AI responses. Higher values allow longer outputs if needed and may increase cost depending on usage.', 'wpsc-ps' ); ?>
-					</span>
-				</div>
-
-				<div class="wpsc-input-group">
-					<div class="label-container">
-						<label for="custom-prompt"><?php esc_attr_e( 'Polish (AI) Custom Prompt (Additional instructions)', 'wpsc-ps' ); ?></label>
-					</div>
-					<textarea class="wpsc_textarea" id="custom-prompt" name="custom-prompt" style="height: 100px;"><?php echo esc_textarea( $ai_settings['custom-prompt'] ); ?></textarea>
-					<span class="extra-info">
-						<?php esc_attr_e( 'Add optional instructions to refine how the AI improves (polishes) content. The default prompt already handles this, so only add text here if you need specific adjustments.', 'wpsc-ps' ); ?>
-					</span>
-				</div>
-
-				<div class="wpsc-input-group">
-					<div class="label-container">
-						<label for="summary-custom-prompt"><?php esc_attr_e( 'Summary Custom Prompt (Additional instructions)', 'wpsc-ps' ); ?></label>
-					</div>
-					<textarea class="wpsc_textarea" id="summary-custom-prompt" name="summary-custom-prompt" style="height: 100px;"><?php echo esc_textarea( $ai_settings['summary-custom-prompt'] ); ?></textarea>
-					<span class="extra-info">
-						<?php esc_attr_e( 'Provide extra instructions to customize how summaries are generated. This is optional—leave empty to use the default behavior.', 'wpsc-ps' ); ?>
-					</span>
-				</div>
-
-				<div class="wpsc-input-group">
-					<div class="label-container">
-						<label for="auto-draft-custom-prompt"><?php esc_attr_e( 'Auto Draft Custom Prompt (Additional instructions)', 'wpsc-ps' ); ?></label>
-					</div>
-					<textarea class="wpsc_textarea" id="auto-draft-custom-prompt" name="auto-draft-custom-prompt" style="height: 100px;"><?php echo esc_textarea( $ai_settings['auto-draft-custom-prompt'] ); ?></textarea>
-					<span class="extra-info">
-						<?php esc_attr_e( 'Add optional guidance to influence how the AI generates draft replies. The default prompt is sufficient for most cases, so use this only for specific needs.', 'wpsc-ps' ); ?>
-					</span>
-				</div>
-
-				<div class="wpsc-input-group">
-					<div class="label-container">
-						<label for="wpsc-ai-auto-delete-logs-time"><?php esc_attr_e( 'Auto delete AI logs', 'wpsc-ps' ); ?></label>
-					</div>
-					<div class="divide-bar">
-						<input type="number" class="wpsc-ai-auto-delete-logs-time" id="wpsc-ai-auto-delete-logs-time" name="auto-delete-ai-logs-time" value="<?php echo esc_attr( $ai_settings['auto-delete-ai-logs-time'] ); ?>">
-						<select id="wpsc-ai-auto-delete-logs-unit" name="auto-delete-ai-logs-unit" class="wpsc-ai-auto-delete-logs-unit">
-							<option <?php selected( $ai_settings['auto-delete-ai-logs-unit'], 'days' ); ?> value="days"><?php esc_attr_e( 'Day(s)', 'wpsc-ps' ); ?></option>
-							<option <?php selected( $ai_settings['auto-delete-ai-logs-unit'], 'month' ); ?> value="month"><?php esc_attr_e( 'Month(s)', 'wpsc-ps' ); ?></option>
-							<option <?php selected( $ai_settings['auto-delete-ai-logs-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'wpsc-ps' ); ?></option>
-						</select>
-					</div>
-					<span class="extra-info">
-						<?php esc_attr_e( 'Specify the duration after which AI logs should be automatically deleted.', 'wpsc-ps' ); ?>
 					</span>
 				</div>
 
@@ -192,10 +129,6 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			}
 
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
-			$status = isset( $_POST['wpsc-ai-service-status'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc-ai-service-status'] ) ) : '';
-			if ( '' === $status || ! in_array( $status, array( '1', '0' ), true ) ) {
-				wp_send_json_error( __( 'Invalid or missing AI assistant status!', 'wpsc-ps' ), 400 );
-			}
 
 			$service_provider = isset( $_POST['wpsc-ai-service-provider'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc-ai-service-provider'] ) ) : '';
 			if ( empty( $service_provider ) || ! in_array( $service_provider, array( 'openai', 'google-gemini' ), true ) ) {
@@ -212,20 +145,6 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				wp_send_json_error( __( 'Max tokens must be between 500 and 16384.', 'wpsc-ps' ), 400 );
 			}
 
-			$auto_delete_ai_logs_time = isset( $_POST['auto-delete-ai-logs-time'] ) ? intval( $_POST['auto-delete-ai-logs-time'] ) : 0;
-			if ( $auto_delete_ai_logs_time < 0 ) {
-				wp_send_json_error( __( 'Auto delete AI logs time must be zero or a positive integer.', 'wpsc-ps' ), 400 );
-			}
-
-			$auto_delete_ai_logs_unit = isset( $_POST['auto-delete-ai-logs-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['auto-delete-ai-logs-unit'] ) ) : '';
-			if ( empty( $auto_delete_ai_logs_unit ) ) {
-				wp_send_json_error( __( 'Invalid or missing auto delete AI logs unit!', 'wpsc-ps' ), 400 );
-			}
-
-			$custom_prompt = isset( $_POST['custom-prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['custom-prompt'] ) ) : '';
-			$summary_custom_prompt = isset( $_POST['summary-custom-prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['summary-custom-prompt'] ) ) : '';
-			$auto_draft_custom_prompt = isset( $_POST['auto-draft-custom-prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['auto-draft-custom-prompt'] ) ) : '';
-
 			$temperature = isset( $_POST['wpsc-ai-temperature'] ) ? floatval( $_POST['wpsc-ai-temperature'] ) : 0;
 			if ( $temperature < 0 || $temperature > 1 ) {
 				wp_send_json_error( __( 'Temperature must be between 0 and 1.', 'wpsc-ps' ), 400 );
@@ -239,6 +158,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			// Check if API key OR provider changed.
 			$is_key_changed = ( $api_key !== $old_api_key ) || ( $service_provider !== $old_provider );
+
+			// A changed key may belong to a different provider project. Vector/file-search
+			// stores are project-scoped and never re-validated once cached, so a stale
+			// store ID left over from the old key would silently fail every sync/upload
+			// (Website tab shows no records, file uploads fail with no visible error).
+			// Clear both caches here so the next use recreates a store under the key
+			// that's actually being configured now.
+			if ( $is_key_changed ) {
+				self::clear_cached_provider_store_ids();
+			}
 
 			$test_result = array(
 				'success' => true,
@@ -264,21 +193,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				}
 			}
 
-			$ai_settings = array(
-				'status'                   => $status,
-				'provider'                 => $service_provider,
-				'model'                    => $model,
-				'api_key'                  => $api_key,
-				'max-tokens'               => $max_tokens,
-				'auto-delete-ai-logs-time' => $auto_delete_ai_logs_time,
-				'auto-delete-ai-logs-unit' => $auto_delete_ai_logs_unit,
-				'custom-prompt'            => $custom_prompt,
-				'summary-custom-prompt'    => $summary_custom_prompt,
-				'auto-draft-custom-prompt' => $auto_draft_custom_prompt,
-				'is-active'                => $is_active,
-				'last-error'               => $test_result['success'] ? '' : $test_result['message'],
-				'ai-max-upload-file-size'  => 10, // default 10 MB.
-			);
+			// Only update fields owned by this tab; leave other tabs' settings untouched.
+			$ai_settings['provider']     = $service_provider;
+			$ai_settings['model']        = $model;
+			$ai_settings['api_key']      = $api_key;
+			$ai_settings['max-tokens']   = $max_tokens;
+			$ai_settings['is-active']    = $is_active;
+			$ai_settings['last-error']   = $test_result['success'] ? '' : $test_result['message'];
+			if ( ! isset( $ai_settings['ai-max-upload-file-size'] ) ) {
+				$ai_settings['ai-max-upload-file-size'] = 10; // default 10 MB.
+			}
 			update_option( 'wpsc-ps-ai-assistant-settings', $ai_settings );
 
 			wp_send_json_success(
@@ -303,6 +227,11 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			if ( ! WPSC_Functions::is_site_admin() ) {
 				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
+
+			// Reset should give a genuinely clean slate: also drop any cached vector/file-search
+			// store ID, otherwise re-entering a new key later silently reuses a store that may
+			// belong to a different project (see clear_stored_vector_store_id() docblock).
+			self::clear_cached_provider_store_ids();
 
 			update_option(
 				'wpsc-ps-ai-assistant-settings',
@@ -329,6 +258,20 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				)
 			);
 			wp_die();
+		}
+
+		/**
+		 * Clear both providers' cached vector/file-search store IDs. Called whenever the
+		 * configured API key/provider changes or settings are reset, since a store ID cached
+		 * under a previous key/project is never re-validated on its own (see
+		 * WPSC_PS_AI_OpenAI::clear_stored_vector_store_id() docblock).
+		 *
+		 * @return void
+		 */
+		private static function clear_cached_provider_store_ids() {
+
+			WPSC_PS_AI_OpenAI::clear_stored_vector_store_id();
+			WPSC_PS_AI_Gemini::clear_stored_file_search_store_id();
 		}
 
 		/**

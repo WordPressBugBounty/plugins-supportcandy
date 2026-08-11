@@ -44,6 +44,9 @@ if ( ! class_exists( 'WPSC_Chatbot' ) ) :
 						<button type="button" class="wpsc-chatbot__header-btn wpsc-chatbot__expand" aria-label="Expand" title="<?php esc_attr_e( 'Full screen view', 'wpsc-ps' ); ?>" >
 							<?php WPSC_Icons::get( 'expand' ); ?>
 						</button>
+						<button type="button" class="wpsc-chatbot__header-btn wpsc-chatbot__minimize" aria-label="Minimize" title="<?php esc_attr_e( 'Minimize chat', 'wpsc-ps' ); ?>" >
+							<?php WPSC_Icons::get( 'minimize' ); ?>
+						</button>
 						<button type="button" class="wpsc-chatbot__header-btn wpsc-chatbot__compress" aria-label="Compress" title="<?php esc_attr_e( 'Exit full screen view', 'wpsc-ps' ); ?>" >
 							<?php WPSC_Icons::get( 'compress' ); ?>
 						</button>
@@ -58,7 +61,7 @@ if ( ! class_exists( 'WPSC_Chatbot' ) ) :
 						<?php esc_html_e( 'Hey, I\'m your assistant. How can I help you today?', 'wpsc-ps' ); ?>
 						<div class="wpsc-chatbot__message-meta">
 							<span><?php esc_html_e( 'Assistant', 'wpsc-ps' ); ?></span>
-							<span><?php echo esc_html( gmdate( 'g:i a' ) ); ?></span>
+							<span><?php echo esc_html( wp_date( 'H:i' ) ); ?></span>
 						</div>
 					</div>
 				</div>

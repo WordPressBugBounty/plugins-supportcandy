@@ -696,3 +696,54 @@ function wpsc_delete_all_ait_posts( el, nonce, slug ) {
 			}
 		);
 }
+
+/**
+ * Manually schedule the wpsc_ai_training_upload cron from the "Retry Upload"
+ * link shown next to the In Queue count when there are queued records but the
+ * cron isn't scheduled (see edit_ai_training_source() in
+ * class-wpsc-ps-ai-setting-ai-training.php). The link is hidden immediately on
+ * click so it can't be clicked twice while the request is in flight; on
+ * success, refreshing the edit screen in place removes it for good (the cron
+ * is now scheduled). On failure it's shown again so the admin can retry.
+ *
+ * @param {HTMLElement} el        The clicked link.
+ * @param {string}      nonce     Nonce for the wpsc_schedule_ai_training_upload action.
+ * @param {string}      slug      Training source slug, used to refresh the edit screen.
+ * @param {string}      editNonce Nonce for the wpsc_edit_ai_training_source action.
+ */
+function wpsc_schedule_ai_training_upload( el, nonce, slug, editNonce ) {
+
+	const link = jQuery( el ).hide();
+
+	const data = {
+		action: 'wpsc_schedule_ai_training_upload',
+		_ajax_nonce: nonce
+	};
+
+	jQuery.post( supportcandy.ajax_url, data )
+		.done(
+			function( response ) {
+				if ( ! response.success ) {
+					alert( response.data?.message || supportcandy.translations.something_wrong );
+					link.show();
+					return;
+				}
+				// Refreshing the edit screen replaces this link entirely, so it's not shown again here.
+				wpsc_edit_ai_training_source( slug, editNonce );
+			}
+		)
+		.fail(
+			function( xhr ) {
+				let message = supportcandy.translations.something_wrong;
+				if (
+					xhr.responseJSON &&
+					xhr.responseJSON.data &&
+					xhr.responseJSON.data.message
+				) {
+					message = xhr.responseJSON.data.message;
+				}
+				alert( message );
+				link.show();
+			}
+		);
+}

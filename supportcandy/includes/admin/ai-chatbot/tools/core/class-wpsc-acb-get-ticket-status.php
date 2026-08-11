@@ -5,7 +5,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 
-	final class WPSC_ACB_Get_Ticket_Status {
+	final class WPSC_ACB_Get_Ticket_Status extends WPSC_Email_Notifications {
+
+		/**
+		 * Max OTP verification attempts allowed within a single chat turn (i.e.
+		 * across the tool calls of one agentic loop), separate from and
+		 * tighter than the existing cross-turn 5-attempt transient lockout -
+		 * stops the model from brute-forcing many guesses back-to-back inside
+		 * one multi-iteration turn.
+		 *
+		 * @var int
+		 */
+		const INTRA_TURN_OTP_ATTEMPT_LIMIT = 2;
+
+		/**
+		 * Count of OTP verification attempts made so far in this PHP request.
+		 *
+		 * @var int
+		 */
+		private static $otp_verify_attempts_this_turn = 0;
 
 		/**
 		 * Initialize the tool.
@@ -58,6 +76,10 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 		/**
 		 * Execute get ticket status tool.
 		 *
+		 * Returns structured data only (a 'need' code describing what's missing,
+		 * or a 'ticket' payload on success); the calling LLM turn composes the
+		 * actual user-facing reply (in the user's own language) from this result.
+		 *
 		 * @param array  $args Tool arguments.
 		 * @param string $session_uuid Session UUID.
 		 * @return array
@@ -67,16 +89,16 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 			$parsed_ticket_id = self::parse_ticket_id( $args['ticket_id'] ?? '' );
 			if ( ! $parsed_ticket_id || ! self::was_ticket_id_shared_by_user( $parsed_ticket_id ) ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'Please share your ticket ID to check status.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'ticket_id',
 				);
 			}
 
 			$ticket = self::get_ticket_object( $parsed_ticket_id );
 			if ( ! $ticket ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'I could not find a ticket with that ID. Please verify and share the correct ticket ID.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'ticket_not_found',
 				);
 			}
 
@@ -85,14 +107,14 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 
 				if ( ! self::can_logged_in_user_access_ticket( $ticket, $current_user ) ) {
 					return array(
-						'success'  => true,
-						'response' => '<p>' . esc_html__( 'You do not have permission to view this ticket.', 'wpsc-ps' ) . '</p>',
+						'success' => true,
+						'need'    => 'permission_denied',
 					);
 				}
 
 				return array(
-					'success'  => true,
-					'response' => self::build_ticket_status_response( $ticket, false ),
+					'success' => true,
+					'ticket'  => self::build_ticket_status_data( $ticket ),
 				);
 			}
 
@@ -101,15 +123,15 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 
 			if ( '' === $email_raw || ! is_email( $email_raw ) ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'For guest verification, please share your ticket email address.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'guest_email',
 				);
 			}
 
 			if ( ! self::is_guest_authorized_for_ticket( $ticket, $email ) ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'I could not verify this ticket with the provided details. Please check your ticket ID and email, then try again.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'guest_verification_failed',
 				);
 			}
 
@@ -124,29 +146,40 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 
 				if ( ! empty( $otp_state['otp_id'] ) && true !== $resend_otp ) {
 					return array(
-						'success'  => true,
-						'response' => '<p>' . esc_html__( 'I already sent a verification code to your email. Please share the OTP to continue. If you did not receive it, ask me to resend OTP.', 'wpsc-ps' ) . '</p>',
+						'success' => true,
+						'need'    => 'otp_pending',
 					);
 				}
 
 				$sent = self::send_guest_otp( $email, $ticket->id, $otp_state_key );
 				if ( ! $sent ) {
 					return array(
-						'success'  => true,
-						'response' => '<p>' . esc_html__( 'I could not send the verification code right now. Please try again in a moment.', 'wpsc-ps' ) . '</p>',
+						'success' => true,
+						'need'    => 'otp_send_failed',
 					);
 				}
 
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'I sent a one-time verification code to your email. Please share that OTP to view ticket details.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'otp_sent',
+				);
+			}
+
+			// Intra-turn brute-force guard: separate from and tighter than the
+			// cross-turn 5-attempt transient lockout below, this stops the model
+			// from cycling through many OTP guesses within one agentic-loop turn.
+			++self::$otp_verify_attempts_this_turn;
+			if ( self::$otp_verify_attempts_this_turn > self::INTRA_TURN_OTP_ATTEMPT_LIMIT ) {
+				return array(
+					'success' => true,
+					'need'    => 'otp_locked',
 				);
 			}
 
 			if ( empty( $otp_state['otp_id'] ) ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'Please request an OTP first. Share your ticket ID and email, and I will send the verification code.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'otp_not_requested',
 				);
 			}
 
@@ -154,8 +187,8 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 			if ( ! $otp->id || strtolower( (string) $otp->email ) !== strtolower( (string) $email ) ) {
 				delete_transient( $otp_state_key );
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'Your verification session expired. Please ask me to send a new OTP.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'otp_expired',
 				);
 			}
 
@@ -164,8 +197,8 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 				WPSC_Email_OTP::destroy( $otp );
 				delete_transient( $otp_state_key );
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'Too many incorrect OTP attempts. Please request a new verification code.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'otp_locked',
 				);
 			}
 
@@ -178,14 +211,14 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 					WPSC_Email_OTP::destroy( $otp );
 					delete_transient( $otp_state_key );
 					return array(
-						'success'  => true,
-						'response' => '<p>' . esc_html__( 'Too many incorrect OTP attempts. Please request a new verification code.', 'wpsc-ps' ) . '</p>',
+						'success' => true,
+						'need'    => 'otp_locked',
 					);
 				}
 
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html__( 'The OTP is invalid or expired. Please check the code and try again.', 'wpsc-ps' ) . '</p>',
+					'success' => true,
+					'need'    => 'otp_invalid',
 				);
 			}
 
@@ -193,8 +226,8 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 			delete_transient( $otp_state_key );
 
 			return array(
-				'success'  => true,
-				'response' => self::build_ticket_status_response( $ticket, true ),
+				'success' => true,
+				'ticket'  => self::build_ticket_status_data( $ticket ),
 			);
 		}
 
@@ -374,7 +407,7 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 				return false;
 			}
 
-			WPSC_EN_Guest_Login_OTP::send_otp( $otp );
+			self::send_otp( $otp );
 			set_transient(
 				$state_key,
 				array(
@@ -406,29 +439,24 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 		}
 
 		/**
-		 * Format ticket status details and summary.
+		 * Build structured ticket status data for the calling LLM turn to
+		 * compose a user-facing reply from.
 		 *
 		 * @param WPSC_Ticket|WPSC_Archive_Ticket $ticket Ticket object.
-		 * @param bool                            $is_guest Whether request is guest-verified.
-		 * @return string
+		 * @return array
 		 */
-		private static function build_ticket_status_response( $ticket, $is_guest ) {
+		private static function build_ticket_status_data( $ticket ) {
 
 			$last_updated = wp_date( 'M d, Y h:i A', ( $ticket->date_updated )->setTimezone( wp_timezone() )->getTimestamp() );
-			$ticket_url = WPSC_Functions::get_ticket_url( $ticket->id, 1 );
 
-			$response = '<p>' . esc_html__( 'Here are your ticket details:', 'wpsc-ps' ) . '</p>';
-			$response .= '<ul>';
-			$response .= '<li><strong>' . esc_html__( 'Status', 'wpsc-ps' ) . ':</strong> ' . esc_html( $ticket->status->name ) . '</li>';
-			$response .= '<li><strong>' . esc_html__( 'Priority', 'wpsc-ps' ) . ':</strong> ' . esc_html( $ticket->priority->name ) . '</li>';
-			$response .= '<li><strong>' . esc_html__( 'Category', 'wpsc-ps' ) . ':</strong> ' . esc_html( $ticket->category->name ) . '</li>';
-			$response .= '<li><strong>' . esc_html__( 'Last Updated', 'wpsc-ps' ) . ':</strong> ' . esc_html( $last_updated ) . '</li>';
-			if ( ! empty( $ticket_url ) ) {
-				$response .= '<li><strong>' . esc_html__( 'Ticket URL', 'wpsc-ps' ) . ':</strong> <a href="' . esc_url( $ticket_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $ticket_url ) . '</a></li>';
-			}
-			$response .= '</ul>';
-
-			return $response;
+			return array(
+				'ticket_id'    => (int) $ticket->id,
+				'status'       => (string) $ticket->status->name,
+				'priority'     => (string) $ticket->priority->name,
+				'category'     => (string) $ticket->category->name,
+				'last_updated' => (string) $last_updated,
+				'ticket_url'   => (string) WPSC_Functions::get_ticket_url( $ticket->id, 1 ),
+			);
 		}
 
 		/**
@@ -459,6 +487,33 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 			}
 
 			return null;
+		}
+
+		/**
+		 * Send OTP
+		 *
+		 * @param WPSC_Email_OTP $otp - otp.
+		 * @return void
+		 */
+		public static function send_otp( $otp ) {
+
+			$en = new WPSC_Email_Notifications();
+
+			// from name & email.
+			$en_general = get_option( 'wpsc-en-general' );
+			$en->from_name  = $en_general['from-name'] ?? '';
+			$en->from_email = $en_general['from-email'] ?? '';
+			$en->reply_to   = $en_general['reply-to'] ? $en_general['reply-to'] : $en->from_email;
+
+			$body = '<p>' . esc_html__( 'Hello,', 'wpsc-ps' ) . '</p>'
+				. '<p>' . esc_html__( 'Use the one-time password below to verify your email and view your ticket status:', 'wpsc-ps' ) . '</p>'
+				. '<p><strong>{{otp}}</strong></p>'
+				. '<p>' . esc_html__( 'This code will expire in 10 minutes. If you did not request this, you can safely ignore this email.', 'wpsc-ps' ) . '</p>';
+
+			$en->subject = __( 'Your OTP to verify ticket status', 'wpsc-ps' );
+			$en->body    = str_replace( '{{otp}}', $otp->otp, $body );
+			$en->to      = array( $otp->email );
+			$en->send();
 		}
 	}
 

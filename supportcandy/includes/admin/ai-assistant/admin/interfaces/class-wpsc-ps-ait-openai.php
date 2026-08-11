@@ -20,6 +20,16 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 		}
 
 		/**
+		 * Clear the cached vector store ID. See interface docblock.
+		 *
+		 * @return void
+		 */
+		public function wpsc_clear_provider_store_id() {
+
+			WPSC_PS_AI_OpenAI::clear_stored_vector_store_id();
+		}
+
+		/**
 		 * Extract metadata from the prompt for analytics or other purposes.
 		 *
 		 * @param array  $ai_settings AI settings array.
@@ -188,7 +198,11 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 		 * @param string $vector_store_id ID of the vector store.
 		 * @param string $file_id ID of the file to attach.
 		 * @param string $api_key API key for authentication.
-		 * @return array Response from OpenAI API.
+		 * @return array|WP_Error|false Response from OpenAI API, or a WP_Error with code
+		 *                              'vector_store_not_found' when the store itself is
+		 *                              gone/inaccessible (e.g. belongs to another OpenAI
+		 *                              project), so callers can tell that failure apart
+		 *                              from an ordinary attach error.
 		 */
 		public function wpsc_attach_file( $vector_store_id, $file_id, $api_key ) {
 
@@ -208,27 +222,22 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 			$vector_store_id = sanitize_text_field( $vector_store_id );
 			$file_id         = sanitize_text_field( $file_id );
 
-			// API Request.
 			$response = self::wpsc_remote_post(
 				"https://api.openai.com/v1/vector_stores/{$vector_store_id}/files",
-				array(
-					'file_id' => $file_id,
-				),
+				array( 'file_id' => $file_id ),
 				$api_key
 			);
 
-			// Handle WP_Error.
 			if ( is_wp_error( $response ) ) {
-				return false;
-			}
 
-			// Validate Response.
-			if ( empty( $response ) || ! is_array( $response ) ) {
-				return false;
-			}
+				$status_code = $response->get_error_data()['status_code'] ?? 0;
 
-			// API-Level Error.
-			if ( isset( $response['error'] ) ) {
+				// OpenAI returns 404 with a "No vector store found with id ..." message when the
+				// configured store doesn't exist for this key/project (e.g. after a key rotation).
+				if ( 404 === $status_code && false !== stripos( $response->get_error_message(), 'vector store' ) ) {
+					return new WP_Error( 'vector_store_not_found', $response->get_error_message() );
+				}
+
 				return false;
 			}
 
@@ -288,7 +297,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 						'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
 					),
 					'body'    => $body,
-					'timeout' => 120,
+					'timeout' => 45,
 				)
 			);
 
@@ -511,24 +520,30 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 		 * Handle the response from a remote request.
 		 *
 		 * @param array|WP_Error $response The response from wp_remote_post or wp_remote_get.
-		 * @return array The decoded JSON response or an empty array on error.
+		 * @return array|WP_Error The decoded JSON response, or a WP_Error carrying the HTTP
+		 *                        status code (in error data, key 'status_code') and OpenAI's
+		 *                        error message on failure, so callers that need to tell
+		 *                        specific failures apart (e.g. a 404 "not found") can.
 		 */
 		private static function wpsc_handle_response( $response ) {
 
 			if ( is_wp_error( $response ) ) {
-				return array();
+				return $response;
 			}
 
 			$code = wp_remote_retrieve_response_code( $response );
-			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			$data = json_decode( $body, true );
+			if ( $code < 200 || $code >= 300 || ( is_array( $data ) && isset( $data['error'] ) ) ) {
 
-			if ( $code < 200 || $code >= 300 ) {
-				return array();
+				$error_message = isset( $data['error']['message'] ) && is_string( $data['error']['message'] )
+					? $data['error']['message']
+					: __( 'Unknown API error.', 'wpsc-ps' );
+
+				return new WP_Error( 'api_error', $error_message, array( 'status_code' => $code ) );
 			}
 
-			return $data ? $data : array();
+			return is_array( $data ) ? $data : array();
 		}
 
 		/**
@@ -606,7 +621,6 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 
 			$headers = array(
 				'Authorization' => 'Bearer ' . $api_key,
-				'OpenAI-Beta'   => 'assistants=v2',
 			);
 
 			// Step 1: Remove from vector store (ignore 404).

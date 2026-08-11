@@ -285,7 +285,8 @@
 }
 
 /* Customer list */
-#wpsc-customer-list .dt-search {
+#wpsc-customer-list .dt-search,
+#wpsc-session-list .dt-search  {
   display: none !important;
 }
 

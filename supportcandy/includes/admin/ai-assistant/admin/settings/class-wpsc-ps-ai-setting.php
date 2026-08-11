@@ -91,10 +91,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting' ) ) :
 			self::$tabs = apply_filters(
 				'wpsc_ai_assistant_settings_tabs',
 				array(
-					'general' => array(
+					'general'   => array(
 						'slug'     => 'general',
-						'label'    => esc_attr__( 'General', 'wpsc-ps' ),
+						'label'    => esc_attr__( 'Connection', 'wpsc-ps' ),
 						'callback' => 'wpsc_get_aia_general_setting',
+					),
+					'assistant' => array(
+						'slug'     => 'assistant',
+						'label'    => esc_attr__( 'AI Assistant', 'wpsc-ps' ),
+						'callback' => 'wpsc_get_aia_assistant_setting',
 					),
 				)
 			);

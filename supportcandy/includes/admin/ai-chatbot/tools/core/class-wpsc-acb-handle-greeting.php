@@ -25,24 +25,16 @@ if ( ! class_exists( 'WPSC_ACB_Handle_Greeting' ) ) :
 
 			$registry['handle_greeting'] = array(
 				'name'        => 'handle_greeting',
-				'description' => 'Handle pure small-talk messages in any language. AI should decide the intent internally and provide a user-ready reply. Optionally request to end conversation when user clearly intends to end chat. Never use this tool for mixed messages that also contain a support issue or question.',
+				'description' => 'Signal that the current message is pure small-talk (greeting, thank-you, farewell) in any language, so you can compose the actual reply yourself in your next response. Set end_conversation=true only when the user clearly intends to end the chat. Never use this tool for mixed messages that also contain a support issue or question.',
 				'parameters'  => array(
 					'type'                 => 'object',
 					'properties'           => array(
-						'reply'                 => array(
-							'type'        => 'string',
-							'description' => 'User-ready short reply for the current small-talk message.',
-						),
-						'end_conversation'      => array(
+						'end_conversation' => array(
 							'type'        => 'boolean',
 							'description' => 'Set true only when user clearly intends to end the chat.',
 						),
-						'disable_input_message' => array(
-							'type'        => 'string',
-							'description' => 'Optional message shown when chat input is disabled after ending conversation.',
-						),
 					),
-					'required'             => array( 'reply' ),
+					'required'             => array( 'end_conversation' ),
 					'additionalProperties' => false,
 				),
 				'handler'     => 'execute_tool_handle_greeting',
@@ -55,23 +47,21 @@ if ( ! class_exists( 'WPSC_ACB_Handle_Greeting' ) ) :
 		/**
 		 * Execute greeting/small-talk tool.
 		 *
+		 * Returns structured intent data only; the calling LLM turn composes the
+		 * actual user-facing reply (in the user's own language) from this result.
+		 *
 		 * @param array  $args Tool arguments.
 		 * @param string $session_uuid Session UUID.
 		 * @return array
 		 */
 		public static function execute_tool_handle_greeting( $args, $session_uuid ) {
 
-			$reply = sanitize_text_field( (string) ( $args['reply'] ?? '' ) );
-			if ( '' === $reply ) {
-				$reply = __( 'I am here to help. Please tell me what you need.', 'wpsc-ps' );
-			}
-
 			$end_conversation = ! empty( $args['end_conversation'] );
 
 			if ( ! $end_conversation ) {
 				return array(
-					'success'  => true,
-					'response' => '<p>' . esc_html( $reply ) . '</p>',
+					'success' => true,
+					'intent'  => 'greeting',
 				);
 			}
 
@@ -86,17 +76,12 @@ if ( ! class_exists( 'WPSC_ACB_Handle_Greeting' ) ) :
 
 			WPSC_ACB_Cookies::delete_session_cookie( 'wpsc_acb_session_id' );
 
-			$end_message = sanitize_text_field( (string) ( $args['disable_input_message'] ?? '' ) );
-			if ( '' === $end_message ) {
-				$end_message = __( 'Conversation ended. You can start a new chat anytime.', 'wpsc-ps' );
-			}
-
 			return array(
-				'success'               => true,
-				'response'              => '<p>' . esc_html( $reply ) . '</p>',
-				'end_conversation'      => true,
-				'session_expired'       => true,
-				'disable_input_message' => $end_message,
+				'success'          => true,
+				'intent'           => 'greeting',
+				'end_conversation' => true,
+				'session_expired'  => true,
+				'reason'           => 'conversation_ended',
 			);
 		}
 	}

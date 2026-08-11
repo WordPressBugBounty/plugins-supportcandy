@@ -30,7 +30,7 @@ if ( ! class_exists( 'WPSC_Chatbot_Welcome' ) ) :
 				<?php esc_html_e( 'Hey, I\'m your assistant. How can I help you today?', 'wpsc-ps' ); ?>
 				<div class="wpsc-chatbot__message-meta">
 					<span><?php esc_html_e( 'Assistant', 'wpsc-ps' ); ?></span>
-					<span><?php echo esc_html( gmdate( 'g:i a' ) ); ?></span>
+					<span><?php echo esc_html( wp_date( 'H:i' ) ); ?></span>
 				</div>
 			</div>
 			<?php

@@ -25,6 +25,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			// Add new.
 			add_action( 'wp_ajax_wpsc_add_ai_training_source', array( __CLASS__, 'add_ai_training_source' ) );
 			add_action( 'wp_ajax_wpsc_edit_ai_training_source', array( __CLASS__, 'edit_ai_training_source' ) );
+
+			// Manually schedule the upload cron when it's due (records in queue) but not scheduled.
+			add_action( 'wp_ajax_wpsc_schedule_ai_training_upload', array( __CLASS__, 'schedule_ai_training_upload' ) );
 		}
 
 		/**
@@ -38,6 +41,11 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
 				$sources = array();
 			}
+
+			// Record counts are scoped to the currently configured AI provider - see
+			// get_source_record_counts().
+			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
+			$current_provider = sanitize_text_field( $ai_settings['provider'] ?? '' );
 			?>
 			<div class="wpsc-dock-container">
 				<?php
@@ -54,6 +62,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						<th><?php echo esc_attr( wpsc__( 'Name', 'wpsc-ps' ) ); ?></th>
 						<th><?php echo esc_attr( wpsc__( 'Source', 'wpsc-ps' ) ); ?></th>
 						<th><?php echo esc_attr( wpsc__( 'Post Types', 'wpsc-ps' ) ); ?></th>
+						<th><?php echo esc_attr( wpsc__( 'Upload Status', 'wpsc-ps' ) ); ?></th>
 						<th><?php echo esc_attr( wpsc__( 'Actions', 'wpsc-ps' ) ); ?></th>
 					</tr>
 				</thead>
@@ -64,6 +73,8 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							// remove trailing content from api url.
 							$api_url = $source['api-url'] ?? '';
 							$api_url = preg_replace( '/\/wp-json\/?$/', '', $api_url );
+							$record_counts = self::get_source_record_counts( sanitize_text_field( $source['slug'] ?? '' ), $current_provider );
+							$upload_status = self::get_source_upload_status( $record_counts );
 							?>
 							<tr>
 								<td><?php echo esc_html( $source['name'] ); ?></td>
@@ -87,6 +98,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 										)
 									);
 								?>
+								</td>
+								<td>
+									<span class="wpsc-ait-upload-status wpsc-ait-upload-status--<?php echo esc_attr( $upload_status['key'] ); ?>"><?php echo esc_html( $upload_status['label'] ); ?></span>
 								</td>
 								<td>
 									<span class="wpsc-link" onclick="wpsc_edit_ai_training_source('<?php echo esc_js( (string) $source['slug'] ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_edit_ai_training_source' ) ); ?>')"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span>
@@ -136,6 +150,120 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			</script>
 			<?php
 			wp_die();
+		}
+
+		/**
+		 * Get the per-status training record counts for a source, scoped to the
+		 * currently configured AI provider - each provider keeps its own independent
+		 * copy of a document (see insert_training_post()), so counts must only reflect
+		 * the provider actually in use, not every provider a source has ever been synced
+		 * under. Soft-deleted (DELETE) records are intentionally excluded from every
+		 * bucket, including 'total'.
+		 *
+		 * @param string $source_slug      Training source slug.
+		 * @param string $current_provider Currently configured AI provider.
+		 * @return array { new: int, processing: int, indexed: int, failed: int, queue: int, total: int }
+		 */
+		private static function get_source_record_counts( $source_slug, $current_provider ) {
+
+			$empty_counts = array(
+				'new'        => 0,
+				'processing' => 0,
+				'indexed'    => 0,
+				'failed'     => 0,
+				'queue'      => 0,
+				'total'      => 0,
+			);
+
+			if ( '' === $source_slug ) {
+				return $empty_counts;
+			}
+
+			$counts_by_status = $empty_counts;
+			foreach ( array( WPSC_PS_AIT_Status::NEW, WPSC_PS_AIT_Status::PROCESSING, WPSC_PS_AIT_Status::INDEXED, WPSC_PS_AIT_Status::FAILED ) as $status ) {
+				$counts_by_status[ $status ] = WPSC_RAG_Training_File::count(
+					array(
+						'meta_query' => array(
+							'relation' => 'AND',
+							array(
+								'slug'    => 'doc_source',
+								'compare' => '=',
+								'val'     => $source_slug,
+							),
+							array(
+								'slug'    => 'status',
+								'compare' => '=',
+								'val'     => $status,
+							),
+							array(
+								'slug'    => 'provider',
+								'compare' => '=',
+								'val'     => $current_provider,
+							),
+						),
+					)
+				);
+			}
+
+			$counts_by_status['queue'] = $counts_by_status[ WPSC_PS_AIT_Status::NEW ] + $counts_by_status[ WPSC_PS_AIT_Status::PROCESSING ];
+			$counts_by_status['total'] = $counts_by_status[ WPSC_PS_AIT_Status::INDEXED ] + $counts_by_status['queue'];
+
+			return array(
+				'new'        => $counts_by_status[ WPSC_PS_AIT_Status::NEW ],
+				'processing' => $counts_by_status[ WPSC_PS_AIT_Status::PROCESSING ],
+				'indexed'    => $counts_by_status[ WPSC_PS_AIT_Status::INDEXED ],
+				'failed'     => $counts_by_status[ WPSC_PS_AIT_Status::FAILED ],
+				'queue'      => $counts_by_status['queue'],
+				'total'      => $counts_by_status['total'],
+			);
+		}
+
+		/**
+		 * Collapse a source's per-status record counts (see get_source_record_counts())
+		 * into the single overall status shown in the sources list table.
+		 *
+		 * Priority order: an in-flight upload (processing) or a still-pending one
+		 * (new) is more actionable/current than a past failure, so those are reported
+		 * first; a failure only surfaces once nothing is actively moving, since by
+		 * then it is the reason nothing more is happening for this source.
+		 *
+		 * @param array $counts Per-status counts from get_source_record_counts().
+		 * @return array { key: string, label: string }
+		 */
+		private static function get_source_upload_status( array $counts ) {
+
+			if ( ( $counts['processing'] ?? 0 ) > 0 ) {
+				return array(
+					'key'   => 'uploading',
+					'label' => __( 'Uploading', 'wpsc-ps' ),
+				);
+			}
+
+			if ( ( $counts['new'] ?? 0 ) > 0 ) {
+				return array(
+					'key'   => 'queued',
+					'label' => __( 'Queue', 'wpsc-ps' ),
+				);
+			}
+
+			if ( ( $counts['failed'] ?? 0 ) > 0 ) {
+				return array(
+					'key'   => 'failed',
+					'label' => __( 'Failed', 'wpsc-ps' ),
+				);
+			}
+
+			if ( ( $counts['indexed'] ?? 0 ) > 0 ) {
+				return array(
+					'key'   => 'completed',
+					'label' => __( 'Completed', 'wpsc-ps' ),
+				);
+			}
+
+			return array(
+				'key'   => 'not-synced',
+				'label' => __( 'Not Synced', 'wpsc-ps' ),
+			);
 		}
 
 		/**
@@ -412,6 +540,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				$provider = WPSC_PS_AIT_Provider::get_label( $training->provider );
 				$training_id = absint( $training->id );
 
+				// Surface the underlying failure reason (if one was recorded) as a tooltip on the
+				// status badge instead of leaving admins with just a generic "Failed" label.
+				if ( in_array( $training->status, array( WPSC_PS_AIT_Status::FAILED, WPSC_PS_AIT_Status::DELETE ), true ) ) {
+					$meta = json_decode( $training->meta_data, true );
+					$failure_reason = is_array( $meta ) && ! empty( $meta['failure_reason'] ) ? $meta['failure_reason'] : '';
+					if ( '' !== $failure_reason ) {
+						$status = '<span title="' . esc_attr( $failure_reason ) . '">' . esc_html( $status ) . ' &#9432;</span>';
+					}
+				}
+
 				$edit_actions = array();
 				if ( $training->provider === $current_provider && ! in_array( $training->status, array( WPSC_PS_AIT_Status::DELETE, WPSC_PS_AIT_Status::PROCESSING ), true ) ) {
 					$edit_actions[] = sprintf(
@@ -588,51 +726,42 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			$ait_endpoint = esc_url_raw( $selected_source['api-url'] ?? '' );
 			$site_url = preg_replace( '/\/wp-json\/?$/', '', $ait_endpoint );
 
-			// Records for this source are tagged with doc_source = the source's own slug (see insert_training_post()).
-			$indexed_count = 0;
-			$queue_count   = 0;
+			// Records for this source are tagged with doc_source = the source's own slug (see insert_training_post()),
+			// and with the AI provider they were uploaded to at the time - the currently configured provider is what
+			// "Total records" etc. should reflect, not every provider a source has ever been synced under.
+			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
+			$current_provider = sanitize_text_field( $ai_settings['provider'] ?? '' );
+
+			$record_counts = self::get_source_record_counts( $ait_slug, $current_provider );
+			$indexed_count = $record_counts['indexed'];
+			$queue_count   = $record_counts['queue'];
+			$total_records = $record_counts['total'];
+
+			$needs_provider_resync = false;
 			if ( '' !== $ait_slug ) {
 
-				$indexed_count = WPSC_RAG_Training_File::count(
-					array(
-						'meta_query' => array(
-							'relation' => 'AND',
-							array(
-								'slug'    => 'doc_source',
-								'compare' => '=',
-								'val'     => $ait_slug,
-							),
-							array(
-								'slug'    => 'status',
-								'compare' => '=',
-								'val'     => WPSC_PS_AIT_Status::INDEXED,
-							),
-						),
-					)
-				);
+				$enabled_post_type_slugs = array();
+				foreach ( $saved_post_types as $post_type ) {
+					if ( is_array( $post_type ) && ! empty( $post_type['status'] ) && ! empty( $post_type['slug'] ) ) {
+						$enabled_post_type_slugs[] = sanitize_key( $post_type['slug'] );
+					}
+				}
 
-				$queue_count = WPSC_RAG_Training_File::count(
-					array(
-						'meta_query' => array(
-							'relation' => 'AND',
-							array(
-								'slug'    => 'doc_source',
-								'compare' => '=',
-								'val'     => $ait_slug,
-							),
-							array(
-								'slug'    => 'status',
-								'compare' => 'IN',
-								'val'     => array( WPSC_PS_AIT_Status::NEW, WPSC_PS_AIT_Status::PROCESSING ),
-							),
-						),
-					)
-				);
+				$needs_provider_resync = WPSC_PS_AI_Setting_AI_Training_Actions::source_has_other_provider_data( $ait_slug, $enabled_post_type_slugs, $current_provider );
 			}
-			$total_records = $indexed_count + $queue_count;
 
 			// Show the sync progress bar already running if a background sync is in flight for this source.
 			$sync_running = WPSC_PS_AI_Setting_AI_Training_Actions::is_sync_running( $ait_slug );
+
+			// Offer a manual "Schedule Upload" action only when there's actually something
+			// stuck: records waiting (queue_count > 0) but the cron that would upload them
+			// isn't due at all. Hidden while a database sync is active anywhere - the
+			// upload cron is deliberately deferred until every sync finishes (see
+			// WPSC_PS_AIT_Controller::upload_file_to_training()), so scheduling it here would
+			// just be cleared again on its next tick, not actually upload anything sooner.
+			$upload_scheduled = (bool) wp_next_scheduled( 'wpsc_ai_training_upload' );
+			$sync_active = WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active();
+			$show_schedule_upload_link = $queue_count > 0 && ! $upload_scheduled && ! $sync_active;
 			?>
 			<div class="wpsc-back-button">
 				<a class="wpsc-link" onclick="wpsc_get_aia_website_setting();"><?php esc_attr_e( 'Back', 'supportcandy' ); ?></a>
@@ -714,11 +843,26 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<div class="wpsc-ait-record-counts">
 					<span><?php esc_html_e( 'Total records:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $total_records ); ?></strong></span>
 					<span><?php esc_html_e( 'Indexed:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $indexed_count ); ?></strong></span>
-					<span><?php esc_html_e( 'In Queue:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $queue_count ); ?></strong></span>
+					<span>
+						<?php esc_html_e( 'In Queue:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $queue_count ); ?></strong>
+						<?php if ( $show_schedule_upload_link ) : ?>
+							<span
+								class="wpsc-link wpsc-ait-retry-upload-link"
+								title="<?php esc_attr_e( 'The upload isn\'t scheduled yet - click to schedule it now.', 'wpsc-ps' ); ?>"
+								onclick="wpsc_schedule_ai_training_upload(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_schedule_ai_training_upload' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_edit_ai_training_source' ) ); ?>');">
+								<?php esc_html_e( 'Retry Upload', 'wpsc-ps' ); ?>
+							</span>
+						<?php endif; ?>
+					</span>
 				</div>
 
 				<hr>
 				<div class="wpsc-tt-data-sync-setting">
+					<?php if ( $needs_provider_resync ) : ?>
+						<div class="wpsc-ait-provider-notice">
+							<?php esc_html_e( 'Your AI Assistant provider has been changed. Some or all of your existing training data was uploaded using a different AI provider. Please sync the affected data again to continue using the AI Assistant.', 'wpsc-ps' ); ?>
+						</div>
+					<?php endif; ?>
 					<div class="wpsc-input-group">
 						<div class="label-container">
 							<label for="wpsc-ait-wp-endpoint">
@@ -779,6 +923,45 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<?php
 			}
 			wp_die();
+		}
+
+		/**
+		 * AJAX: Manually schedule the wpsc_ai_training_upload cron when it's due
+		 * (records waiting in queue) but not currently scheduled - see the
+		 * "Schedule Upload" link rendered next to the In Queue count in
+		 * edit_ai_training_source().
+		 *
+		 * Re-checks both conditions server-side rather than trusting the link only
+		 * being rendered when appropriate, since the page state can go stale between
+		 * render and click (another admin/tab, a sync starting, the cron firing on
+		 * its own in the meantime).
+		 *
+		 * @return void
+		 */
+		public static function schedule_ai_training_upload() {
+
+			if ( check_ajax_referer( 'wpsc_schedule_ai_training_upload', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( array( 'message' => __( 'Unauthorized request!', 'wpsc-ps' ) ), 401 );
+			}
+
+			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
+				wp_send_json_error( array( 'message' => __( 'Unauthorized access!', 'wpsc-ps' ) ), 401 );
+			}
+
+			if ( WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
+				wp_send_json_error( array( 'message' => __( 'A database sync is currently in progress. The upload will be scheduled automatically once it finishes.', 'wpsc-ps' ) ), 409 );
+			}
+
+			if ( wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
+				wp_send_json_success( array( 'message' => __( 'Upload is already scheduled.', 'wpsc-ps' ) ) );
+			}
+
+			wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
+			if ( function_exists( 'spawn_cron' ) ) {
+				spawn_cron();
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Upload scheduled.', 'wpsc-ps' ) ) );
 		}
 	}
 endif;

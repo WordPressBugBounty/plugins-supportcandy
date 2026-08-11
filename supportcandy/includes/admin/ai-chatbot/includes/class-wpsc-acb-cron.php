@@ -239,15 +239,15 @@ if ( ! class_exists( 'WPSC_ACB_Cron' ) ) :
 
 				Status Rules:
 				resolved
-				- The user\'s issue appears answered or completed.
+				- The assistant provided an answer, solution, or the requested information for the user\'s issue, even if the user never replied again or left the conversation afterward (e.g. closed the chat/tab without further response).
 				- The user confirms success, satisfaction, understanding, or thanks.
-				- No further action appears required.
+				- No further action appears required from the assistant.
 
 				abandoned
-				- The user stopped responding before the issue appeared resolved.
-				- The conversation ended without confirmation of resolution.
-				- The issue appears incomplete or unanswered.
-				- If uncertain, classify as abandoned.
+				- The assistant asked the user a clarifying question or requested more information, and the user left without responding.
+				- The conversation ended before the assistant could provide any answer, solution, or requested information.
+				- The user\'s issue remains clearly incomplete or unanswered at the point the conversation stopped.
+				- If uncertain, classify as resolved when the assistant\'s last message already addressed the user\'s issue; otherwise classify as abandoned.
 
 				Subject Rules:
 				- Generate a concise support ticket subject between 3 and 8 words.
