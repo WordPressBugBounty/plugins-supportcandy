@@ -5,6 +5,73 @@
 let wpscAitPollTimer = null;
 
 /**
+ * Every button that starts a mutually-exclusive action against a training
+ * source's sync job (Update, Sync Posts, Sync Missing Posts, Delete All Posts).
+ * Only one of these may run at a time - interleaving two (e.g. a rapid
+ * click on "Sync Posts" then "Delete All Posts" before the first request
+ * even lands) would race the same stored sync-job state and produce a
+ * meaningless mix of the two actions, so all four are disabled the instant
+ * any one of them is clicked, not just once its request comes back.
+ */
+const WPSC_AIT_ACTION_BUTTONS_SELECTOR = '#wpsc-update-source-btn, #wpsc-sync-posts-btn, #wpsc-sync-missing-posts-btn, #wpsc-delete-all-posts-btn';
+
+/**
+ * Disable every mutually-exclusive training-source action button. Called
+ * synchronously on click, before any AJAX request goes out, so the other
+ * buttons can never be clicked while one action is already in flight.
+ */
+function wpsc_disable_ait_action_buttons() {
+	jQuery( WPSC_AIT_ACTION_BUTTONS_SELECTOR ).prop( 'disabled', true );
+}
+
+/**
+ * Re-enable every mutually-exclusive training-source action button.
+ */
+function wpsc_enable_ait_action_buttons() {
+	jQuery( WPSC_AIT_ACTION_BUTTONS_SELECTOR ).prop( 'disabled', false );
+}
+
+/**
+ * Show (or re-hide) the "Update" button based on whether any post type has
+ * been fetched via "Get Post Types" - regardless of which, if any, are
+ * currently checked. There is nothing for Update to persist without this.
+ *
+ * Does NOT touch the "Data Synchronization & Actions" section - that only
+ * ever appears once a post type is actually enabled and saved, which happens
+ * exclusively through a successful "Update" (see
+ * wpsc_ait_show_data_sync_section()), not from checking a box.
+ *
+ * Safe to call at any time (checkboxes not rendered yet, etc.) - the selector
+ * no-ops gracefully when empty.
+ */
+function wpsc_ait_refresh_action_buttons() {
+
+	const hasPostTypes = jQuery( '.wpsc-ait-wordpress-sync-response input[name="ait-post-types[]"]' ).length > 0;
+	jQuery( '.wpsc-ait-update-container' ).toggle( hasPostTypes );
+}
+
+/**
+ * Reveal the "Data Synchronization & Actions" section (hr, heading, and the
+ * Sync Posts/Sync Missing Posts/Delete All Posts buttons) and hide the
+ * "enable a post type" hint. Called once "Update" succeeds with at least one
+ * post type enabled - see wpsc_update_edit_ai_training_source().
+ */
+function wpsc_ait_show_data_sync_section() {
+	jQuery( '.wpsc-ait-data-sync-container' ).show();
+	jQuery( '.wpsc-tt-data-sync-setting .wpsc-input-group.options' ).show();
+	jQuery( '.wpsc-ait-no-sync-hint' ).hide();
+}
+
+/**
+ * Hide the "Data Synchronization & Actions" section entirely. Called when
+ * "Update" succeeds but leaves no post type enabled - there is nothing left
+ * for Sync Posts/Sync Missing Posts/Delete All Posts to act on.
+ */
+function wpsc_ait_hide_data_sync_section() {
+	jQuery( '.wpsc-ait-data-sync-container' ).hide();
+}
+
+/**
  * Update the training sync progress bar.
  *
  * @param {number} percent Overall completion percentage (0-100).
@@ -32,11 +99,13 @@ function wpsc_hide_sync_progress() {
 }
 
 /**
- * Render the per-post-type breakdown list (done / processing / pending), so
- * post types that finish within a single poll interval (small counts) still
- * show up as completed instead of looking like they were skipped.
+ * Render the per-post-type breakdown list (done / failed / processing / pending),
+ * so post types that finish within a single poll interval (small counts) still
+ * show up as completed instead of looking like they were skipped, and a post
+ * type that failed permanently (exhausted retries) is visibly distinct from one
+ * that actually finished - instead of both showing as plain "done".
  *
- * @param {Array} postTypes List of { name, status, page, total_pages }.
+ * @param {Array} postTypes List of { name, status, page, total_pages, error }.
  */
 function wpsc_render_sync_post_types( postTypes ) {
 
@@ -48,9 +117,15 @@ function wpsc_render_sync_post_types( postTypes ) {
 	list.empty();
 
 	( Array.isArray( postTypes ) ? postTypes : [] ).forEach( function( postType ) {
+		const isFailed = 'failed' === postType.status;
 		const item = jQuery( '<li></li>' )
 			.addClass( postType.status || 'pending' )
-			.text( postType.name + ' (' + postType.page + '/' + postType.total_pages + ')' );
+			.text( postType.name + ' (' + postType.page + '/' + postType.total_pages + ')' + ( isFailed ? ' - ' + ( supportcandy.translations.failed || 'failed' ) : '' ) );
+
+		if ( isFailed && postType.error ) {
+			item.attr( 'title', postType.error );
+		}
+
 		list.append( item );
 	} );
 }
@@ -114,6 +189,35 @@ function wpsc_get_aia_file_upload_setting() {
 }
 
 /**
+ * Load AI Training Data tab ui
+ */
+function wpsc_get_aia_training_data_setting() {
+  supportcandy.current_tab = "ai-training-data";
+  jQuery(".wpsc-setting-tab-container button").removeClass("active");
+  jQuery(
+    ".wpsc-setting-tab-container button." + supportcandy.current_tab
+  ).addClass("active");
+
+  window.history.replaceState(
+    {},
+    null,
+    "admin.php?page=wpsc-settings&section=" +
+      supportcandy.current_section +
+      "&tab=" +
+      supportcandy.current_tab
+  );
+  jQuery(".wpsc-setting-section-body").html(supportcandy.loader_html);
+
+  wpsc_scroll_top();
+
+  var data = { action: "wpsc_get_aia_training_data_setting" };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    jQuery(".wpsc-setting-section-body").html(response);
+    wpsc_reset_responsive_style();
+  });
+}
+
+/**
  * Get AI training source form (add/edit).
  */
 function wpsc_add_ai_training_source(nonce) {
@@ -152,6 +256,7 @@ function wpsc_edit_ai_training_source(slug, nonce) {
 		function (response) {
 			jQuery('.wpsc-setting-section-body').html(response);
 			wpsc_reset_responsive_style();
+			wpsc_ait_refresh_action_buttons();
 		}
 	);
 }
@@ -236,11 +341,19 @@ function wpsc_fetch_wordpress_endpoints_posts(el, nonce) {
 			contentType: false
 		}
 	).done(
-		function (res) {		
+		function (res) {
 			if ( res && res.success ) {
 				const message = ( res.data && res.data.message ) ? res.data.message : supportcandy.translations.something_wrong;
 				const ragTypesHtml = ( res.data && typeof res.data.rag_types_html === 'string' ) ? res.data.rag_types_html : '';
 				renderResponse( '<div class="label-container"><label>' + message + '</label></div>' + ragTypesHtml, true );
+
+				// Post types were just fetched (and rendered checked/unchecked per their
+				// current saved status) - recompute which of Update/the Data Synchronization
+				// & Actions section/its individual actions should now be visible, even
+				// though the page itself was rendered before this fetch happened.
+				if ( ragTypesHtml.trim() !== '' ) {
+					wpsc_ait_refresh_action_buttons();
+				}
 			} else {
 				renderResponse( ( res && res.data && res.data.message ) ? res.data.message : supportcandy.translations.something_wrong, false );
 			}
@@ -411,10 +524,11 @@ function wpsc_update_edit_ai_training_source( el ) {
 	dataform.set( 'action', 'wpsc_update_edit_ai_training_source' );
 	dataform.set( '_ajax_nonce', dataform.get( 'wpsc_update_ai_training_source_nonce' ) || '' );
 
-	// Prevent duplicate submission.
+	// Prevent duplicate submission, and block every other mutually-exclusive
+	// action button too - not just this one - until this request settles.
 	const button = jQuery( el );
 	const buttonOriginalText = button.text();
-	button.prop( 'disabled', true );
+	wpsc_disable_ait_action_buttons();
 	button.text( supportcandy.translations.please_wait );
 
 	jQuery.ajax( {
@@ -427,12 +541,26 @@ function wpsc_update_edit_ai_training_source( el ) {
 	)
 	.done(
 		function( response ) {
-			button.prop( 'disabled', false );
 			button.text( buttonOriginalText );
 
 			if ( response.success && response.data.is_sync ) {
+				// At least one post type is enabled and saved - reveal the "Data
+				// Synchronization & Actions" section (its Sync Posts action's progress bar
+				// wrapper included) before a background sync kicks off, so
+				// wpsc_poll_ait_sync_progress() shows/updates it correctly. Every action
+				// button stays disabled; it re-enables them once the sync finishes.
+				wpsc_ait_show_data_sync_section();
 				wpsc_poll_ait_sync_progress( slug );
+				return;
 			}
+
+			if ( response.success ) {
+				// Nothing enabled (any post type was unchecked before this Update) - there
+				// is nothing left for the sync actions to act on.
+				wpsc_ait_hide_data_sync_section();
+			}
+
+			wpsc_enable_ait_action_buttons();
 		}
 	)
 	.fail(
@@ -446,8 +574,8 @@ function wpsc_update_edit_ai_training_source( el ) {
 				message = xhr.responseJSON.data.message;
 			}
 			alert( message );
-			button.prop( 'disabled', false );
 			button.text( buttonOriginalText );
+			wpsc_enable_ait_action_buttons();
 		}
 	);
 
@@ -466,6 +594,8 @@ function wpsc_update_edit_ai_training_source( el ) {
  */
 function wpsc_sync_posts_for_ai_training( el, nonce, slug ) {
 
+	wpsc_disable_ait_action_buttons();
+
 	jQuery.post(
 		supportcandy.ajax_url,
 		{
@@ -478,6 +608,7 @@ function wpsc_sync_posts_for_ai_training( el, nonce, slug ) {
 		function( response ) {
 			if ( ! response.success ) {
 				alert( response.data?.message || supportcandy.translations.something_wrong );
+				wpsc_enable_ait_action_buttons();
 				return;
 			}
 			wpsc_poll_ait_sync_progress( response.data.source_slug || slug || '' );
@@ -494,6 +625,61 @@ function wpsc_sync_posts_for_ai_training( el, nonce, slug ) {
 				message = xhr.responseJSON.data.message;
 			}
 			alert( message );
+			wpsc_enable_ait_action_buttons();
+		}
+	);
+
+}
+
+/**
+ * Sync only the posts missing a local training record for an AI training
+ * source's enabled post types - existing records (even if the remote post
+ * has since changed) are left untouched. Use wpsc_sync_posts_for_ai_training()
+ * ("Sync Posts") to also refresh changed content.
+ *
+ * Shares the same background job/progress mechanism as "Sync Posts" - only
+ * the AJAX action differs, which is what tags the job as 'missing'-mode
+ * server-side (see sync_missing_posts_for_ai_training() in
+ * class-wpsc-ps-ai-setting-ai-training-actions.php).
+ *
+ * @param {HTMLElement} el    Sync Missing Posts button.
+ * @param {string}      nonce Nonce for the wpsc_sync_missing_posts_for_ai_training action.
+ * @param {string}      slug  Training source slug.
+ */
+function wpsc_sync_missing_posts_for_ai_training( el, nonce, slug ) {
+
+	wpsc_disable_ait_action_buttons();
+
+	jQuery.post(
+		supportcandy.ajax_url,
+		{
+			action: 'wpsc_sync_missing_posts_for_ai_training',
+			_ajax_nonce: nonce,
+			slug: slug || ''
+		}
+	)
+	.done(
+		function( response ) {
+			if ( ! response.success ) {
+				alert( response.data?.message || supportcandy.translations.something_wrong );
+				wpsc_enable_ait_action_buttons();
+				return;
+			}
+			wpsc_poll_ait_sync_progress( response.data.source_slug || slug || '' );
+		}
+	)
+	.fail(
+		function( xhr ) {
+			let message = supportcandy.translations.something_wrong;
+			if (
+				xhr.responseJSON &&
+				xhr.responseJSON.data &&
+				xhr.responseJSON.data.message
+			) {
+				message = xhr.responseJSON.data.message;
+			}
+			alert( message );
+			wpsc_enable_ait_action_buttons();
 		}
 	);
 
@@ -520,7 +706,7 @@ function wpsc_poll_ait_sync_progress( slug ) {
 		return;
 	}
 
-	const buttons = jQuery( '#wpsc-update-source-btn, #wpsc-sync-posts-btn, #wpsc-delete-all-posts-btn' );
+	const buttons = jQuery( WPSC_AIT_ACTION_BUTTONS_SELECTOR );
 	const tabButtons = jQuery( '.wpsc-setting-tab-container button' );
 	buttons.prop( 'disabled', true );
 	tabButtons.prop( 'disabled', true );
@@ -569,6 +755,14 @@ function wpsc_poll_ait_sync_progress( slug ) {
 				wpsc_render_sync_post_types( data.post_types );
 
 				if ( 'completed' === data.status ) {
+					// A post type can fail permanently (exhausted retries) while the rest of
+					// the sync still finishes normally - the job as a whole is "completed" and
+					// the DB updates from every other post type are real, so this still runs
+					// the normal completed flow (refresh, stale-deleted notice), but the
+					// failure itself must not pass silently as if nothing went wrong.
+					if ( data.message ) {
+						alert( data.message );
+					}
 					wpsc_finish_ait_sync_progress( buttons, tabButtons, '', data.deleted || 0, slug, editNonce );
 					return;
 				}
@@ -666,6 +860,8 @@ function wpsc_delete_all_ait_posts( el, nonce, slug ) {
 		return;
 	}
 
+	wpsc_disable_ait_action_buttons();
+
 	const data = {
 		action: 'wpsc_delete_all_ait_posts',
 		_ajax_nonce: nonce,
@@ -677,8 +873,11 @@ function wpsc_delete_all_ait_posts( el, nonce, slug ) {
 			function( response ) {
 				if ( ! response.success ) {
 					alert( response.data?.message || supportcandy.translations.something_wrong );
+					wpsc_enable_ait_action_buttons();
 					return;
 				}
+				// Re-renders the whole tab with fresh markup (including these buttons),
+				// so there is nothing to explicitly re-enable on this path.
 				wpsc_get_aia_website_setting();
 			}
 		)
@@ -693,6 +892,7 @@ function wpsc_delete_all_ait_posts( el, nonce, slug ) {
 					message = xhr.responseJSON.data.message;
 				}
 				alert( message );
+				wpsc_enable_ait_action_buttons();
 			}
 		);
 }

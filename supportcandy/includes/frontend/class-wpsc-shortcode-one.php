@@ -83,7 +83,7 @@ if ( ! class_exists( 'WPSC_Shortcode_One' ) ) :
 
 				if ( $ticket_id && $auth_code ) {
 					$ticket = new WPSC_Ticket( $ticket_id );
-					self::$url_auth = $ticket->auth_code == $auth_code ? true : false;
+					self::$url_auth = ( $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) );
 				}
 			}
 

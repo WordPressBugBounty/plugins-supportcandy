@@ -83,6 +83,7 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 				<table class="ticket-fields wpsc-setting-tbl">
 					<thead>
 						<tr>
+							<th style="width: 30px;"><?php esc_attr_e( 'Sort', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Field', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Extra info', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Type', 'supportcandy' ); ?></th>
@@ -97,7 +98,8 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 								continue;
 							}
 							?>
-							<tr>
+							<tr data-id="<?php echo esc_attr( $cf->id ); ?>">
+								<td class="sort-handle"><?php WPSC_Icons::get( 'sort' ); ?></td>
 								<td><?php echo esc_attr( $cf->name ); ?></td>
 								<td><?php echo esc_attr( $cf->extra_info ); ?></td>
 								<td><?php echo esc_attr( $custom_fields_types[ $cf->type::$slug ]['label'] ); ?></td>
@@ -122,9 +124,11 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 				<script>
 					jQuery('table.ticket-fields').DataTable({
 						ordering: false,
+						autoWidth: false,
 						pageLength: 20,
 						bLengthChange: false,
-						columnDefs: [ 
+						columnDefs: [
+							{ targets: 0, width: '30px', searchable: false },
 							{ targets: -1, searchable: false },
 							{ targets: '_all', className: 'dt-left' }
 						],
@@ -142,6 +146,35 @@ if ( ! class_exists( 'WPSC_AOF' ) ) :
 							},
 						},
 						language: supportcandy.translations.datatables
+					});
+
+					jQuery(function() {
+						// Enable sorting with jQuery UI.
+						jQuery('table.ticket-fields tbody').sortable({
+							handle: '.sort-handle',
+							helper: function(e, tr) {
+								var $originals = tr.children();
+								var $helper = tr.clone();
+								$helper.children().each(function(index) {
+									jQuery(this).width($originals.eq(index).width());
+								});
+								return $helper;
+							},
+							update: function(event, ui) {
+								var ids = jQuery(this).sortable('toArray', { attribute: 'data-id' });
+								jQuery.post(
+									supportcandy.ajax_url,
+									{
+										action: 'wpsc_set_custom_field_load_order',
+										_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_custom_field_load_order' ) ); ?>',
+										ids: ids
+									},
+									function(response) {
+
+									}
+								);
+							}
+						});
 					});
 				</script>
 			</div>

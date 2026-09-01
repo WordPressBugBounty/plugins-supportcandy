@@ -39,6 +39,11 @@ if ( ! class_exists( 'WPSC_Ticket_Tags_List' ) ) :
 			}
 
 			$tags = WPSC_Ticket_Tags::find( array( 'items_per_page' => 0 ) )['results'];
+
+			// Whether the "Tags" filter is enabled in agent ticket list, so "View tickets" actually filters by tag.
+			$atl_filter_items       = get_option( 'wpsc-atl-filter-items', array() );
+			$is_tags_filter_allowed = in_array( 'tags', $atl_filter_items, true );
+			$tags_filter_notice     = esc_js( wpsc__( 'The "Tags" filter is not enabled in the ticket list, so this link will show all tickets instead of tickets with this tag. Go to Ticket List settings > Agent ticket list > Filter items and add "Tags" to fix this.', 'supportcandy' ) );
 			?>
 			<div class="wpsc-dock-container">
 				<?php
@@ -65,7 +70,11 @@ if ( ! class_exists( 'WPSC_Ticket_Tags_List' ) ) :
 							<td><span class="wpsc-tag" style="color: <?php echo esc_attr( $tag->color ); ?>; background-color: <?php echo esc_attr( $tag->bg_color ); ?>;" ><?php echo esc_attr( $tag->name ); ?></span></td>
 							<td><?php echo strlen( $tag->description ) > 20 ? esc_attr( substr( $tag->description, 0, 20 ) . '...' ) : esc_attr( $tag->description ); ?></td>
 							<td>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&wpsc_tag=' . $tag->id ) ); ?>" class="wpsc-link" target="__blank"><?php echo esc_attr( wpsc__( 'View tickets', 'supportcandy' ) ); ?></a> | 
+								<?php if ( $is_tags_filter_allowed ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&wpsc_tag=' . $tag->id ) ); ?>" class="wpsc-link" target="__blank"><?php echo esc_attr( wpsc__( 'View tickets', 'supportcandy' ) ); ?></a> |
+								<?php else : ?>
+									<span class="wpsc-link" onclick="alert('<?php echo $tags_filter_notice; // phpcs:ignore ?>');" title="<?php echo esc_attr( wpsc__( 'Tags filter is not enabled in ticket list', 'supportcandy' ) ); ?>"><?php echo esc_attr( wpsc__( 'View tickets', 'supportcandy' ) ); ?></span> |
+								<?php endif; ?>
 								<span class="wpsc-link" onclick="wpsc_get_edit_ticket_tags(<?php echo esc_attr( $tag->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ticket_tags' ) ); ?>');"><?php echo esc_attr( wpsc__( 'Edit', 'supportcandy' ) ); ?></span> | 
 								<span class="wpsc-link" onclick="wpsc_set_delete_ticket_tags(<?php echo esc_attr( $tag->id ); ?>, '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_delete_ticket_tags' ) ); ?>');"><?php echo esc_attr( wpsc__( 'Delete', 'supportcandy' ) ); ?></span>
 							</td>

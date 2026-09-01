@@ -96,7 +96,7 @@ if ( ! class_exists( 'WPSC_ACB_Appearance_Setting' ) ) :
 		 */
 		public static function save_settings() {
 
-			if ( check_ajax_referer( 'wpsc_set_acb_appearance_setting', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_set_acb_appearance_setting', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -129,7 +129,7 @@ if ( ! class_exists( 'WPSC_ACB_Appearance_Setting' ) ) :
 		 */
 		public static function reset_settings() {
 
-			if ( check_ajax_referer( 'wpsc_reset_acb_appearance_setting', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_reset_acb_appearance_setting', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 

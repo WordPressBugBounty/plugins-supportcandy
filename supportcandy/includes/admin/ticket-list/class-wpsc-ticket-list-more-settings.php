@@ -210,7 +210,15 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 				)
 			);
 			?>
-
+			<div class="wpsc-dock-container">
+				<?php
+				printf(
+					/* translators: Click here to see the documentation */
+					esc_attr__( '%s to see the documentation!', 'supportcandy' ),
+					'<a href="https://supportcandy.net/docs/ticket-list-settings/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
+				);
+				?>
+			</div>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-tl-ms-agent-view">
 				<div class="wpsc-input-group">
 					<div class="label-container">
@@ -405,7 +413,15 @@ if ( ! class_exists( 'WPSC_Ticket_List_More_Settings' ) ) :
 			$customer_view   = get_option( 'wpsc-tl-ms-customer-view', array() );
 			$default_filters = get_option( 'wpsc-ctl-default-filters', array() );
 			?>
-
+			<div class="wpsc-dock-container">
+				<?php
+				printf(
+					/* translators: Click here to see the documentation */
+					esc_attr__( '%s to see the documentation!', 'supportcandy' ),
+					'<a href="https://supportcandy.net/docs/ticket-list-settings/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
+				);
+				?>
+			</div>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-tl-ms-customer-view">
 				<div class="wpsc-input-group">
 					<div class="label-container">

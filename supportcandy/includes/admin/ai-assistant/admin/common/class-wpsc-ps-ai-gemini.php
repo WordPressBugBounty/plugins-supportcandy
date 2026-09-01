@@ -28,9 +28,18 @@ if ( ! class_exists( 'WPSC_PS_AI_Gemini' ) ) :
 				'https://generativelanguage.googleapis.com/v1beta/fileSearchStores'
 			);
 
-			// Request body.
+			// Request body. Site URL is prefixed in square brackets so the store can be
+			// told apart from other sites' stores under the same Google AI project - a
+			// random suffix is kept so re-creating a store for the same site (e.g. after
+			// clear_stored_file_search_store_id()) doesn't collide with the old one.
+			$display_name = '[' . home_url() . '] ' . get_bloginfo( 'name' ) . '_' . wp_generate_password( 6, false );
+			$display_name = sanitize_text_field( $display_name );
+			$display_name = function_exists( 'mb_substr' )
+				? mb_substr( $display_name, 0, 512, 'UTF-8' )
+				: substr( $display_name, 0, 512 );
+
 			$body = array(
-				'displayName' => 'SupportCandy_KB_' . wp_generate_password( 6, false ),
+				'displayName' => $display_name,
 			);
 
 			$response = self::wpsc_remote_post( $url, $body );
@@ -78,7 +87,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Gemini' ) ) :
 
 			switch ( $attempt ) {
 				case 1:
-					return 'gemini-2.5-flash-lite';
+					return $model;
 				case 2:
 					return 'gemini-2.5-flash';
 				default:

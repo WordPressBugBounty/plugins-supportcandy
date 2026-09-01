@@ -79,6 +79,9 @@ if ( ! class_exists( 'WPSC_CF_Settings' ) ) :
 
 			// Delete.
 			add_action( 'wp_ajax_wpsc_delete_custom_field', array( __CLASS__, 'delete_custom_field' ) );
+
+			// Sorting.
+			add_action( 'wp_ajax_wpsc_set_custom_field_load_order', array( __CLASS__, 'set_custom_field_load_order' ) );
 		}
 
 		/**
@@ -719,6 +722,41 @@ if ( ! class_exists( 'WPSC_CF_Settings' ) ) :
 
 			WPSC_Custom_Field::destroy( $id );
 			wp_die();
+		}
+
+		/**
+		 * Set load order for custom fields
+		 *
+		 * @return void
+		 */
+		public static function set_custom_field_load_order() {
+
+			if ( check_ajax_referer( 'wpsc_set_custom_field_load_order', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 400 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$ids = isset( $_POST['ids'] ) ? array_map( 'intval', wp_unslash( $_POST['ids'] ) ) : array();
+			if ( ! $ids ) {
+				wp_send_json_error( 'Bad Request', 400 );
+			}
+
+			$count = 1;
+			foreach ( $ids as $id ) {
+
+				$cf = new WPSC_Custom_Field( $id );
+				if ( ! $cf->id ) {
+					continue;
+				}
+
+				$cf->load_order = $count++;
+				$cf->save();
+			}
+
+			wp_send_json( array( 'success' => true ), 200 );
 		}
 
 		/**

@@ -528,6 +528,8 @@ if ( ! class_exists( 'WPSC_Agent_Roles' ) ) :
 
 			update_option( 'wpsc-agent-roles', $roles );
 
+			do_action( 'wpsc_after_clone_agent_role', array_key_last( $roles ), $id );
+
 			wp_die();
 		}
 

@@ -30,169 +30,6 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 		}
 
 		/**
-		 * Extract metadata from the prompt for analytics or other purposes.
-		 *
-		 * @param array  $ai_settings AI settings array.
-		 * @param string $system_prompt The system prompt to guide the AI's response.
-		 * @param string $user_prompt The user prompt containing the content to analyze.
-		 * @return array Extracted metadata such as intent, entities, etc.
-		 */
-		public function wpsc_get_file_meta_data( $ai_settings, $system_prompt, $user_prompt ) {
-
-			// Validate Settings.
-			if ( empty( $ai_settings ) || ! is_array( $ai_settings ) ) {
-				return false;
-			}
-
-			// Validate prompts.
-			if ( empty( $system_prompt ) || empty( $user_prompt ) ) {
-				return false;
-			}
-
-			$api_key = isset( $ai_settings['api_key'] ) ? trim( $ai_settings['api_key'] ) : '';
-			$model = ! empty( $ai_settings['model'] ) ? sanitize_text_field( $ai_settings['model'] ) : 'gpt-4.1-mini';
-
-			// Prepare Body.
-			$request_body = array(
-				'model' => $model,
-				'input' => array(
-					array(
-						'role'    => 'system',
-						'content' => array(
-							array(
-								'type' => 'input_text',
-								'text' => (string) $system_prompt,
-							),
-						),
-					),
-					array(
-						'role'    => 'user',
-						'content' => array(
-							array(
-								'type' => 'input_text',
-								'text' => (string) $user_prompt,
-							),
-						),
-					),
-				),
-				'text'  => array(
-					'format' => array(
-						'type'   => 'json_schema',
-						'name'   => 'file_metadata',
-						'schema' => array(
-							'type'                 => 'object',
-							'properties'           => array(
-								'summary'  => array(
-									'type' => 'string',
-								),
-								'headings' => array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'string',
-									),
-								),
-								'topics'   => array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'string',
-									),
-								),
-								'keywords' => array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'string',
-									),
-								),
-								'intent'   => array(
-									'type' => 'string',
-								),
-							),
-							'required'             => array(
-								'summary',
-								'headings',
-								'topics',
-								'keywords',
-								'intent',
-							),
-							'additionalProperties' => false,
-						),
-						'strict' => true,
-					),
-				),
-			);
-
-			// API Request.
-			$response = wp_remote_post(
-				'https://api.openai.com/v1/responses',
-				array(
-					'headers'     => array(
-						'Authorization' => 'Bearer ' . $api_key,
-						'Content-Type'  => 'application/json',
-					),
-					'timeout'     => 60,
-					'body'        => wp_json_encode( $request_body ),
-					'data_format' => 'body',
-				)
-			);
-
-			// Handle WP_Error.
-			if ( is_wp_error( $response ) ) {
-				return false;
-			}
-
-			// Validate HTTP Response.
-			$status_code = wp_remote_retrieve_response_code( $response );
-			$raw_body    = wp_remote_retrieve_body( $response );
-
-			if ( $status_code < 200 || $status_code >= 300 ) {
-				return false;
-			}
-
-			// Decode Response JSON.
-			$body = json_decode( $raw_body, true );
-
-			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $body ) ) {
-				return false;
-			}
-
-			// API-Level Error.
-			if ( isset( $body['error'] ) ) {
-				$message = isset( $body['error']['message'] ) ? $body['error']['message'] : 'Unknown API error';
-				return false;
-			}
-
-			// Extract Structured Output.
-			if (
-				empty( $body['output'] ) ||
-				! is_array( $body['output'] ) ||
-				empty( $body['output'][0]['content'][0]['text'] )
-			) {
-				return false;
-			}
-
-			$json_output = $body['output'][0]['content'][0]['text'];
-
-			// Decode Final JSON Output.
-			$final_output = json_decode( $json_output, true );
-
-			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $final_output ) ) {
-				return false;
-			}
-
-			if (
-				! isset( $final_output['summary'] ) ||
-				! isset( $final_output['headings'] ) ||
-				! isset( $final_output['topics'] ) ||
-				! isset( $final_output['keywords'] ) ||
-				! isset( $final_output['intent'] )
-			) {
-				return false;
-			}
-
-			return $final_output;
-		}
-
-		/**
 		 * Attach a file to a vector store
 		 *
 		 * @param string $vector_store_id ID of the vector store.
@@ -238,7 +75,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 					return new WP_Error( 'vector_store_not_found', $response->get_error_message() );
 				}
 
-				return false;
+				return $response;
 			}
 
 			// Validate Success.
@@ -246,7 +83,89 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 				return false;
 			}
 			$response['id'] = sanitize_text_field( $response['id'] );
-			return $response;
+
+			// OpenAI returns the vector-store-file object immediately in status
+			// "in_progress" while it chunks/embeds the file in the background, later
+			// settling to "completed", "failed", or "cancelled" (detail in last_error).
+			// Treating this initial response as a finished result would let unindexable
+			// content (malformed structured data, no extractable text, an internal
+			// indexing error) get marked INDEXED with the local copy already deleted -
+			// poll to a settled state instead.
+			return self::wpsc_poll_vector_store_file( $response, $vector_store_id, $api_key );
+		}
+
+		/**
+		 * Poll a vector-store-file's status until it settles to "completed", "failed", or
+		 * "cancelled". Bounded so a file stuck at "in_progress" (a known occurrence on
+		 * OpenAI's side) doesn't hang this call indefinitely - if it's still in_progress
+		 * after the poll window, that's reported as a distinct error so the row is
+		 * requeued for a fresh attempt instead of marked INDEXED or permanently failed.
+		 *
+		 * @param array  $vector_store_file Vector-store-file object returned by the attach call.
+		 * @param string $vector_store_id   ID of the vector store.
+		 * @param string $api_key           API key for authentication.
+		 * @return array|WP_Error Settled ("completed") vector-store-file object, or WP_Error
+		 *                        on failure/timeout.
+		 */
+		private static function wpsc_poll_vector_store_file( $vector_store_file, $vector_store_id, $api_key ) {
+
+			$max_attempts  = 10;
+			$poll_interval = 2; // seconds.
+
+			for ( $attempt = 0; $attempt < $max_attempts; $attempt++ ) {
+
+				$status = $vector_store_file['status'] ?? '';
+
+				if ( 'completed' === $status ) {
+					return $vector_store_file;
+				}
+
+				if ( 'failed' === $status || 'cancelled' === $status ) {
+
+					$error_message = isset( $vector_store_file['last_error']['message'] ) && is_string( $vector_store_file['last_error']['message'] )
+						? $vector_store_file['last_error']['message']
+						: sprintf( 'Vector store file %s.', $status );
+
+					return new WP_Error( 'attach_failed', $error_message, array( 'response' => $vector_store_file ) );
+				}
+
+				$file_id = $vector_store_file['id'] ?? '';
+				if ( '' === $file_id ) {
+					return new WP_Error(
+						'invalid_response',
+						__( 'Missing file ID in API response.', 'wpsc-ps' ),
+						array( 'response' => $vector_store_file )
+					);
+				}
+
+				sleep( $poll_interval );
+
+				$vector_store_file = self::wpsc_remote_get(
+					"https://api.openai.com/v1/vector_stores/{$vector_store_id}/files/{$file_id}",
+					$api_key
+				);
+
+				if ( is_wp_error( $vector_store_file ) ) {
+					return $vector_store_file;
+				}
+			}
+
+			return new WP_Error(
+				'attach_pending',
+				__( 'File attach is still processing.', 'wpsc-ps' ),
+				array( 'response' => $vector_store_file )
+			);
+		}
+
+		/**
+		 * Maximum training file size OpenAI's Files/Vector Store (file_search) endpoints
+		 * accept per file. See interface docblock.
+		 *
+		 * @return int Maximum file size in bytes (512 MB, per OpenAI's documented Files API limit).
+		 */
+		public function wpsc_max_training_file_size() {
+
+			return 512 * 1024 * 1024;
 		}
 
 		/**
@@ -254,7 +173,8 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 		 *
 		 * @param string $file_path Path to the file.
 		 * @param string $api_key API key for authentication.
-		 * @return array Response from OpenAI API.
+		 * @return array|WP_Error|false Response from OpenAI API, or a WP_Error carrying
+		 *                              the real OpenAI error detail on failure.
 		 */
 		public function wpsc_upload_file( $file_path, $api_key ) {
 
@@ -288,35 +208,45 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 			$body .= $filedata . "\r\n";
 			$body .= "--{$boundary}--";
 
-			// Request.
-			$response = wp_remote_post(
-				'https://api.openai.com/v1/files',
-				array(
-					'headers' => array(
-						'Authorization' => 'Bearer ' . trim( $api_key ),
-						'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
-					),
-					'body'    => $body,
-					'timeout' => 45,
-				)
-			);
+			// Request. Retried on a retryable response (429/5xx/transport error), matching
+			// every other OpenAI call in this plugin - this is otherwise the
+			// highest-volume OpenAI call path (up to 25 files uploaded back-to-back per
+			// cron batch with no inter-request delay), so it's also the one most likely
+			// to trip a rate limit.
+			for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
 
-			// Handle response.
-			if ( is_wp_error( $response ) ) {
-				return false;
+				$response = wp_remote_post(
+					'https://api.openai.com/v1/files',
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . trim( $api_key ),
+							'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+						),
+						'body'    => $body,
+						'timeout' => 45,
+					)
+				);
+
+				if ( WPSC_PS_AI_OpenAI::is_retryable_response( $response ) && $attempt < 3 ) {
+					sleep( 1 );
+					continue;
+				}
+
+				break;
 			}
 
-			$status_code = wp_remote_retrieve_response_code( $response );
-			$response_body = wp_remote_retrieve_body( $response );
+			// Handle response. Uses the same decoder as wpsc_attach_file() so a real
+			// OpenAI error (invalid_api_key, insufficient_quota, rate_limit_exceeded, a
+			// rejected file, etc.) is preserved as a WP_Error instead of collapsing every
+			// distinct failure into a bare false the admin UI can't tell apart.
+			$data = self::wpsc_handle_response( $response );
 
-			if ( $status_code < 200 || $status_code >= 300 ) {
-				return false;
+			if ( is_wp_error( $data ) ) {
+				return $data;
 			}
 
-			$data = json_decode( $response_body, true );
-
-			if ( json_last_error() !== JSON_ERROR_NONE || empty( $data['id'] ) ) {
-				return false;
+			if ( empty( $data['id'] ) ) {
+				return new WP_Error( 'invalid_response', __( 'Missing file ID in API response.', 'wpsc-ps' ), array( 'response' => $data ) );
 			}
 
 			return $data;
@@ -493,6 +423,10 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 
 		/**
 		 * Send a POST request to a remote URL with JSON-encoded body and API key authentication.
+		 * Retries on a retryable response (429/5xx/transport error), matching every other
+		 * OpenAI call in this plugin - this is otherwise the highest-volume OpenAI call
+		 * path (up to 25 files attached back-to-back per cron batch with no inter-request
+		 * delay), so it's also the one most likely to trip a rate limit.
 		 *
 		 * @param string $url The URL to send the request to.
 		 * @param array  $body The body of the request.
@@ -501,19 +435,59 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 		 */
 		private static function wpsc_remote_post( $url, $body, $api_key ) {
 
-			$response = wp_remote_post(
-				$url,
-				array(
-					'headers' => array(
-						'Authorization' => 'Bearer ' . $api_key,
-						'Content-Type'  => 'application/json',
-					),
-					'body'    => wp_json_encode( $body ),
-					'timeout' => 60,
-				)
-			);
+			for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
 
-			return self::wpsc_handle_response( $response );
+				$response = wp_remote_post(
+					$url,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $api_key,
+							'Content-Type'  => 'application/json',
+						),
+						'body'    => wp_json_encode( $body ),
+						'timeout' => 60,
+					)
+				);
+
+				if ( WPSC_PS_AI_OpenAI::is_retryable_response( $response ) && $attempt < 3 ) {
+					sleep( 1 );
+					continue;
+				}
+
+				return self::wpsc_handle_response( $response );
+			}
+		}
+
+		/**
+		 * Send a GET request to a remote URL with API key authentication. Retries on a
+		 * retryable response, same as wpsc_remote_post().
+		 *
+		 * @param string $url The URL to send the request to.
+		 * @param string $api_key The API key for authentication.
+		 * @return array|WP_Error The decoded JSON response, or a WP_Error on failure - see
+		 *                        wpsc_handle_response().
+		 */
+		private static function wpsc_remote_get( $url, $api_key ) {
+
+			for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
+
+				$response = wp_remote_get(
+					$url,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $api_key,
+						),
+						'timeout' => 30,
+					)
+				);
+
+				if ( WPSC_PS_AI_OpenAI::is_retryable_response( $response ) && $attempt < 3 ) {
+					sleep( 1 );
+					continue;
+				}
+
+				return self::wpsc_handle_response( $response );
+			}
 		}
 
 		/**
@@ -562,37 +536,8 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 				return false;
 			}
 
-			// ✅ STEP 1: CLEAN CONTEXT (remove duplicate lines)
-			$lines   = explode( "\n", $context );
-			$clean   = array();
-			$last    = '';
-
-			foreach ( $lines as $line ) {
-				$line = trim( $line );
-				if ( empty( $line ) || $line === $last ) {
-					continue;
-				}
-				$clean[] = $line;
-				$last    = $line;
-			}
-
-			$context = implode( "\n", $clean );
-
-			// ✅ STEP 2: Extract only last user question + last assistant reply (token optimization)
-			$last_user = '';
-			$last_assistant = '';
-
-			foreach ( array_reverse( $clean ) as $line ) {
-				if ( empty( $last_user ) && stripos( $line, 'User:' ) === 0 ) {
-					$last_user = trim( substr( $line, 5 ) );
-				}
-				if ( empty( $last_assistant ) && stripos( $line, 'Assistant:' ) === 0 ) {
-					$last_assistant = trim( substr( $line, 10 ) );
-				}
-				if ( $last_user && $last_assistant ) {
-					break;
-				}
-			}
+			// Extract only last user question + last assistant reply (token optimization).
+			list( $last_user, $last_assistant ) = WPSC_PS_AI_Functions::wpsc_extract_last_user_and_assistant_blocks( $context );
 
 			$optimized_context = "User: {$last_user}\nAssistant: {$last_assistant}";
 
@@ -696,151 +641,6 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 				'reply'  => isset( $response['reply'] ) ? trim( $response['reply'] ) : '',
 				'status' => ! empty( $response['reply'] ) ? 'success' : 'error',
 			);
-		}
-
-		/**
-		 * Clean ticket for RAG
-		 *
-		 * @param string $system_prompt The system prompt.
-		 * @param array  $ai_settings AI settings array.
-		 * @return string The cleaned ticket history.
-		 */
-		public function wpsc_clean_row_content_for_rag( $system_prompt, $ai_settings ) {
-
-			// Validate inputs.
-			if ( empty( $system_prompt ) || empty( $ai_settings ) || ! is_array( $ai_settings ) ) {
-				return false;
-			}
-
-			$api_key    = isset( $ai_settings['api_key'] ) ? trim( $ai_settings['api_key'] ) : '';
-			$model      = ! empty( $ai_settings['model'] ) ? sanitize_text_field( $ai_settings['model'] ) : 'gpt-4o-mini';
-			$max_tokens = ! empty( $ai_settings['max-tokens'] ) && (int) $ai_settings['max-tokens'] > 0 ? (int) $ai_settings['max-tokens'] : 500;
-
-			// Prepare request body.
-			$request_body = array(
-				'model'             => $model,
-				'temperature'       => 0,
-				'max_output_tokens' => $max_tokens,
-				'text'              => array(
-					'format' => array(
-						'type'   => 'json_schema',
-						'name'   => 'clean_ticket_schema',
-						'schema' => array(
-							'type'                 => 'object',
-							'additionalProperties' => false,
-							'properties'           => array(
-								'clean_text' => array(
-									'type' => 'string',
-								),
-							),
-							'required'             => array( 'clean_text' ),
-						),
-					),
-				),
-				'input'             => array(
-					array(
-						'role'    => 'system',
-						'content' => array(
-							array(
-								'type' => 'input_text',
-								'text' => 'You clean support ticket data for RAG. Follow instructions strictly. Do not add new content.',
-							),
-						),
-					),
-					array(
-						'role'    => 'user',
-						'content' => array(
-							array(
-								'type' => 'input_text',
-								'text' => $system_prompt,
-							),
-						),
-					),
-				),
-			);
-
-			// API request.
-			$response = wp_remote_post(
-				'https://api.openai.com/v1/responses',
-				array(
-					'method'      => 'POST',
-					'timeout'     => 60,
-					'sslverify'   => true,
-					'headers'     => array(
-						'Authorization' => 'Bearer ' . $api_key,
-						'Content-Type'  => 'application/json',
-					),
-					'body'        => wp_json_encode( $request_body ),
-					'data_format' => 'body',
-				)
-			);
-
-			// Handle request error.
-			if ( is_wp_error( $response ) ) {
-				return false;
-			}
-
-			$status_code = wp_remote_retrieve_response_code( $response );
-			$raw_body    = wp_remote_retrieve_body( $response );
-
-			if ( $status_code < 200 || $status_code >= 300 ) {
-				return false;
-			}
-
-			if ( empty( $raw_body ) ) {
-				return false;
-			}
-
-			// Decode JSON.
-			$body = json_decode( $raw_body, true );
-
-			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $body ) ) {
-				return false;
-			}
-
-			// Best case.
-			if ( ! empty( $body['output_text'] ) && is_string( $body['output_text'] ) ) {
-
-				$decoded = json_decode( $body['output_text'], true );
-				if ( json_last_error() === JSON_ERROR_NONE && isset( $decoded['clean_text'] ) ) {
-					return trim( $decoded['clean_text'] );
-				}
-				return trim( $body['output_text'] ); // fallback.
-			}
-
-			// Fallback parsing.
-			if ( ! empty( $body['output'] ) && is_array( $body['output'] ) ) {
-
-				foreach ( $body['output'] as $item ) {
-
-					if ( isset( $item['content'] ) && is_array( $item['content'] ) ) {
-
-						foreach ( $item['content'] as $content ) {
-
-							if ( isset( $content['text'] ) && is_string( $content['text'] ) ) {
-								$text = trim( $content['text'] );
-								$decoded = json_decode( $text, true );
-								if ( json_last_error() === JSON_ERROR_NONE && isset( $decoded['clean_text'] ) ) {
-									return trim( $decoded['clean_text'] );
-								}
-								return $text;
-							}
-						}
-					}
-
-					// Secondary fallback.
-					if ( isset( $item['text'] ) && is_string( $item['text'] ) ) {
-						return trim( $item['text'] );
-					}
-				}
-			}
-
-			// API error passthrough (frontend visibility).
-			if ( ! empty( $body['error'] ) ) {
-				return $body['error'];
-			}
-
-			return false;
 		}
 
 		/**
@@ -1185,6 +985,137 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 				'summary' => $summary,
 				'tokens'  => $tokens,
 			);
+		}
+
+		/**
+		 * Ask OpenAI to judge whether prepared post content is useful enough to index
+		 * into the RAG knowledge base. See interface docblock.
+		 *
+		 * @param array  $ai_settings AI settings array.
+		 * @param string $content Prepared plain-text content to judge.
+		 * @return array|false {'quality_score' => int, 'useful_for_rag' => bool} or false on failure.
+		 */
+		public function wpsc_assess_content_quality_for_rag( $ai_settings, $content ) {
+
+			if ( empty( $content ) || ! is_string( $content ) ) {
+				return false;
+			}
+
+			$api_key = isset( $ai_settings['api_key'] ) ? trim( $ai_settings['api_key'] ) : '';
+			$model   = ! empty( $ai_settings['model'] ) ? sanitize_text_field( $ai_settings['model'] ) : 'gpt-4o-mini';
+
+			$prompt = WPSC_PS_AIT_Controller::wpsc_prompt_to_assess_content_quality_for_rag( $content );
+
+			for ( $attempt = 1; $attempt <= 3; $attempt++ ) {
+
+				$attempt_model = WPSC_PS_AI_OpenAI::resolve_retry_model( $model, $attempt );
+
+				// Prepare request body.
+				$request_body = array(
+					'model'             => $attempt_model,
+					'input'             => array(
+						array(
+							'role'    => 'user',
+							'content' => array(
+								array(
+									'type' => 'input_text',
+									'text' => (string) $prompt,
+								),
+							),
+						),
+					),
+					'max_output_tokens' => 50,
+				);
+
+				// API request.
+				$response = wp_remote_post(
+					'https://api.openai.com/v1/responses',
+					array(
+						'method'      => 'POST',
+						'timeout'     => 30,
+						'sslverify'   => true,
+						'headers'     => array(
+							'Authorization' => 'Bearer ' . $api_key,
+							'Content-Type'  => 'application/json',
+						),
+						'body'        => wp_json_encode( $request_body ),
+						'data_format' => 'body',
+					)
+				);
+
+				if ( WPSC_PS_AI_OpenAI::is_retryable_response( $response ) ) {
+
+					if ( $attempt < 3 ) {
+						sleep( 1 );
+						continue;
+					}
+				}
+
+				return $this->process_content_quality_response( $response );
+			}
+
+			return false;
+		}
+
+		/**
+		 * Process the response from the OpenAI API for the RAG content-quality check.
+		 *
+		 * @param array|WP_Error $response The response from wp_remote_post.
+		 * @return array|false {'quality_score' => int, 'useful_for_rag' => bool} or false on failure.
+		 */
+		private function process_content_quality_response( $response ) {
+
+			if ( is_wp_error( $response ) ) {
+				return false;
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$raw_body    = wp_remote_retrieve_body( $response );
+
+			if ( $status_code < 200 || $status_code >= 300 || empty( $raw_body ) ) {
+				return false;
+			}
+
+			$body = json_decode( $raw_body, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $body ) ) {
+				return false;
+			}
+
+			$text = '';
+
+			// Direct path.
+			if ( ! empty( $body['output'][0]['content'][0]['text'] ) && is_string( $body['output'][0]['content'][0]['text'] ) ) {
+				$text = $body['output'][0]['content'][0]['text'];
+			}
+
+			// Fallback parsing.
+			if ( empty( $text ) && ! empty( $body['output'] ) && is_array( $body['output'] ) ) {
+
+				foreach ( $body['output'] as $output ) {
+
+					if (
+						isset( $output['type'], $output['content'] ) &&
+						$output['type'] === 'message' &&
+						is_array( $output['content'] )
+					) {
+						foreach ( $output['content'] as $content ) {
+							if ( isset( $content['text'] ) && is_string( $content['text'] ) ) {
+								$text = $content['text'];
+								break 2;
+							}
+						}
+					}
+
+					// Secondary fallback.
+					if ( isset( $output['text'] ) && is_string( $output['text'] ) ) {
+						$text = $output['text'];
+						break;
+					}
+				}
+			}
+
+			return WPSC_PS_AI_Functions::wpsc_parse_rag_quality_response( $text );
 		}
 	}
 endif;

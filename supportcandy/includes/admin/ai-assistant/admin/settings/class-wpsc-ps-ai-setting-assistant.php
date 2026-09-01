@@ -41,6 +41,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_Assistant' ) ) :
 				$ai_settings['status'] = '0';
 			}
 			?>
+			<div class="wpsc-dock-container">
+				<?php
+				printf(
+					/* translators: Click here to see the documentation */
+					esc_attr__( '%s to see the documentation!', 'supportcandy' ),
+					'<a href="https://supportcandy.net/docs/how-to-enable-ai-assistant/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
+				);
+				?>
+			</div>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-ai-assistant-settings">
 
 				<div class="wpsc-input-group">
@@ -125,7 +134,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_Assistant' ) ) :
 		 */
 		public static function save_settings() {
 
-			if ( check_ajax_referer( 'wpsc_set_ai_assistant_settings', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_set_ai_assistant_settings', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 

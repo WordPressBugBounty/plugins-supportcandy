@@ -3,9 +3,9 @@ Contributors: supportcandy,pradeepmakone07,nsgawli
 License: GPL v3
 Tags: support, helpdesk, ticketing system, customer support, ai chatbot agent
 Requires at least: 5.6
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.2
+Stable tag: 3.5.3
 
 Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -220,6 +220,20 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 
 == Changelog ==
 
+= 3.5.3 (September 01, 2026) =
+* New: Added custom chatbot prompt instructions
+* New: Added “Last Reply” ticket condition
+* New: Added sorting to ticket list headers
+* New: Added sorting handle for form fields
+* Fix: Cloned agent roles missing permissions
+* Fix: Fixed View More/Less link functionality
+* Fix: Custom field attachments missing from notifications
+* Fix: Preserved links in chatbot replies
+* Fix: Fixed chatbot button display on mobile
+* Fix: Skipped near-empty records during ai training synchronization
+* Fix: Prevented raw JSON from appearing in chatbot
+* Fix: Addressed security vulnerability issue
+
 = 3.5.2 (August 11, 2026) =
 * New: Added chatbot auto-popup setting
 * Fix: Addressed security vulnerability issue
@@ -244,28 +258,5 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 = 3.4.8 (June 04, 2026) =
 * New: Added Cloudflare CAPTCHA integration
 * Fix: Resolved PHP notice issues
-
-= 3.4.7 (May 26, 2026) =
-* New: Option to disable email notifications for specific tickets
-* New: Improved form validation to highlight incomplete fields on submission
-* New: Agent collision widget added
-* Fix: Security vulnerability resolved
-* Fix: Email notifications not sent to agents assigned via workflows
-
-= 3.4.6 (March 23, 2026) =
-* New: Added Merge Ticket feature (Pro) in Productivity Suite.
-* New: Added AI Assistant feature (Pro) in Productivity Suite.
-* New: Archive action added for deleted tickets.
-* Fix: Addons not updating when Home URL and Site URL are different.
-* Fix: Improved upgrade process from version 2 to version 3.
-* Fix: Optimized dashboard card performance.
-* Fix: Bullet lists not displaying in ticket replies.
-* Fix: Reply restrictions now apply to all statuses defined as Closed Statuses
-* New: Added hooks in the registration form.
-
-= 3.4.5 (January 28, 2026) =
-* Fix: Resolved an issue where archived tickets could not be deleted
-* Fix: Fixed a bug preventing actions from being performed in the settings panel
-* Fix: Addressed reported security vulnerabilities to improve overall system safety
 
 [See changelog for all versions](https://plugins.svn.wordpress.org/supportcandy/trunk/changelog.txt).

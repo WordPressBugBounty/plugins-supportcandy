@@ -14,7 +14,8 @@ if ( ! class_exists( 'WPSC_Chatbot_Ticket_Modal' ) ) :
 		 */
 		public static function init() {
 
-			add_action( 'init', array( __CLASS__, 'get_ticket_modal_template' ), 1 );
+			// get_ticket_modal_template() is only ever needed on demand, via
+			// WPSC_ACB_Admin::frontend_config() - no separate 'init' hook call needed.
 		}
 
 		/**

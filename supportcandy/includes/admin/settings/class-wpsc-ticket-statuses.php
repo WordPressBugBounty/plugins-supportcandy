@@ -26,6 +26,9 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 			// Delete.
 			add_action( 'wp_ajax_wpsc_get_delete_status', array( __CLASS__, 'get_delete_status' ) );
 			add_action( 'wp_ajax_wpsc_set_delete_status', array( __CLASS__, 'set_delete_status' ) );
+
+			// Sorting.
+			add_action( 'wp_ajax_wpsc_set_status_load_order', array( __CLASS__, 'set_status_load_order' ) );
 		}
 
 		/**
@@ -61,6 +64,7 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 				<table class="wpsc-ticket-statuses wpsc-setting-tbl">
 					<thead>
 						<tr>
+							<th style="width: 30px;"><?php esc_attr_e( 'Sort', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Name', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Actions', 'supportcandy' ); ?></th>
 						</tr>
@@ -69,7 +73,8 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 						<?php
 						foreach ( $statuses as $status ) {
 							?>
-							<tr>
+							<tr data-id="<?php echo esc_attr( $status->id ); ?>">
+								<td class="sort-handle"><?php WPSC_Icons::get( 'sort' ); ?></td>
 								<td><span class="wpsc-tag" style="color: <?php echo esc_attr( $status->color ); ?>; background-color: <?php echo esc_attr( $status->bg_color ); ?>;" ><?php echo esc_attr( $status->name ); ?></span></td>
 								<td>
 									<div class="actions">
@@ -91,9 +96,11 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 			<script>
 				jQuery('table.wpsc-ticket-statuses').DataTable({
 					ordering: false,
+					autoWidth: false,
 					pageLength: 20,
 					bLengthChange: false,
-					columnDefs: [ 
+					columnDefs: [
+						{ targets: 0, width: '30px', searchable: false },
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
@@ -125,6 +132,35 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 						},
 					},
 					language: supportcandy.translations.datatables
+				});
+
+				jQuery(function() {
+					// Enable sorting with jQuery UI.
+					jQuery('table.wpsc-ticket-statuses tbody').sortable({
+						handle: '.sort-handle',
+						helper: function(e, tr) {
+							var $originals = tr.children();
+							var $helper = tr.clone();
+							$helper.children().each(function(index) {
+								jQuery(this).width($originals.eq(index).width());
+							});
+							return $helper;
+						},
+						update: function(event, ui) {
+							var ids = jQuery(this).sortable('toArray', { attribute: 'data-id' });
+							jQuery.post(
+								supportcandy.ajax_url,
+								{
+									action: 'wpsc_set_status_load_order',
+									_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_status_load_order' ) ); ?>',
+									ids: ids
+								},
+								function(response) {
+
+								}
+							);
+						}
+					});
 				});
 			</script>
 			<?php
@@ -619,6 +655,41 @@ if ( ! class_exists( 'WPSC_Ticket_Statuses' ) ) :
 
 			$status->destroy( $status );
 			wp_die();
+		}
+
+		/**
+		 * Set load order for ticket statuses
+		 *
+		 * @return void
+		 */
+		public static function set_status_load_order() {
+
+			if ( check_ajax_referer( 'wpsc_set_status_load_order', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 400 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$ids = isset( $_POST['ids'] ) ? array_map( 'intval', wp_unslash( $_POST['ids'] ) ) : array();
+			if ( ! $ids ) {
+				wp_send_json_error( 'Bad Request', 400 );
+			}
+
+			$count = 1;
+			foreach ( $ids as $id ) {
+
+				$status = new WPSC_Status( $id );
+				if ( ! $status->id ) {
+					continue;
+				}
+
+				$status->load_order = $count++;
+				$status->save();
+			}
+
+			wp_send_json( array( 'success' => true ), 200 );
 		}
 	}
 endif;

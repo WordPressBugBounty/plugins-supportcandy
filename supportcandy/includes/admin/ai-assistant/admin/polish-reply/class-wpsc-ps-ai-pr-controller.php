@@ -49,7 +49,7 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 		 */
 		public static function refine_ticket_reply_with_ai() {
 
-			if ( check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
@@ -121,7 +121,7 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 		 */
 		public static function generate_ai_reply() {
 
-			if ( check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
@@ -232,7 +232,11 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 		 */
 		public static function wpsc_generate_ticket_reply_with_ai( $ai_settings, $system_prompt, $prompt, $ticket_id ) {
 
-			$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			try {
+				$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			} catch ( \Throwable $e ) {
+				return false;
+			}
 			return $provider->wpsc_generate_polished_reply( $ai_settings, $system_prompt, $prompt, $ticket_id );
 		}
 

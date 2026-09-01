@@ -60,7 +60,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		 */
 		public static function improve_auto_draft_reply() {
 
-			if ( check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
@@ -157,7 +157,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		 */
 		public static function handle_ai_auto_draft_popup() {
 
-			if ( check_ajax_referer( 'wpsc_handle_ai_auto_draft', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_handle_ai_auto_draft', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
@@ -227,7 +227,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		 */
 		public static function handle_ai_auto_draft() {
 
-			if ( check_ajax_referer( 'wpsc_handle_ai_auto_draft', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_handle_ai_auto_draft', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
@@ -248,13 +248,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
-			$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			try {
+				$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			} catch ( \Throwable $e ) {
+				wp_send_json_error( __( 'There is an error with the AI response.', 'wpsc-ps' ) );
+			}
 			$response = $provider->wpsc_auto_draft_ticket_reply( $ai_settings, $ticket );
 
 			if ( $response['status'] == 'error' ) {
 				$safe_reply = esc_html__( 'There is an error with the AI response.', 'wpsc-ps' );
-			} elseif ( $response['reply'] == '[NO_KB_MATCH]' ) {
-				$safe_reply = esc_html__( 'No relevant information found in the knowledge base.', 'wpsc-ps' );
 			} else {
 
 				// Sanitize AI-generated HTML before returning to client.
@@ -296,7 +298,11 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		 */
 		public static function wpsc_improve_auto_draft_reply_using_user_prompt( $ai_settings, $context, $ticket_id ) {
 
-			$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			try {
+				$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			} catch ( \Throwable $e ) {
+				return false;
+			}
 			return $provider->wpsc_improve_draft_content( $context, $ticket_id );
 		}
 	}

@@ -73,8 +73,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							// remove trailing content from api url.
 							$api_url = $source['api-url'] ?? '';
 							$api_url = preg_replace( '/\/wp-json\/?$/', '', $api_url );
-							$record_counts = self::get_source_record_counts( sanitize_text_field( $source['slug'] ?? '' ), $current_provider );
-							$upload_status = self::get_source_upload_status( $record_counts );
+							$source_slug = sanitize_text_field( $source['slug'] ?? '' );
+							$record_counts = self::get_source_record_counts( $source_slug, $current_provider );
+							$skipped_count = WPSC_PS_AIT_Controller::get_skipped_insufficient_content_count( $source_slug );
+							$upload_status = self::get_source_upload_status( $record_counts, $skipped_count );
 							?>
 							<tr>
 								<td><?php echo esc_html( $source['name'] ); ?></td>
@@ -160,6 +162,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		 * under. Soft-deleted (DELETE) records are intentionally excluded from every
 		 * bucket, including 'total'.
 		 *
+		 * 'total' includes 'failed' (indexed + queue + failed) - a failed row (whether a
+		 * genuine error, or a row rejected for insufficient/duplicate content - see
+		 * WPSC_PS_AIT_Controller::get_skipped_insufficient_content_count()) is still a
+		 * record that was created and processed for this source, so leaving it out would
+		 * make "Total records" look smaller than what was actually attempted.
+		 *
 		 * @param string $source_slug      Training source slug.
 		 * @param string $current_provider Currently configured AI provider.
 		 * @return array { new: int, processing: int, indexed: int, failed: int, queue: int, total: int }
@@ -206,7 +214,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			}
 
 			$counts_by_status['queue'] = $counts_by_status[ WPSC_PS_AIT_Status::NEW ] + $counts_by_status[ WPSC_PS_AIT_Status::PROCESSING ];
-			$counts_by_status['total'] = $counts_by_status[ WPSC_PS_AIT_Status::INDEXED ] + $counts_by_status['queue'];
+			$counts_by_status['total'] = $counts_by_status[ WPSC_PS_AIT_Status::INDEXED ] + $counts_by_status['queue'] + $counts_by_status[ WPSC_PS_AIT_Status::FAILED ];
 
 			return array(
 				'new'        => $counts_by_status[ WPSC_PS_AIT_Status::NEW ],
@@ -227,10 +235,21 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		 * first; a failure only surfaces once nothing is actively moving, since by
 		 * then it is the reason nothing more is happening for this source.
 		 *
-		 * @param array $counts Per-status counts from get_source_record_counts().
+		 * Records rejected for insufficient/duplicate content share the FAILED status
+		 * with genuine errors (network, API, unsupported format, etc.) only so their
+		 * reason stays inspectable in the training list - see
+		 * WPSC_PS_AIT_Controller::get_post_type_data_for_training(). That's an expected,
+		 * benign outcome (low-value pages exist on most sites), not something broken, so
+		 * $skipped_count is subtracted out here before deciding whether this source
+		 * actually needs attention - otherwise a source with even a single skipped post
+		 * would show "Failed" forever, however healthy the rest of its sync is.
+		 *
+		 * @param array $counts        Per-status counts from get_source_record_counts().
+		 * @param int   $skipped_count This source's insufficient-content-skip count - see
+		 *                             WPSC_PS_AIT_Controller::get_skipped_insufficient_content_count().
 		 * @return array { key: string, label: string }
 		 */
-		private static function get_source_upload_status( array $counts ) {
+		private static function get_source_upload_status( array $counts, $skipped_count = 0 ) {
 
 			if ( ( $counts['processing'] ?? 0 ) > 0 ) {
 				return array(
@@ -246,14 +265,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				);
 			}
 
-			if ( ( $counts['failed'] ?? 0 ) > 0 ) {
+			$failed_other = max( 0, ( $counts['failed'] ?? 0 ) - $skipped_count );
+
+			if ( $failed_other > 0 ) {
 				return array(
 					'key'   => 'failed',
 					'label' => __( 'Failed', 'wpsc-ps' ),
 				);
 			}
 
-			if ( ( $counts['indexed'] ?? 0 ) > 0 ) {
+			if ( ( $counts['indexed'] ?? 0 ) > 0 || $skipped_count > 0 ) {
 				return array(
 					'key'   => 'completed',
 					'label' => __( 'Completed', 'wpsc-ps' ),
@@ -288,44 +309,71 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				);
 				?>
 			</div>
-			<div class="wpsc-ai-training-list-actions-container">
-				<div class="wpsc-ai-training-list-actions">
-					<div class="wpsc-ai-training-list-actions-bulk-actions">
-						<button
-							id="wpsc-file-upload-bulk-actions-btn"
-							class="wpsc-button small secondary"
-							type="button"
-							data-popover="wpsc-file-upload-bulk-actions">
-							<?php esc_attr_e( 'Bulk Actions', 'supportcandy' ); ?>
-							<?php WPSC_Icons::get( 'chevron-down' ); ?>
-						</button>
-						<div id="wpsc-file-upload-bulk-actions" class="gpopover wpsc-popover-menu wpsc-ticket-bulk-actions" style="width: 200px !important;">
-							<div class="wpsc-popover-menu-item" onclick="wpsc_bulk_delete_training( '<?php echo esc_attr( wp_create_nonce( 'wpsc_bulk_delete_training' ) ); ?>' );">
-								<?php WPSC_Icons::get( 'trash-alt' ); ?>
-								<span><?php esc_html_e( 'Delete', 'wpsc-ps' ); ?></span>
-							</div>
-						</div>
-					</div>
-					<div class="wpsc-ai-training-list-actions-select wpsc-more-actions-btn" style="min-width: 200px;">
-						<select id="wpsc-file-upload-status-filter" class="load-status-wise-training-list">
-							<option value="all"><?php esc_attr_e( 'All statuses', 'wpsc-ps' ); ?></option>
-							<?php
-							foreach ( WPSC_PS_AIT_Status::get_labels() as $status_value => $status_label ) {
-								if ( $status_value == WPSC_PS_AIT_Status::DELETE ) {
-									continue;
-								}
-								?>
-								<option value="<?php echo esc_attr( $status_value ); ?>"><?php echo esc_html( $status_label ); ?></option>
-								<?php
+
+			<div class="wpsc-aia-toolbar">
+
+				<div class="wpsc-aia-toolbar-item">
+					<label><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></label>
+					<select id="wpsc-file-upload-status-filter">
+						<option value="all"><?php esc_attr_e( 'All statuses', 'wpsc-ps' ); ?></option>
+						<?php
+						foreach ( WPSC_PS_AIT_Status::get_labels() as $status_value => $status_label ) {
+							if ( $status_value == WPSC_PS_AIT_Status::DELETE ) {
+								continue;
 							}
 							?>
-						</select>
+							<option value="<?php echo esc_attr( $status_value ); ?>"><?php echo esc_html( $status_label ); ?></option>
+							<?php
+						}
+						?>
+					</select>
+				</div>
+
+				<div class="wpsc-aia-toolbar-item">
+					<label><?php esc_attr_e( 'Source', 'wpsc-ps' ); ?></label>
+					<select id="wpsc-file-upload-source-filter">
+						<option value="all"><?php esc_attr_e( 'All sources', 'wpsc-ps' ); ?></option>
+						<?php foreach ( array( WPSC_PS_AIT_Source::FILE, WPSC_PS_AIT_Source::URL ) as $source_value ) : ?>
+							<option value="<?php echo esc_attr( $source_value ); ?>"><?php echo esc_html( WPSC_PS_AIT_Source::get_label( $source_value ) ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+
+				<div class="wpsc-aia-toolbar-item wpsc-aia-toolbar-search">
+					<label><?php esc_attr_e( 'Search', 'supportcandy' ); ?></label>
+					<input type="text" id="wpsc-file-upload-list-search" autocomplete="off" placeholder="<?php esc_attr_e( 'Search...', 'supportcandy' ); ?>">
+				</div>
+
+				<div class="wpsc-aia-toolbar-item wpsc-aia-toolbar-reset">
+					<button type="button" class="wpsc-button normal secondary" id="wpsc-file-upload-reset-filter">
+						<?php esc_attr_e( 'Reset', 'supportcandy' ); ?>
+					</button>
+				</div>
+
+			</div>
+
+			<div class="wpsc-aia-actions-bar">
+				<div class="wpsc-ai-training-list-actions-bulk-actions">
+					<button
+						id="wpsc-file-upload-bulk-actions-btn"
+						class="wpsc-button small secondary"
+						type="button"
+						data-popover="wpsc-file-upload-bulk-actions">
+						<?php esc_attr_e( 'Bulk Actions', 'supportcandy' ); ?>
+						<?php WPSC_Icons::get( 'chevron-down' ); ?>
+					</button>
+					<div id="wpsc-file-upload-bulk-actions" class="gpopover wpsc-popover-menu wpsc-ticket-bulk-actions" style="width: 200px !important;">
+						<div class="wpsc-popover-menu-item" onclick="wpsc_bulk_delete_training( '<?php echo esc_attr( wp_create_nonce( 'wpsc_bulk_delete_training' ) ); ?>' );">
+							<?php WPSC_Icons::get( 'trash-alt' ); ?>
+							<span><?php esc_html_e( 'Delete', 'wpsc-ps' ); ?></span>
+						</div>
 					</div>
 				</div>
-				<div class="wpsc-ai-training-list-actions-search">
-					<input type="text" id="wpsc-file-upload-list-search" placeholder="<?php esc_attr_e( 'Search...', 'supportcandy' ); ?>">
-				</div>
+				<button class="wpsc-button small primary" onclick="wpsc_add_ai_training_item(this);">
+					<?php echo esc_attr( wpsc__( 'Add new', 'wpsc-ps' ) ); ?>
+				</button>
 			</div>
+
 			<div class="wpsc-ai-training-list-container">
 				<table class="wpsc-ai-file-upload-list-table wpsc-setting-tbl">
 					<thead>
@@ -340,6 +388,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							<th><?php esc_attr_e( 'Provider', 'wpsc-ps' ); ?></th>
 							<th><?php esc_attr_e( 'Source', 'wpsc-ps' ); ?></th>
 							<th><?php esc_attr_e( 'File', 'wpsc-ps' ); ?></th>
+							<th><?php esc_attr_e( 'Reason', 'wpsc-ps' ); ?></th>
 							<th><?php esc_attr_e( 'Action', 'wpsc-ps' ); ?></th>
 						</tr>
 					</thead>
@@ -348,11 +397,14 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 
 			<script>
 				var trainingTable;
-				function wpsc_load_file_upload_training_list(aiStatusType) {
 
-					if (trainingTable) {
-						trainingTable.destroy();
-					}
+				jQuery(document).ready(function() {
+
+					jQuery('#wpsc-file-upload-bulk-actions-btn').gpopover({
+						width: 120
+					});
+					jQuery('#wpsc-file-upload-status-filter').selectWoo({ minimumResultsForSearch: 0, width: '100%' });
+					jQuery('#wpsc-file-upload-source-filter').selectWoo({ minimumResultsForSearch: 0, width: '100%' });
 
 					trainingTable = jQuery('.wpsc-ai-file-upload-list-table').DataTable({
 						processing: true,
@@ -366,10 +418,11 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 
 						ajax: {
 							url: supportcandy.ajax_url,
-							data: {
-								action: 'wpsc_get_aia_file_upload_training_list',
-								ai_status_type: aiStatusType,
-								_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_aia_file_upload_training_list' ) ); ?>'
+							data: function (d) {
+								d.action = 'wpsc_get_aia_file_upload_training_list';
+								d.ai_status_type = jQuery('#wpsc-file-upload-status-filter').val();
+								d.source_filter = jQuery('#wpsc-file-upload-source-filter').val();
+								d._ajax_nonce = '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_aia_file_upload_training_list' ) ); ?>';
 							}
 						},
 
@@ -379,53 +432,32 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							{ data: 'provider' },
 							{ data: 'source' },
 							{ data: 'file' },
+							{ data: 'reason' },
 							{ data: 'action' },
 						],
 
 						columnDefs: [
 							{ targets: '_all', className: 'dt-left' },
-							{ targets: [ 0, 3, 5 ], orderable: false }
+							{ targets: [ 0, 3, 5, 6 ], orderable: false }
 						],
-
-						layout: {
-							topStart: {
-								buttons: [
-									{
-										text: '<?php echo esc_attr( wpsc__( 'Add new', 'wpsc-ps' ) ); ?>',
-										className: 'wpsc-button small primary',
-										action: function ( e, dt, node, config ) {
-											wpsc_add_ai_training_item( node );
-										}
-									}
-								],
-							},
-						},
 
 						language: supportcandy.translations.datatables
 					});
 
-					// Move the DataTable's "Add new" button in front of the bulk actions/status filter.
-					jQuery('.wpsc-ai-training-list-actions').prepend(
-						jQuery(trainingTable.table().container()).find('.dt-buttons')
-					);
-				}
-
-				jQuery(document).ready(function() {
-
-					jQuery('#wpsc-file-upload-bulk-actions-btn').gpopover({
-						width: 120
-					});
-					jQuery('#wpsc-file-upload-status-filter').selectWoo({});
-
-					wpsc_load_file_upload_training_list('all');
-					jQuery('#wpsc-file-upload-status-filter').on('change', function(){
-						wpsc_load_file_upload_training_list(jQuery(this).val());
+					jQuery('#wpsc-file-upload-status-filter, #wpsc-file-upload-source-filter').on('change', function() {
+						trainingTable.ajax.reload();
 					});
 
 					jQuery('#wpsc-file-upload-list-search').on('keyup', function() {
-						if (trainingTable) {
-							trainingTable.search(this.value).draw();
-						}
+						trainingTable.search(this.value).draw();
+					});
+
+					jQuery('#wpsc-file-upload-reset-filter').on('click', function() {
+						jQuery('#wpsc-file-upload-status-filter').val('all').trigger('change.select2');
+						jQuery('#wpsc-file-upload-source-filter').val('all').trigger('change.select2');
+						jQuery('#wpsc-file-upload-list-search').val('');
+						trainingTable.search('');
+						trainingTable.ajax.reload();
 					});
 				});
 			</script>
@@ -440,7 +472,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		 */
 		public static function get_aia_file_upload_training_list() {
 
-			if ( check_ajax_referer( 'wpsc_get_aia_file_upload_training_list', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_get_aia_file_upload_training_list', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
 			}
 
@@ -455,6 +487,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						'provider'     => '',
 						'source'       => '',
 						'file'         => '',
+						'reason'       => '',
 						'action'       => '',
 					),
 				);
@@ -471,6 +504,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			$status_filter = isset( $_POST['ai_status_type'] ) ? sanitize_text_field( wp_unslash( $_POST['ai_status_type'] ) ) : 'all';
 			if ( 'all' !== $status_filter && ! WPSC_PS_AIT_Status::is_valid( $status_filter ) ) {
 				$status_filter = 'all';
+			}
+
+			// This tab only ever lists file/url sourced items, so a source filter value
+			// is only honoured when it narrows down to one of those two sources.
+			$source_filter = isset( $_POST['source_filter'] ) ? sanitize_text_field( wp_unslash( $_POST['source_filter'] ) ) : 'all';
+			if ( ! in_array( $source_filter, array( WPSC_PS_AIT_Source::FILE, WPSC_PS_AIT_Source::URL ), true ) ) {
+				$source_filter = 'all';
 			}
 
 			// Whitelisted map of sortable DataTables column index to actual DB column.
@@ -525,11 +565,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				'val'     => $current_provider,
 			);
 
-			// Only show file/url sourced training items on this tab.
+			// Only show file/url sourced training items on this tab, narrowed further if the
+			// Source filter picked one of the two.
 			$args['meta_query'][] = array(
 				'slug'    => 'source',
-				'compare' => 'IN',
-				'val'     => array( WPSC_PS_AIT_Source::FILE, WPSC_PS_AIT_Source::URL ),
+				'compare' => 'all' === $source_filter ? 'IN' : '=',
+				'val'     => 'all' === $source_filter ? array( WPSC_PS_AIT_Source::FILE, WPSC_PS_AIT_Source::URL ) : $source_filter,
 			);
 
 			$trainings = WPSC_RAG_Training_File::find( $args );
@@ -540,14 +581,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				$provider = WPSC_PS_AIT_Provider::get_label( $training->provider );
 				$training_id = absint( $training->id );
 
-				// Surface the underlying failure reason (if one was recorded) as a tooltip on the
-				// status badge instead of leaving admins with just a generic "Failed" label.
+				// Surface the underlying failure/skip reason (if one was recorded) in its own
+				// column instead of leaving admins with just a generic "Failed"/"Deleted" label.
+				$reason = '';
 				if ( in_array( $training->status, array( WPSC_PS_AIT_Status::FAILED, WPSC_PS_AIT_Status::DELETE ), true ) ) {
 					$meta = json_decode( $training->meta_data, true );
-					$failure_reason = is_array( $meta ) && ! empty( $meta['failure_reason'] ) ? $meta['failure_reason'] : '';
-					if ( '' !== $failure_reason ) {
-						$status = '<span title="' . esc_attr( $failure_reason ) . '">' . esc_html( $status ) . ' &#9432;</span>';
-					}
+					$reason = is_array( $meta ) && ! empty( $meta['failure_reason'] ) ? $meta['failure_reason'] : '';
 				}
 
 				$edit_actions = array();
@@ -572,6 +611,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 					'provider'     => $provider,
 					'source'       => WPSC_PS_AIT_Source::get_label( $training->source ),
 					'file'         => esc_attr( $training->name ),
+					'reason'       => esc_html( $reason ),
 					'action'       => implode( ' | ', $edit_actions ),
 				);
 			}
@@ -593,7 +633,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		 */
 		public static function bulk_delete_file_upload_training() {
 
-			if ( check_ajax_referer( 'wpsc_bulk_delete_training', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_bulk_delete_training', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorised request!', 401 );
 			}
 
@@ -735,20 +775,35 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			$record_counts = self::get_source_record_counts( $ait_slug, $current_provider );
 			$indexed_count = $record_counts['indexed'];
 			$queue_count   = $record_counts['queue'];
+			$failed_count  = $record_counts['failed'];
 			$total_records = $record_counts['total'];
 
 			$needs_provider_resync = false;
-			if ( '' !== $ait_slug ) {
-
-				$enabled_post_type_slugs = array();
-				foreach ( $saved_post_types as $post_type ) {
-					if ( is_array( $post_type ) && ! empty( $post_type['status'] ) && ! empty( $post_type['slug'] ) ) {
-						$enabled_post_type_slugs[] = sanitize_key( $post_type['slug'] );
-					}
+			$enabled_post_type_slugs = array();
+			foreach ( $saved_post_types as $post_type ) {
+				if ( is_array( $post_type ) && ! empty( $post_type['status'] ) && ! empty( $post_type['slug'] ) ) {
+					$enabled_post_type_slugs[] = sanitize_key( $post_type['slug'] );
 				}
+			}
 
+			if ( '' !== $ait_slug ) {
 				$needs_provider_resync = WPSC_PS_AI_Setting_AI_Training_Actions::source_has_other_provider_data( $ait_slug, $enabled_post_type_slugs, $current_provider );
 			}
+
+			// "Available" = at least fetched via "Get Post Types" (regardless of which, if
+			// any, are currently enabled) - Update has nothing to persist without this, so
+			// the button only needs this much to appear.
+			// "Synced" = at least one of those fetched post types is actually enabled and
+			// saved - the "Data Synchronization & Actions" section (hint + Sync Posts/Sync
+			// Missing Posts/Delete All Posts) stays hidden entirely until this is true,
+			// whether that's from a source already configured this way on a previous visit,
+			// or because "Update" was just clicked with a post type checked (see
+			// wpsc_ait_show_data_sync_section() in ai-training.js, called from the Update
+			// button's AJAX success handler). The Sync actions themselves also re-check this
+			// server-side - see validate_and_resolve_sync_request() in
+			// class-wpsc-ps-ai-setting-ai-training-actions.php.
+			$has_post_types         = ! empty( $saved_post_types );
+			$has_enabled_post_types = ! empty( $enabled_post_type_slugs );
 
 			// Show the sync progress bar already running if a background sync is in flight for this source.
 			$sync_running = WPSC_PS_AI_Setting_AI_Training_Actions::is_sync_running( $ait_slug );
@@ -759,9 +814,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			// upload cron is deliberately deferred until every sync finishes (see
 			// WPSC_PS_AIT_Controller::upload_file_to_training()), so scheduling it here would
 			// just be cleared again on its next tick, not actually upload anything sooner.
+			// Also hidden while an upload tick is genuinely in flight - WP-Cron unschedules
+			// a single event before running it, so right after a sync finishes (and for the
+			// whole duration of the upload it kicks off), wp_next_scheduled() already reads
+			// false even though nothing is stuck. Without is_upload_running() here, this
+			// link would flash on for every normal upload, not only a stuck one - see
+			// WPSC_PS_AIT_Controller::is_upload_running().
 			$upload_scheduled = (bool) wp_next_scheduled( 'wpsc_ai_training_upload' );
 			$sync_active = WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active();
-			$show_schedule_upload_link = $queue_count > 0 && ! $upload_scheduled && ! $sync_active;
+			$upload_running = WPSC_PS_AIT_Controller::is_upload_running( $current_provider );
+			$show_schedule_upload_link = $queue_count > 0 && ! $upload_scheduled && ! $sync_active && ! $upload_running;
 			?>
 			<div class="wpsc-back-button">
 				<a class="wpsc-link" onclick="wpsc_get_aia_website_setting();"><?php esc_attr_e( 'Back', 'supportcandy' ); ?></a>
@@ -808,10 +870,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 									$pt_name = sanitize_text_field( $post_type['name'] ?? $pt_slug );
 									$checked = ! empty( $post_type['status'] );
 									$input_id = 'wpsc-post-type-' . sanitize_html_class( $pt_slug );
+									$pt_skipped_count = ( '' !== $ait_slug ) ? WPSC_PS_AIT_Controller::get_skipped_insufficient_content_count( $ait_slug, $pt_slug ) : 0;
+									/* translators: %d: number of records skipped for this post type due to insufficient content. */
+									$pt_skipped_label = sprintf( _n( '(%d skipped)', '(%d skipped)', $pt_skipped_count, 'wpsc-ps' ), $pt_skipped_count );
 									?>
-									<div class="checkbox-container" style="margin-bottom:5px;">
+									<div class="checkbox-container" style="margin-bottom: 5px; gap: 5px;">
 										<input id="<?php echo esc_attr( $input_id ); ?>" type="checkbox" name="ait-post-types[]" value="<?php echo esc_attr( $pt_slug ); ?>" <?php checked( $checked ); ?>>
 										<label for="<?php echo esc_attr( $input_id ); ?>"><?php echo esc_html( $pt_name ); ?></label>
+										<?php if ( $pt_skipped_count > 0 ) : ?>
+											<span title="<?php esc_attr_e( 'Records skipped for this post type because their extracted content was empty or too short to be useful for search.', 'wpsc-ps' ); ?>"><?php echo esc_html( $pt_skipped_label ); ?></span>
+										<?php endif; ?>
 									</div>
 								<?php endforeach; ?>
 							</div>
@@ -827,7 +895,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<input type="hidden" name="wpsc_get_ait_sync_progress_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpsc_get_ait_sync_progress' ) ); ?>">
 				<input type="hidden" name="wpsc-ait-edit-refresh-nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpsc_edit_ai_training_source' ) ); ?>">
 
-				<div class="wpsc-input-group">
+				<div class="wpsc-input-group wpsc-ait-update-container" style="<?php echo $has_post_types ? '' : 'display:none;'; ?>">
 					<div class="setting-footer-actions">
 						<button
 							id="wpsc-update-source-btn"
@@ -839,25 +907,30 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						</button>
 					</div>
 				</div>
-				
+
 				<div class="wpsc-ait-record-counts">
-					<span><?php esc_html_e( 'Total records:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $total_records ); ?></strong></span>
+					<span title="<?php esc_attr_e( 'Indexed + In Queue + Failed.', 'wpsc-ps' ); ?>"><?php esc_html_e( 'Total records:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $total_records ); ?></strong></span>
 					<span><?php esc_html_e( 'Indexed:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $indexed_count ); ?></strong></span>
+					<span><?php esc_html_e( 'In Queue:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $queue_count ); ?></strong></span>
+					<?php if ( $failed_count > 0 ) : ?>
+						<span title="<?php esc_attr_e( 'Records that failed to upload/index - see the training data list for each record\'s reason.', 'wpsc-ps' ); ?>">
+							<?php esc_html_e( 'Failed:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $failed_count ); ?></strong>
+						</span>
+					<?php endif; ?>
 					<span>
-						<?php esc_html_e( 'In Queue:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $queue_count ); ?></strong>
-						<?php if ( $show_schedule_upload_link ) : ?>
-							<span
-								class="wpsc-link wpsc-ait-retry-upload-link"
-								title="<?php esc_attr_e( 'The upload isn\'t scheduled yet - click to schedule it now.', 'wpsc-ps' ); ?>"
-								onclick="wpsc_schedule_ai_training_upload(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_schedule_ai_training_upload' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_edit_ai_training_source' ) ); ?>');">
-								<?php esc_html_e( 'Retry Upload', 'wpsc-ps' ); ?>
-							</span>
-						<?php endif; ?>
+					<?php if ( $show_schedule_upload_link ) : ?>
+						<span
+							class="wpsc-link wpsc-ait-retry-upload-link"
+							title="<?php esc_attr_e( 'The upload isn\'t scheduled yet - click to schedule it now.', 'wpsc-ps' ); ?>"
+							onclick="wpsc_schedule_ai_training_upload(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_schedule_ai_training_upload' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_edit_ai_training_source' ) ); ?>');">
+							<?php esc_html_e( 'Retry Upload', 'wpsc-ps' ); ?>
+						</span>
+					<?php endif; ?>
 					</span>
 				</div>
 
-				<hr>
-				<div class="wpsc-tt-data-sync-setting">
+				<hr class="wpsc-ait-data-sync-container" style="<?php echo $has_enabled_post_types ? '' : 'display:none;'; ?>">
+				<div class="wpsc-tt-data-sync-setting wpsc-ait-data-sync-container" style="<?php echo $has_enabled_post_types ? '' : 'display:none;'; ?>">
 					<?php if ( $needs_provider_resync ) : ?>
 						<div class="wpsc-ait-provider-notice">
 							<?php esc_html_e( 'Your AI Assistant provider has been changed. Some or all of your existing training data was uploaded using a different AI provider. Please sync the affected data again to continue using the AI Assistant.', 'wpsc-ps' ); ?>
@@ -871,7 +944,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						</div>
 					</div>
 
-					<div class="wpsc-input-group options">
+					<div class="wpsc-input-group wpsc-ait-no-sync-hint" style="<?php echo $has_enabled_post_types ? 'display:none;' : ''; ?>">
+						<span class="extra-info">
+							<?php esc_html_e( 'Enable at least one post type above and click "Update" to start syncing.', 'wpsc-ps' ); ?>
+						</span>
+					</div>
+
+					<div class="wpsc-input-group options" style="<?php echo $has_enabled_post_types ? '' : 'display:none;'; ?>">
 						<button
 							id="wpsc-sync-posts-btn"
 							type="button"
@@ -896,7 +975,21 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						</div>
 					</div>
 
-					<div class="wpsc-input-group options">
+					<div class="wpsc-input-group options" style="<?php echo $has_enabled_post_types ? '' : 'display:none;'; ?>">
+						<button
+							id="wpsc-sync-missing-posts-btn"
+							type="button"
+							class="wpsc-button normal secondary margin-right"
+							onclick="wpsc_sync_missing_posts_for_ai_training(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_sync_missing_posts_for_ai_training' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>' );"
+							<?php disabled( $sync_running ); ?>>
+							<?php esc_html_e( 'Sync Missing Posts', 'wpsc-ps' ); ?>
+						</button>
+						<span class="extra-info">
+							<?php esc_attr_e( 'By clicking "Sync Missing Posts" button, only posts not yet synced will be added for AI training - existing records are left untouched even if the post has since changed.', 'wpsc-ps' ); ?>
+						</span>
+					</div>
+
+					<div class="wpsc-input-group options" style="<?php echo $has_enabled_post_types ? '' : 'display:none;'; ?>">
 						<button
 							id="wpsc-delete-all-posts-btn"
 							type="button"
@@ -940,7 +1033,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		 */
 		public static function schedule_ai_training_upload() {
 
-			if ( check_ajax_referer( 'wpsc_schedule_ai_training_upload', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_schedule_ai_training_upload', '_ajax_nonce', false ) ) {
 				wp_send_json_error( array( 'message' => __( 'Unauthorized request!', 'wpsc-ps' ) ), 401 );
 			}
 
@@ -954,6 +1047,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 
 			if ( wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
 				wp_send_json_success( array( 'message' => __( 'Upload is already scheduled.', 'wpsc-ps' ) ) );
+			}
+
+			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
+			$current_provider = sanitize_text_field( $ai_settings['provider'] ?? '' );
+			if ( WPSC_PS_AIT_Controller::is_upload_running( $current_provider ) ) {
+				wp_send_json_success( array( 'message' => __( 'An upload is already in progress.', 'wpsc-ps' ) ) );
 			}
 
 			wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );

@@ -34,8 +34,17 @@ if ( ! class_exists( 'WPSC_Dashboard_Widgets_Setting' ) ) :
 			// Set load order.
 			add_action( 'wp_ajax_wpsc_set_dashboard_widget_load_order', array( __CLASS__, 'set_dashboard_widget_load_order' ) );
 
+			// Toggle enable/disable of a single widget.
+			add_action( 'wp_ajax_wpsc_toggle_dashboard_widget_status', array( __CLASS__, 'toggle_dashboard_widget_status' ) );
+
+			// Enable/disable all widgets at once.
+			add_action( 'wp_ajax_wpsc_toggle_all_dashboard_widgets_status', array( __CLASS__, 'toggle_all_dashboard_widgets_status' ) );
+
 			// allow access to new agent role.
 			add_action( 'wpsc_after_add_agent_role', array( __CLASS__, 'after_add_agent_role' ) );
+
+			// allow access to cloned agent role wherever the source role was allowed.
+			add_action( 'wpsc_after_clone_agent_role', array( __CLASS__, 'after_clone_agent_role' ), 10, 2 );
 		}
 
 		/**
@@ -77,9 +86,30 @@ if ( ! class_exists( 'WPSC_Dashboard_Widgets_Setting' ) ) :
 				);
 				?>
 			</div>
+			<?php
+			$enabled_count = 0;
+			foreach ( $dashboard_widgets as $widget ) {
+				if ( ! empty( $widget['is_enable'] ) ) {
+					++$enabled_count;
+				}
+			}
+			$all_enabled = $dashboard_widgets && $enabled_count === count( $dashboard_widgets );
+			?>
 			<div class="wpsc-setting-cards-container ui-sortable">
 				<div class="wpsc-actions-btn-setting">
 					<button class="wpsc-button normal primary margin-right" onclick="wpsc_get_new_dashboard_widget('<?php echo esc_attr( wp_create_nonce( 'wpsc_get_new_dashboard_widget' ) ); ?>');"><?php esc_attr_e( 'Add widget', 'supportcandy' ); ?></button>
+					<div class="wpsc-setting-cards-toggle-all">
+						<label class="wpsc-dbc-toggle-switch">
+							<input
+								type="checkbox"
+								class="wpsc-toggle-all-dashboard-widgets"
+								<?php checked( $all_enabled ); ?>
+								onchange="wpsc_toggle_all_dashboard_widgets( this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_toggle_all_dashboard_widgets_status' ) ); ?>' );"
+							/>
+							<span class="wpsc-dbc-slider"></span>
+						</label>
+						<span class="wpsc-toggle-all-label"><?php esc_attr_e( 'Enable All / Disable All', 'supportcandy' ); ?></span>
+					</div>
 				</div>
 				<?php
 				foreach ( $dashboard_widgets as $key => $widget ) {
@@ -97,6 +127,15 @@ if ( ! class_exists( 'WPSC_Dashboard_Widgets_Setting' ) ) :
 							?>
 						</span>
 						<div class="actions">
+							<label class="wpsc-dbc-toggle-switch" onclick="event.stopPropagation();">
+								<input
+									type="checkbox"
+									class="wpsc-toggle-dashboard-widget"
+									<?php checked( ! empty( $widget['is_enable'] ) ); ?>
+									onchange="wpsc_toggle_dashboard_widget_status( this, '<?php echo esc_attr( $key ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_toggle_dashboard_widget_status' ) ); ?>' );"
+								/>
+								<span class="wpsc-dbc-slider"></span>
+							</label>
 							<span class="action-btn" onclick="wpsc_get_edit_dashboard_card_widget( 'wpsc-dashboard-widgets', '<?php echo esc_attr( $key ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_dashboard_card_widget' ) ); ?>' );"><?php WPSC_Icons::get( 'edit' ); ?></span>
 							<?php if ( $widget['type'] != 'default' ) { ?>
 								<span class="action-btn" onclick="wpsc_delete_dashboard_widget( '<?php echo esc_attr( $key ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_dashboard_widget' ) ); ?>' );"><?php WPSC_Icons::get( 'trash-alt' ); ?></span>
@@ -323,6 +362,59 @@ if ( ! class_exists( 'WPSC_Dashboard_Widgets_Setting' ) ) :
 		}
 
 		/**
+		 * Toggle enable/disable status of a single dashboard widget
+		 *
+		 * @return void
+		 */
+		public static function toggle_dashboard_widget_status() {
+
+			if ( check_ajax_referer( 'wpsc_toggle_dashboard_widget_status', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$slug      = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
+			$is_enable = isset( $_POST['is_enable'] ) ? intval( $_POST['is_enable'] ) : 0;
+
+			$dashboard_widgets = get_option( 'wpsc-dashboard-widgets', array() );
+			if ( ! $slug || ! isset( $dashboard_widgets[ $slug ] ) ) {
+				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+			}
+
+			$dashboard_widgets[ $slug ]['is_enable'] = $is_enable;
+			update_option( 'wpsc-dashboard-widgets', $dashboard_widgets );
+			wp_die();
+		}
+
+		/**
+		 * Enable or disable all dashboard widgets at once
+		 *
+		 * @return void
+		 */
+		public static function toggle_all_dashboard_widgets_status() {
+
+			if ( check_ajax_referer( 'wpsc_toggle_all_dashboard_widgets_status', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$is_enable = isset( $_POST['is_enable'] ) ? intval( $_POST['is_enable'] ) : 0;
+
+			$dashboard_widgets = get_option( 'wpsc-dashboard-widgets', array() );
+			foreach ( $dashboard_widgets as $key => $widget ) {
+				$dashboard_widgets[ $key ]['is_enable'] = $is_enable;
+			}
+			update_option( 'wpsc-dashboard-widgets', $dashboard_widgets );
+			wp_die();
+		}
+
+		/**
 		 * After new agent role added add that role in ticket widgets
 		 *
 		 * @param integer $role_id - agent role id.
@@ -335,6 +427,26 @@ if ( ! class_exists( 'WPSC_Dashboard_Widgets_Setting' ) ) :
 
 				$widget['allowed-agent-roles'][] = $role_id;
 				$dashboard_widgets[ $key ]          = $widget;
+			}
+			update_option( 'wpsc-dashboard-widgets', $dashboard_widgets );
+		}
+
+		/**
+		 * After agent role cloned, add the new role to every widget the source role was allowed on.
+		 *
+		 * @param integer $new_role_id - newly cloned agent role id.
+		 * @param integer $source_role_id - source agent role id that was cloned.
+		 * @return void
+		 */
+		public static function after_clone_agent_role( $new_role_id, $source_role_id ) {
+
+			$dashboard_widgets = get_option( 'wpsc-dashboard-widgets', array() );
+			foreach ( $dashboard_widgets as $key => $widget ) {
+
+				if ( in_array( $source_role_id, $widget['allowed-agent-roles'] ) ) {
+					$widget['allowed-agent-roles'][] = $new_role_id;
+					$dashboard_widgets[ $key ]       = $widget;
+				}
 			}
 			update_option( 'wpsc-dashboard-widgets', $dashboard_widgets );
 		}

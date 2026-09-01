@@ -32,6 +32,23 @@ if ( ! class_exists( 'WPSC_ACB_Cookies' ) ) :
 		}
 
 		/**
+		 * Read the requester's session cookie as-is, without the "mint a new one if
+		 * missing" side effect get_request_session_id() has. Callers that only want to
+		 * know what the requester's own cookie currently is - e.g. verifying a
+		 * client-submitted session id actually belongs to them - must use this instead:
+		 * generating (and Set-Cookie-ing) a fresh random id purely to fail a comparison
+		 * against it has no purpose, and clobbers whatever cookie value the requester
+		 * legitimately had if this call happens to run before anything else sets one.
+		 *
+		 * @return string Empty string if no session cookie is present.
+		 */
+		public static function get_current_session_id() {
+
+			$cookie_name = 'wpsc_acb_session_id';
+			return isset( $_COOKIE[ $cookie_name ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) ) : '';
+		}
+
+		/**
 		 * Set guest session cookie.
 		 *
 		 * @param string $cookie_name Cookie name.

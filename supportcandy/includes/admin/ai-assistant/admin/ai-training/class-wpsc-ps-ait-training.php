@@ -17,6 +17,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 			add_action( 'wp_ajax_wpsc_add_ai_training_item', array( __CLASS__, 'add_ai_training_item' ) );
 			add_action( 'wp_ajax_wpsc_set_add_ai_training_item', array( __CLASS__, 'set_add_ai_training_item' ) );
 			add_action( 'wp_ajax_wpsc_get_delete_ai_training_item', array( __CLASS__, 'get_delete_ai_training_item' ) );
+			add_action( 'wp_ajax_wpsc_view_reason_for_failed_ai_training_item', array( __CLASS__, 'view_reason_for_failed_ai_training_item' ) );
 			add_action( 'wp_ajax_wpsc_download_ai_training_item', array( __CLASS__, 'download_ai_training_item' ) );
 		}
 
@@ -132,7 +133,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		public static function set_add_ai_training_item() {
 
 			// Verify nonce.
-			if ( check_ajax_referer( 'wpsc_set_add_ai_training_item', '_ajax_nonce', false ) !== 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_set_add_ai_training_item', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
 			}
 
@@ -192,12 +193,47 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 						if ( empty( $file['file'] ) ) {
 							continue;
 						}
+
+						// Re-uploading the same file name should supersede the previous copy rather
+						// than add another one, so find any existing non-deleted record for it first.
+						$existing_files = WPSC_RAG_Training_File::find(
+							array(
+								'items_per_page' => 50,
+								'meta_query'     => array(
+									'relation' => 'AND',
+									array(
+										'slug'    => 'source',
+										'compare' => '=',
+										'val'     => WPSC_PS_AIT_Source::FILE,
+									),
+									array(
+										'slug'    => 'status',
+										'compare' => 'NOT IN',
+										'val'     => array( WPSC_PS_AIT_Status::DELETE ),
+									),
+									array(
+										'slug'    => 'custom_query',
+										'compare' => '=',
+										'val'     => "(
+											meta_data IS NOT NULL
+											AND JSON_VALID(meta_data) = 1
+											AND JSON_CONTAINS_PATH(meta_data, 'one', '$.original_name') = 1
+											AND JSON_UNQUOTE(JSON_EXTRACT(meta_data, '$.original_name')) = '" . esc_sql( $file['original_name'] ) . "'
+										)",
+									),
+								),
+							)
+						);
+						foreach ( ( $existing_files['results'] ?? array() ) as $existing_file ) {
+							WPSC_RAG_Training_File::safe_delete( $existing_file );
+						}
+
 						// Set source, name, file_path and meta data for file.
 						// doc_source is left empty - file uploads aren't tied to a training source.
 						$data['source'] = 'file';
 						$data['name'] = $file['name'];
 						$data['file_path'] = $file['file'];
-						$data['meta_data'] = $file['meta_data'];
+						$data['meta_data'] = wp_json_encode( array( 'original_name' => $file['original_name'] ) );
 
 						// Insert training file record for file.
 						$result = WPSC_RAG_Training_File::insert( $data );
@@ -232,7 +268,11 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 							continue;
 						}
 
-						// Check duplicate entry for URL.
+						// Check duplicate entry for URL. Any non-deleted record for this URL
+						// counts, not just an already-INDEXED one - otherwise a URL still
+						// sitting in NEW/PROCESSING/FAILED would go undetected here and get
+						// queued a second time, racing the first (same "existing non-deleted
+						// record" rule the file-upload branch above already applies).
 						$check_duplicate = WPSC_RAG_Training_File::count(
 							array(
 								'meta_query' => array(
@@ -244,13 +284,8 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 									),
 									array(
 										'slug'    => 'status',
-										'compare' => '=',
-										'val'     => WPSC_PS_AIT_Status::INDEXED,
-									),
-									array(
-										'slug'    => 'provider_file_id',
-										'compare' => 'IS NOT',
-										'val'     => 'NULL',
+										'compare' => 'NOT IN',
+										'val'     => array( WPSC_PS_AIT_Status::DELETE ),
 									),
 									array(
 										'slug'    => 'custom_query',
@@ -287,7 +322,10 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 					wp_send_json_error( __( 'Invalid training type selected.', 'wpsc-ps' ), 400 );
 			}
 
-			if ( $flag && ! wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
+			// Defer to an in-progress website sync, same as every other caller of this
+			// hook (see WPSC_PS_AIT_Controller::upload_file_to_training()) - it will be
+			// scheduled once that sync's database phase finishes instead.
+			if ( $flag && ! wp_next_scheduled( 'wpsc_ai_training_upload' ) && ! WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
 				wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
 			}
 		}
@@ -299,7 +337,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		 */
 		public static function get_delete_ai_training_item() {
 
-			if ( check_ajax_referer( 'wpsc_get_delete_ai_training_item', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_get_delete_ai_training_item', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
 			}
 
@@ -331,13 +369,77 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		}
 
 		/**
+		 * Show the recorded failure/skip reason of a training item in a read-only modal.
+		 *
+		 * The reason is stored in the record's meta_data under 'failure_reason' (see the
+		 * "Reason" column of the training lists), which can be too long to read inline.
+		 *
+		 * @return void
+		 */
+		public static function view_reason_for_failed_ai_training_item() {
+
+			if ( ! check_ajax_referer( 'wpsc_view_reason_for_failed_ai_training_item', '_ajax_nonce', false ) ) {
+				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+			}
+
+			// Check capability and setting.
+			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
+				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+			}
+
+			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
+			if ( ! $id ) {
+				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+			}
+
+			$training_item = new WPSC_RAG_Training_File( $id );
+			if ( ! $training_item->id ) {
+				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+			}
+
+			$meta   = json_decode( $training_item->meta_data, true );
+			$reason = is_array( $meta ) && ! empty( $meta['failure_reason'] ) ? $meta['failure_reason'] : '';
+
+			$title = $training_item->name ? $training_item->name : esc_attr__( 'Reason', 'wpsc-ps' );
+
+			ob_start();
+			?>
+			<div class="wpsc-ai-training-failure-reason">
+				<?php
+				if ( $reason ) {
+					echo esc_html( $reason );
+				} else {
+					esc_html_e( 'No reason recorded for this training item.', 'wpsc-ps' );
+				}
+				?>
+			</div>
+			<?php
+			$body = ob_get_clean();
+
+			ob_start();
+			?>
+			<button class="wpsc-button small secondary" onclick="wpsc_close_modal();">
+				<?php esc_attr_e( 'Cancel', 'wpsc-ps' ); ?>
+			</button>
+			<?php
+			$footer = ob_get_clean();
+
+			$response = array(
+				'title'  => $title,
+				'body'   => $body,
+				'footer' => $footer,
+			);
+			wp_send_json( $response );
+		}
+
+		/**
 		 * Download AI training item
 		 *
 		 * @return void
 		 */
 		public static function download_ai_training_item() {
 
-			if ( check_ajax_referer( 'wpsc_download_ai_training_item', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_download_ai_training_item', '_ajax_nonce', false ) ) {
 				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
 			}
 
@@ -396,7 +498,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 			$upload_dir = wp_upload_dir();
 			$base_dir   = realpath( $upload_dir['basedir'] );
 
-			if ( strpos( $real_path, $base_dir ) !== 0 ) {
+			if ( ! $real_path || ! $base_dir || strpos( $real_path, $base_dir . DIRECTORY_SEPARATOR ) !== 0 ) {
 				wp_die( 'Invalid file path.' );
 			}
 

@@ -24,14 +24,14 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 		public static function register_tool( $registry ) {
 
 			$registry['create_support_ticket'] = array(
-				'name'                  => 'create_support_ticket',
-				'description'           => 'Create a support ticket. Requires user confirmation first: before ever calling this tool with confirm_create_ticket=true, you must already have asked the customer in a plain conversational reply (no tool call) whether they want a ticket created, and they must have affirmatively agreed in a later message. Once that confirmation has happened, it is fine (and expected) to call this tool with confirm_create_ticket=true again on later turns even before you have the customer\'s full name/email - if either is still missing, it will fail with error=missing_fields and a missing array naming exactly which field(s) to ask for next; use that to word your follow-up question, do not give up or move on without the customer\'s email. Never set confirm_create_ticket=false just because information is still incomplete or you are still gathering it - false must be reserved exclusively for a clear, explicit "no"/"don\'t"/"cancel" from the customer after you asked for confirmation; using false as a placeholder while waiting for name/email will incorrectly tell the customer their request was declined. Never call this tool to ask the confirmation question yourself, never call it for uncertainty or missing-knowledge fallback, and never fabricate identity values. For guest users, both customer_name and customer_email are mandatory - a ticket cannot be created without a valid email. After an explicit decline, continue helping in chat and do not ask again unless the customer asks for it.',
-				'parameters'            => array(
+				'name'               => 'create_support_ticket',
+				'description'        => 'Create a support ticket - a support enquiry for a human agent to follow up on. This never places an order, processes a payment, or reserves stock, even if the customer\'s request was about buying/ordering something. On success, tell the customer a support ticket/request was created; never describe it as an order being placed/confirmed, never call the ticket ID an order or confirmation number, and never promise an order/purchase confirmation email - if they want to actually buy something, this tool does not do that, so say so and point them to the site\'s normal checkout instead. This tool enforces its own confirmation gate, so you do not need to track confirmation state yourself: as soon as the customer asks for a ticket, call this tool with confirm_create_ticket=true. The very first time it is called for a given chat session, it will NOT create a ticket yet, no matter what you pass - it returns confirmation_required=true instead. Treat that exactly like asking a question: tell the customer, in a plain conversational reply, that you would like to create a ticket for them and ask them to confirm, then stop and wait for their next message. Only after the customer affirmatively agrees in that later message should you call this tool again with confirm_create_ticket=true - it will then proceed. Once that later confirmation has been accepted, it is fine (and expected) to call this tool with confirm_create_ticket=true again on further turns even before you have the customer\'s full name/email - if either is still missing, it will fail with error=missing_fields and a missing array naming exactly which field(s) to ask for next; use that to word your follow-up question, do not give up or move on without the customer\'s email. Never set confirm_create_ticket=false just because information is still incomplete or you are still gathering it - false must be reserved exclusively for a clear, explicit "no"/"don\'t"/"cancel" from the customer. Never call this tool for uncertainty or missing-knowledge fallback, and never fabricate identity values. For guest users, both customer_name and customer_email are mandatory - a ticket cannot be created without a valid email. After an explicit decline, continue helping in chat and do not ask again unless the customer asks for it.',
+				'parameters'         => array(
 					'type'                 => 'object',
 					'properties'           => array(
 						'confirm_create_ticket' => array(
 							'type'        => 'boolean',
-							'description' => 'true once the customer has affirmatively agreed to ticket creation (keep using true on later turns of the same request, even while still gathering name/email). false ONLY for an explicit decline - never as a placeholder for "not ready yet" or "still missing info".',
+							'description' => 'Set true as soon as the customer asks for a ticket. The first call this returns confirmation_required=true instead of creating anything - relay that as a confirmation question and wait for the customer\'s next message before calling again with true (keep using true on further turns after that, even while still gathering name/email). false ONLY for an explicit decline - never as a placeholder for "not ready yet" or "still missing info".',
 						),
 						'customer_name'         => array(
 							'type'        => 'string',
@@ -45,11 +45,15 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 					'required'             => array( 'confirm_create_ticket' ),
 					'additionalProperties' => false,
 				),
-				'handler'               => 'execute_tool_create_support_ticket',
-				'class'                 => __CLASS__,
-				'requires_confirmation' => true,
-				'side_effecting'        => true,
-				'max_calls_per_turn'    => 1,
+				'handler'            => 'execute_tool_create_support_ticket',
+				'class'              => __CLASS__,
+				// Confirmation is enforced in code (see execute_tool_create_support_ticket()'s
+				// pending-confirmation transient), not left to prompt discipline, so this is
+				// deliberately not flagged 'requires_confirmation' - that flag only adds a
+				// generic "ask before calling with confirming args" prompt reminder, which
+				// would contradict this tool's own instructions to call it right away.
+				'side_effecting'     => true,
+				'max_calls_per_turn' => 1,
 			);
 			return $registry;
 		}
@@ -60,6 +64,17 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 		 * Returns structured data only; the calling LLM turn composes the actual
 		 * user-facing reply (in the user's own language) from this result.
 		 *
+		 * The "customer must confirm before a ticket is created" rule is enforced
+		 * here in code, not left to the model's own discipline across turns - see
+		 * the pending-confirmation transient below. This tool is capped at one
+		 * call per turn (max_calls_per_turn => 1 in register_tool()), so a
+		 * pending flag that only gets set - never read as already-satisfied -
+		 * within the same call can only be satisfied by a genuinely later,
+		 * separate turn (i.e. the customer's own next message), never by the
+		 * same completion that first proposed creating the ticket, regardless
+		 * of what confirm_create_ticket the model passes or what text it pairs
+		 * the call with.
+		 *
 		 * @param array  $args Tool arguments.
 		 * @param string $session_uuid Session ID.
 		 * @return array
@@ -67,6 +82,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 		public static function execute_tool_create_support_ticket( $args, $session_uuid ) {
 
 			$confirm = self::normalize_tool_boolean( $args['confirm_create_ticket'] ?? null );
+
 			if ( null === $confirm ) {
 				return array(
 					'success' => false,
@@ -74,7 +90,12 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 				);
 			}
 
+			$pending_key = self::get_pending_confirmation_key( $session_uuid );
+
 			if ( ! $confirm ) {
+				// Explicit decline - clear any pending offer so a stray later "yes"
+				// referring to something else is never read as confirming this one.
+				delete_transient( $pending_key );
 				return array(
 					'success'        => true,
 					'ticket_created' => false,
@@ -82,6 +103,64 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 				);
 			}
 
+			$pending = get_transient( $pending_key );
+
+			if ( empty( $pending ) ) {
+
+				// First time this session has confirmed ticket creation (or the
+				// prior offer expired/was declined) - do not create the ticket
+				// yet. Record the offer as pending (not yet verified - see
+				// below) and hand back a result that tells the calling turn to
+				// relay the confirmation question and stop, even though
+				// confirm_create_ticket=true was passed.
+				set_transient( $pending_key, array( 'verified' => false ), 15 * MINUTE_IN_SECONDS );
+
+				return array(
+					'success'               => true,
+					'ticket_created'        => false,
+					'confirmation_required' => true,
+				);
+			}
+
+			$pending = is_array( $pending ) ? $pending : array( 'verified' => false );
+
+			if ( empty( $pending['verified'] ) ) {
+
+				// A later, separate turn did call this tool with confirm=true -
+				// but that alone is not proof the customer was actually asked:
+				// the model can call this tool speculatively on a turn whose
+				// final reply never mentions ticket creation at all (e.g. while
+				// answering an unrelated question), which would otherwise arm
+				// this exact same pending state without the customer ever
+				// seeing a question. Verify against the assistant's own actual
+				// last reply in this session - not the model's current claim -
+				// that a real confirmation question was asked before trusting
+				// this as consent.
+				$was_asked = self::was_ticket_confirmation_actually_asked();
+				if ( ! $was_asked ) {
+					return array(
+						'success'               => true,
+						'ticket_created'        => false,
+						'confirmation_required' => true,
+					);
+				}
+
+				// Verified once - remember that, so further turns spent only
+				// gathering a still-missing name/email (whose own last reply
+				// will no longer be the original confirmation question) do not
+				// need to satisfy this check again.
+				set_transient( $pending_key, array( 'verified' => true ), 15 * MINUTE_IN_SECONDS );
+			}
+
+			// Confirmed and verified - the customer's own later message is what
+			// is authorizing creation now. The pending flag is deliberately NOT
+			// cleared here: a guest confirming intent before their name/email is
+			// known must be able to keep calling this tool with
+			// confirm_create_ticket=true across further turns spent only
+			// gathering those fields, without the confirmation prompt firing
+			// again each time. It is cleared once a ticket actually gets
+			// created - see create_ticket_from_chat_session() - or on an
+			// explicit decline above.
 			$identity = self::get_logged_in_identity();
 			$name = '';
 			$email = '';
@@ -215,6 +294,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 					// is empty - it never depends on this transient surviving.
 					WPSC_ACB_Cache::clear_acb_cache( $session->id );
 					WPSC_ACB_Cookies::delete_session_cookie( 'wpsc_acb_session_id' );
+					delete_transient( self::get_pending_confirmation_key( $session_uuid ) );
 					return array(
 						'success'           => true,
 						'ticket_created'    => true,
@@ -298,6 +378,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			// has already been handed off to a ticket.
 			WPSC_ACB_Cache::clear_acb_cache( $session->id );
 			WPSC_ACB_Cookies::delete_session_cookie( 'wpsc_acb_session_id' );
+			delete_transient( self::get_pending_confirmation_key( $session_uuid ) );
 			return array(
 				'success'           => true,
 				'ticket_created'    => true,
@@ -505,23 +586,69 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 		private static function is_placeholder_identity( $name, $email ) {
 
 			$name = strtolower( trim( (string) $name ) );
+			$name = preg_replace( '/\s+/', ' ', $name );
 			$email = strtolower( trim( (string) $email ) );
 
-			$placeholder_names = array( 'user', 'test', 'customer', 'guest', 'anonymous' );
+			$placeholder_names = array(
+				'user',
+				'test',
+				'testing',
+				'customer',
+				'guest',
+				'anonymous',
+				'demo',
+				'sample',
+				'dummy',
+				'admin',
+				'n/a',
+				'na',
+				'none',
+				'asdf',
+				'test user',
+				'guest user',
+				'john doe',
+				'jane doe',
+				'first last',
+				'firstname lastname',
+			);
 			if ( in_array( $name, $placeholder_names, true ) ) {
 				return true;
 			}
 
-			$placeholder_emails = array(
-				'user@example.com',
-				'test@example.com',
-				'customer@example.com',
-				'guest@example.com',
-				'anonymous@example.com',
+			// Catches variants like "test1", "test 2", "guest99" that a plain list would miss.
+			if ( '' !== $name && preg_match( '/^(test|guest|user|customer|demo|sample|dummy)\s*\d*$/', $name ) ) {
+				return true;
+			}
+
+			$placeholder_local_parts = array( 'user', 'test', 'testing', 'customer', 'guest', 'anonymous', 'demo', 'sample', 'dummy', 'admin', 'noreply', 'no-reply' );
+			$placeholder_domains = array(
+				'example.com',
+				'example.org',
+				'example.net',
+				'test.com',
+				'mailinator.com',
+				'yopmail.com',
+				'guerrillamail.com',
+				'10minutemail.com',
+				'tempmail.com',
+				'fakeinbox.com',
+				'trashmail.com',
+				'sample.com',
+				'domain.com',
 			);
 
-			if ( in_array( $email, $placeholder_emails, true ) ) {
-				return true;
+			if ( '' !== $email && false !== strpos( $email, '@' ) ) {
+				list( $local_part, $domain ) = explode( '@', $email, 2 );
+
+				if ( in_array( $domain, $placeholder_domains, true ) ) {
+					return true;
+				}
+
+				if ( in_array( $local_part, $placeholder_local_parts, true )
+					|| preg_match( '/^(test|guest|user|customer|demo|sample|dummy)\d*$/', $local_part )
+				) {
+					return true;
+				}
 			}
 
 			return false;
@@ -543,6 +670,102 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 			$cookie_val = isset( $_COOKIE[ $cookie_name ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ $cookie_name ] ) ) : '';
 
 			return is_string( $cookie_val ) ? trim( $cookie_val ) : '';
+		}
+
+		/**
+		 * Build the transient key tracking a pending (asked-but-not-yet-created)
+		 * ticket creation offer for a chat session - see
+		 * execute_tool_create_support_ticket().
+		 *
+		 * @param string $session_uuid Session UUID.
+		 * @return string
+		 */
+		private static function get_pending_confirmation_key( $session_uuid ) {
+
+			$session_uuid = sanitize_text_field( (string) $session_uuid );
+			return 'wpsc_acb_ticket_confirm_pending_' . md5( $session_uuid );
+		}
+
+		/**
+		 * Verify, from the assistant's own last actual reply in this session
+		 * (not the model's current tool-call claim), that the customer was
+		 * genuinely asked to confirm ticket creation.
+		 *
+		 * A model calling this tool with confirm_create_ticket=true on two
+		 * separate turns is not, by itself, proof the customer agreed to
+		 * anything - the first call could have been made speculatively while
+		 * the turn's actual final reply addressed something else entirely and
+		 * never mentioned a ticket. Since the reply may be in any language,
+		 * this uses the same kind of cheap same-language judge call already
+		 * used elsewhere in this flow (see
+		 * WPSC_ACB_Chats::reply_implies_ticket_created_via_judge()) rather than
+		 * a keyword match, which would miss a translated question.
+		 *
+		 * @return bool
+		 */
+		private static function was_ticket_confirmation_actually_asked() {
+
+			if ( ! class_exists( 'WPSC_ACB_Chats' ) ) {
+				return false;
+			}
+
+			$history = WPSC_ACB_Chats::get_conversation_history();
+			if ( ! is_array( $history ) || empty( $history ) ) {
+				return false;
+			}
+
+			$last_assistant_text = '';
+			foreach ( array_reverse( $history ) as $message ) {
+
+				$role = isset( $message['role'] ) ? sanitize_key( (string) $message['role'] ) : '';
+				if ( 'assistant' !== $role ) {
+					continue;
+				}
+
+				$content = isset( $message['content'] ) ? (string) $message['content'] : '';
+				if ( '' !== trim( wp_strip_all_tags( $content ) ) ) {
+					$last_assistant_text = $content;
+				}
+				break;
+			}
+
+			$plain_text = trim( wp_strip_all_tags( $last_assistant_text ) );
+			if ( '' === $plain_text ) {
+				return false;
+			}
+
+			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
+			if ( empty( $ai_settings['is-active'] ) || empty( $ai_settings['provider'] ) ) {
+				return false;
+			}
+
+			$provider = WPSC_AIBOT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			if ( ! $provider ) {
+				return false;
+			}
+
+			$judge_system_prompt = 'You are a safety check reviewing one prior customer-support chatbot reply, which may be written in any language. Decide only this: does the reply explicitly ask the customer for permission or confirmation to create, open, or raise a support ticket on their behalf (for example, "would you like me to create a support ticket for this?") - as opposed to any other topic, including merely mentioning an existing ticket, explaining how the customer can reply to a ticket themselves, or stating that a ticket already exists. Respond with exactly one word, in English: YES or NO. No punctuation, no explanation, no other text.';
+
+			$judge_response = $provider->wpsc_get_chat_response(
+				$ai_settings,
+				$plain_text,
+				$judge_system_prompt,
+				array(),
+				array(),
+				array(
+					'tool_choice' => 'none',
+					'max_retries' => 1,
+				)
+			);
+
+			if ( ! is_array( $judge_response ) || empty( $judge_response['success'] ) ) {
+				// Fail closed: if this can't be verified, do not treat it as consent.
+				return false;
+			}
+
+			$verdict = strtoupper( trim( (string) ( $judge_response['response'] ?? '' ) ) );
+
+			return 0 === strpos( $verdict, 'YES' );
 		}
 	}
 

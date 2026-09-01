@@ -54,6 +54,10 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 			if ( ! isset( $acb_settings['popup-display-limit'] ) ) {
 				$acb_settings['popup-display-limit'] = 3;
 			}
+
+			if ( ! isset( $acb_settings['custom-prompt'] ) ) {
+				$acb_settings['custom-prompt'] = '';
+			}
 			?>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-acb-settings">
 				<div class="wpsc-dock-container">
@@ -155,6 +159,16 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 					</span>
 				</div>
 
+				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
+					<div class="label-container">
+						<label for="wpsc-acb-custom-prompt"><?php esc_attr_e( 'Chatbot Custom Prompt (Additional instructions)', 'wpsc-ps' ); ?></label>
+					</div>
+					<textarea id="wpsc-acb-custom-prompt" name="custom-prompt" rows="4"><?php echo esc_textarea( $acb_settings['custom-prompt'] ); ?></textarea>
+					<span class="extra-info">
+					<?php esc_attr_e( 'Add extra instructions for the chatbot, such as tone of voice, business specific rules, or things it should always mention or avoid. These instructions are appended to the chatbot\'s system prompt and applied to every conversation.', 'wpsc-ps' ); ?>
+					</span>
+				</div>
+
 				<input type="hidden" name="action" value="wpsc_set_acb_settings">
 				<input type="hidden" name="_ajax_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpsc_set_acb_settings' ) ); ?>">
 			
@@ -189,7 +203,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 		 */
 		public static function save_settings() {
 
-			if ( check_ajax_referer( 'wpsc_set_acb_settings', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_set_acb_settings', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -239,6 +253,8 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 				wp_send_json_error( __( 'Invalid or missing popup display limit!', 'wpsc-ps' ), 400 );
 			}
 
+			$custom_prompt = isset( $_POST['custom-prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['custom-prompt'] ) ) : '';
+
 			$acb_settings = array(
 				'status'                  => $status,
 				'delete-acb-session-time' => $retention_policy_time,
@@ -248,6 +264,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 				'popup-delay-status'      => $popup_delay_status,
 				'popup-delay'             => $popup_delay,
 				'popup-display-limit'     => $popup_display_limit,
+				'custom-prompt'           => $custom_prompt,
 			);
 			update_option( 'wpsc-ps-acb-chatbot-settings', $acb_settings );
 
@@ -266,7 +283,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 		 */
 		public static function reset_settings() {
 
-			if ( check_ajax_referer( 'wpsc_reset_acb_settings', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_reset_acb_settings', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -285,6 +302,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 					'popup-delay-status'      => '0',
 					'popup-delay'             => 10,
 					'popup-display-limit'     => 3,
+					'custom-prompt'           => '',
 				)
 			);
 

@@ -25,7 +25,7 @@ if ( ! class_exists( 'WPSC_PS_AI_OpenAI' ) ) :
 
 			// Prepare request body.
 			$body = array(
-				'name'     => 'SupportCandy AI Training',
+				'name'     => '[' . esc_url( home_url() ) . '] ' . sanitize_text_field( get_bloginfo( 'name' ) ),
 				'metadata' => array(
 					'site_title'  => sanitize_text_field( get_bloginfo( 'name' ) ),
 					'site_url'    => esc_url( home_url() ),
@@ -109,7 +109,7 @@ if ( ! class_exists( 'WPSC_PS_AI_OpenAI' ) ) :
 
 			switch ( $attempt ) {
 				case 1:
-					return 'gpt-4o-mini';
+					return $model;
 				case 2:
 					return 'gpt-4.1-mini';
 				default:

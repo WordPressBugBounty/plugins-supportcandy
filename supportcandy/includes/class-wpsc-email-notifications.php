@@ -64,6 +64,13 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 		public $body;
 
 		/**
+		 * Ticket object this notification is for
+		 *
+		 * @var WPSC_Ticket
+		 */
+		public $ticket;
+
+		/**
 		 * Email notification template
 		 *
 		 * @var Array
@@ -211,8 +218,15 @@ if ( ! class_exists( 'WPSC_Email_Notifications' ) ) :
 						mkdir( $filepath, 0777, true );
 					}
 					$filepath .= '/' . $attachment->name;
-					copy( $upload_dir['basedir'] . $attachment->file_path, $filepath );
-					$attachments[] = $filepath;
+
+					$source = wp_normalize_path( $attachment->file_path );
+					if ( ! is_file( $source ) ) {
+						$source = trailingslashit( wp_normalize_path( $upload_dir['basedir'] ) ) . ltrim( $source, '/\\' );
+					}
+
+					if ( is_file( $source ) && copy( $source, $filepath ) ) {
+						$attachments[] = $filepath;
+					}
 				endforeach;
 			}
 

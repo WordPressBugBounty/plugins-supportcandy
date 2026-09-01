@@ -115,6 +115,39 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 		}
 
 		/**
+		 * Extract the last "User:" and last "Assistant:" message blocks from a role-tagged
+		 * conversation string (as produced by wpsc_build_prompt_using_agent_ticket_conversation()).
+		 *
+		 * Each block may span multiple lines/paragraphs, so the full block content is captured
+		 * up to the next "User:"/"Assistant:" marker rather than being truncated to its first line.
+		 *
+		 * @param string $context The role-tagged conversation string, optionally wrapped in a
+		 *                        leading/trailing triple-quote fence ("""...""").
+		 * @return array{0: string, 1: string} [ $last_user, $last_assistant ].
+		 */
+		public static function wpsc_extract_last_user_and_assistant_blocks( $context ) {
+
+			$context = trim( (string) $context );
+			$context = preg_replace( '/^"""\s*/', '', $context );
+			$context = preg_replace( '/\s*"""$/', '', $context );
+
+			$last_user = '';
+			$last_assistant = '';
+
+			if ( preg_match_all( '/^(User|Assistant):[ \t]*(.*?)(?=^(?:User|Assistant):|\z)/ims', trim( $context ) . "\n", $blocks, PREG_SET_ORDER ) ) {
+				foreach ( $blocks as $block ) {
+					if ( 0 === strcasecmp( $block[1], 'User' ) ) {
+						$last_user = trim( $block[2] );
+					} else {
+						$last_assistant = trim( $block[2] );
+					}
+				}
+			}
+
+			return array( $last_user, $last_assistant );
+		}
+
+		/**
 		 * Strip a leading/trailing markdown code fence (e.g. ```html ... ``` or ``` ... ```) that an AI
 		 * model may wrap its reply in, despite being instructed not to.
 		 *
@@ -131,6 +164,50 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 			$content = preg_replace( '/^```[a-zA-Z]*\s*\n?/', '', $content );
 			$content = preg_replace( '/\n?```\s*$/', '', $content );
 			return trim( $content );
+		}
+
+		/**
+		 * Parse an AI provider's raw text response for the RAG content-quality check
+		 * (see WPSC_PS_AIT_Controller::wpsc_prompt_to_assess_content_quality_for_rag())
+		 * into a validated quality_score/useful_for_rag pair. Centralized here since
+		 * both the OpenAI and Gemini training providers need identical validation/
+		 * coercion of the same response shape.
+		 *
+		 * @param string $raw_text Raw text returned by the AI provider, expected to be a JSON object.
+		 * @return array|false {'quality_score' => int (0-100), 'useful_for_rag' => bool}, or
+		 *                      false if the response couldn't be parsed into that shape.
+		 */
+		public static function wpsc_parse_rag_quality_response( $raw_text ) {
+
+			if ( empty( $raw_text ) || ! is_string( $raw_text ) ) {
+				return false;
+			}
+
+			$raw_text = self::wpsc_strip_ai_markdown_fences( $raw_text );
+
+			// The model occasionally wraps the JSON in surrounding text despite
+			// instructions not to - pull out just the first {...} object rather than
+			// failing the whole parse.
+			if ( ! preg_match( '/\{.*\}/s', $raw_text, $matches ) ) {
+				return false;
+			}
+
+			$data = json_decode( $matches[0], true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $data ) ) {
+				return false;
+			}
+
+			if ( ! isset( $data['quality_score'] ) || ! isset( $data['useful_for_rag'] ) ) {
+				return false;
+			}
+
+			$quality_score = max( 0, min( 100, (int) round( (float) $data['quality_score'] ) ) );
+
+			return array(
+				'quality_score'  => $quality_score,
+				'useful_for_rag' => (bool) $data['useful_for_rag'],
+			);
 		}
 
 		/**
@@ -338,14 +415,23 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 		/**
 		 * Validate and move uploaded AI files into temp directory.
 		 *
-		 * @param array $files    The $_FILES['wpsc_ai_file_input'] array.
-		 * @param array $settings Plugin settings containing max file size.
+		 * @param array $files      The $_FILES['wpsc_ai_file_input'] array.
+		 * @param array $settings   Plugin settings containing max file size.
+		 * @param bool  $throw_json Whether to fail via wp_send_json_error() (true, the
+		 *                          default - safe for the AJAX admin upload/URL-training
+		 *                          request context) or return a WP_Error (false - required
+		 *                          when called from a cron/background context, since
+		 *                          wp_send_json_error() calls wp_die() and would otherwise
+		 *                          fatally kill that request).
 		 *
 		 * @return array|WP_Error Returns uploaded file data or WP_Error on failure.
 		 */
-		public static function wpsc_validate_ai_file_uploads( $files, $settings ) {
+		public static function wpsc_validate_ai_file_uploads( $files, $settings, $throw_json = true ) {
 
 			if ( empty( $files ) || ! isset( $files['name'] ) ) {
+				if ( ! $throw_json ) {
+					return new WP_Error( 'wpsc_ai_no_files', __( 'No files uploaded.', 'wpsc-ps' ) );
+				}
 				wp_send_json_error( __( 'No files uploaded.', 'wpsc-ps' ), 400 );
 			}
 
@@ -382,6 +468,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 			$upload_dir = wp_upload_dir();
 
 			if ( ! empty( $upload_dir['error'] ) ) {
+				if ( ! $throw_json ) {
+					return new WP_Error( 'wpsc_ai_upload_dir_error', __( 'Upload directory error: ', 'wpsc-ps' ) . $upload_dir['error'] );
+				}
 				wp_send_json_error( __( 'Upload directory error: ', 'wpsc-ps' ) . $upload_dir['error'], 400 );
 			}
 
@@ -396,8 +485,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 
 			// Check writable (IMPORTANT).
 			if ( ! is_writable( $base_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
+				if ( ! $throw_json ) {
+					return new WP_Error( 'wpsc_ai_upload_dir_not_writable', __( 'Upload directory is not writable.', 'wpsc-ps' ) );
+				}
 				wp_send_json_error( __( 'Upload directory is not writable.', 'wpsc-ps' ), 400 );
 			}
+
+			// Reasons individual files were skipped below, keyed by file name - kept so a
+			// $throw_json = false caller can log the actual reason (e.g. size limit
+			// exceeded) instead of a generic "no valid files" message.
+			$skipped = array();
 
 			foreach ( $files['name'] as $index => $name ) {
 
@@ -421,7 +518,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 
 				// File size validation.
 				if ( $size < 1 || $size > $max_size ) {
-					// Optionally, return a specific error for oversize files.
+					if ( $size > $max_size ) {
+						$skipped[] = array(
+							'name'  => $name,
+							'size'  => $size,
+							'limit' => $max_size,
+						);
+					}
 					continue;
 				}
 
@@ -430,6 +533,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 				$info = pathinfo( $safe_name );
 				$filename     = isset( $info['filename'] ) ? $info['filename'] : 'file';
 				$original_ext = isset( $info['extension'] ) ? strtolower( $info['extension'] ) : '';
+
+				// Sanitized name before the uniqueness suffix is appended below - used to detect
+				// re-uploads of the same file so the old training record can be superseded.
+				$original_name = $filename . ( '' !== $original_ext ? '.' . $original_ext : '' );
 
 				// Keep the original extension so that cron-side upload step can correctly detect. the on disk file type. txt json pdf before sending it to the provider.
 				$extension = '' !== $original_ext ? '.' . $original_ext : '';
@@ -460,15 +567,36 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 				$file_url = $upload_dir['baseurl'] . '/wpsc/ai-training/' . $today->format( 'Y' ) . '/' . $today->format( 'm' ) . '/' . $filename;
 
 				$results[] = array(
-					'file'      => '/wpsc/ai-training/' . $today->format( 'Y' ) . '/' . $today->format( 'm' ) . '/' . $filename,
-					'url'       => $file_url,
-					'name'      => $filename,
-					'source'    => $file_ext,
-					'meta_data' => '',
+					'file'          => '/wpsc/ai-training/' . $today->format( 'Y' ) . '/' . $today->format( 'm' ) . '/' . $filename,
+					'url'           => $file_url,
+					'name'          => $filename,
+					'original_name' => $original_name,
+					'source'        => $file_ext,
+					'meta_data'     => '',
 				);
 			}
 
 			if ( empty( $results ) ) {
+
+				if ( ! $throw_json ) {
+
+					if ( ! empty( $skipped ) ) {
+						$reason = $skipped[0];
+						return new WP_Error(
+							'wpsc_ai_file_size_limit_exceeded',
+							sprintf(
+								/* translators: 1: file name, 2: actual file size in bytes, 3: maximum allowed size in bytes */
+								__( 'AI Training: File size limit exceeded. File: %1$s. Size: %2$s bytes. Maximum allowed size: %3$s bytes.', 'wpsc-ps' ),
+								$reason['name'],
+								$reason['size'],
+								$reason['limit']
+							)
+						);
+					}
+
+					return new WP_Error( 'wpsc_ai_no_valid_files', __( 'No valid files processed.', 'wpsc-ps' ) );
+				}
+
 				wp_send_json_error( __( 'No valid files processed.', 'wpsc-ps' ), 400 );
 			}
 
@@ -523,29 +651,8 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 					continue;
 				}
 
-				// SSRF protection: Only allow http/https schemes.
-				$parsed = wp_parse_url( $url );
-				if ( empty( $parsed['scheme'] ) || ! in_array( strtolower( $parsed['scheme'] ), array( 'http', 'https' ), true ) ) {
-					continue;
-				}
-
-				// SSRF protection: DNS resolve and check IP is public.
-				$host = $parsed['host'] ?? '';
-				if ( empty( $host ) ) {
-					continue;
-				}
-				$ips = gethostbynamel( $host );
-				if ( empty( $ips ) ) {
-					continue;
-				}
-				$is_public = true;
-				foreach ( $ips as $ip ) {
-					if ( ! self::wpsc_is_public_ip( $ip ) ) {
-						$is_public = false;
-						break;
-					}
-				}
-				if ( ! $is_public ) {
+				// SSRF protection: only allow http/https schemes resolving to a public IP.
+				if ( ! self::wpsc_is_url_host_public( $url ) ) {
 					continue;
 				}
 
@@ -615,16 +722,38 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 		}
 
 		/**
-		 * Check if an IP address is public (not private/reserved).
+		 * Check that a URL uses http/https and has a host - basic format
+		 * validation only.
 		 *
-		 * @param string $ip The IP address to check.
-		 * @return bool True if the IP is public, false otherwise.
+		 * Previously also required the host to resolve exclusively to
+		 * public (non-private/non-reserved) IP addresses, as an SSRF guard
+		 * for the manual URL-upload flow (wpsc_validate_ai_urls()) and the
+		 * "Website" training source sync (WPSC_PS_AI_Setting_AI_Training_Actions),
+		 * which fetches admin-supplied endpoints on an unattended recurring
+		 * cron. That check was removed at the site owner's explicit request
+		 * so training sources on localhost/private networks (e.g. local
+		 * WordPress dev installs) work without a separate opt-in. Removing
+		 * it means this function - and therefore both call sites above - no
+		 * longer stop an admin-supplied endpoint from pointing at internal
+		 * services (127.0.0.1, cloud metadata endpoints, other hosts on a
+		 * private network); only use training sources you trust.
+		 *
+		 * @param string $url The URL to check.
+		 * @return bool
 		 */
-		private static function wpsc_is_public_ip( $ip ) {
-			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-				return true;
+		public static function wpsc_is_url_host_public( $url ) {
+
+			$parsed = wp_parse_url( $url );
+			if ( empty( $parsed['scheme'] ) || ! in_array( strtolower( $parsed['scheme'] ), array( 'http', 'https' ), true ) ) {
+				return false;
 			}
-			return false;
+
+			$host = $parsed['host'] ?? '';
+			if ( empty( $host ) ) {
+				return false;
+			}
+
+			return true;
 		}
 
 		/**

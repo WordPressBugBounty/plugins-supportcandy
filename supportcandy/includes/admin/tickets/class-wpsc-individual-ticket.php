@@ -254,7 +254,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			if ( ! $auth_code ) {
 				$auth_code = isset( $_REQUEST['auth_code'] ) ? sanitize_text_field( $_REQUEST['auth_code'] ) : ''; // phpcs:ignore
 			}
-			if ( $auth_code && $ticket->auth_code == $auth_code ) {
+			if ( $auth_code && $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) ) {
 				self::$url_auth = true;
 			}
 
@@ -1189,26 +1189,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			<script>
 
-				jQuery(document).find('.thread-text').each(function(){
-					var height = parseInt(jQuery(this).height());
-					<?php
-					$advanced = get_option( 'wpsc-ms-advanced-settings', array() );
-					if ( $advanced['view-more'] ) {
-						?>
-						if( height > 100){
-							jQuery(this).height(100);
-							jQuery(this).parent().find('.wpsc-ticket-thread-expander').text(supportcandy.translations.view_more);
-							jQuery(this).parent().find('.wpsc-ticket-thread-expander').show();
-						}
-						<?php
-					} else {
-						?>
-						jQuery(this).parent().find('.thread-text').height('auto');
-						<?php
-					}
-					?>
-
-				});
+				wpsc_init_thread_expanders(jQuery(document).find('.thread-text'));
 
 				supportcandy.threads = {last_thread: <?php echo esc_attr( $last_id ); ?>}
 			</script>
@@ -1332,7 +1313,7 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 					</div>
 
-					<div class="thread-text">
+					<div class="thread-text<?php echo $advanced['view-more'] ? ' wpsc-collapsed' : ''; ?>">
 						<?php
 						if ( $thread->is_active ) {
 							echo wp_kses_post( $thread->body );
@@ -1735,7 +1716,12 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			// activate description editor img attachments.
 			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(&auth_code=[^&\s]*)?/', $description, $matches ) ) {
 				foreach ( $matches[1] as $id ) {
-					$attachment            = new WPSC_Attachment( $id );
+					$attachment = new WPSC_Attachment( $id );
+					// Do not allow rebinding an attachment that is already owned
+					// by another active ticket, regardless of how it is referenced.
+					if ( ! $attachment->id || ( $attachment->ticket_id && $attachment->is_active ) ) {
+						continue;
+					}
 					$attachment->is_active = 1;
 					$attachment->source_id = $thread->id;
 					$attachment->ticket_id = self::$ticket->id;
@@ -1975,6 +1961,18 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 
 			// description attachments.
 			$attachments = isset( $_POST['description_attachments'] ) ? array_filter( array_map( 'intval', $_POST['description_attachments'] ) ) : array();
+			$validated_attachments = array();
+			foreach ( $attachments as $id ) {
+
+				$attachment = new WPSC_Attachment( $id );
+				if ( ! $attachment->id ||
+					( $attachment->ticket_id && $attachment->is_active ) ) {
+					continue;
+				}
+
+				$validated_attachments[] = $id;
+			}
+			$attachments = $validated_attachments;
 
 			// submit reply.
 			$thread = WPSC_Thread::insert(
@@ -2004,7 +2002,12 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			// activate description editor img attachments.
 			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(&auth_code=[^&\s]*)?/', $description, $matches ) ) {
 				foreach ( $matches[1] as $id ) {
-					$attachment            = new WPSC_Attachment( $id );
+					$attachment = new WPSC_Attachment( $id );
+					// Do not allow rebinding an attachment that is already owned
+					// by another active ticket, regardless of how it is referenced.
+					if ( ! $attachment->id || ( $attachment->ticket_id && $attachment->is_active ) ) {
+						continue;
+					}
 					$attachment->is_active = 1;
 					$attachment->source_id = $thread->id;
 					$attachment->ticket_id = self::$ticket->id;

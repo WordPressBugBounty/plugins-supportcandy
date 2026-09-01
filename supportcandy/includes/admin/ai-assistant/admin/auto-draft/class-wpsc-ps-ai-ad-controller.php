@@ -60,8 +60,13 @@ if ( ! class_exists( 'WPSC_PS_AI_AD_Controller' ) ) :
 		 */
 		public static function wpsc_extract_relevant_ticket_data_for_rag( $ticket ) {
 
+			// Capped to the most recent threads (same technique as
+			// WPSC_PS_AI_Functions::wpsc_get_clean_ticket_history(): fetch DESC then
+			// reverse) to bound the prompt size sent to the AI provider - an
+			// unbounded fetch here risked exceeding the model's context window on
+			// long-running tickets with many replies.
 			$filters = array(
-				'items_per_page' => 0,
+				'items_per_page' => 10,
 				'meta_query'     => array(
 					'relation' => 'AND',
 					array(
@@ -81,7 +86,7 @@ if ( ! class_exists( 'WPSC_PS_AI_AD_Controller' ) ) :
 					),
 				),
 				'orderby'        => 'id',
-				'order'          => 'ASC',
+				'order'          => 'DESC',
 			);
 
 			$threads = WPSC_Thread::find( $filters );
@@ -89,8 +94,10 @@ if ( ! class_exists( 'WPSC_PS_AI_AD_Controller' ) ) :
 				return '';
 			}
 
+			$results = array_reverse( $threads['results'] );
+
 			$data = '';
-			foreach ( $threads['results'] as $thread ) {
+			foreach ( $results as $thread ) {
 				$thread_user = get_user_by( 'email', $thread->customer->email );
 				$role = $thread_user && $thread_user->has_cap( 'wpsc_agent' ) ? 'Agent' : 'Customer';
 				$data .= sprintf(

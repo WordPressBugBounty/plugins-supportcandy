@@ -412,7 +412,6 @@ if ( ! class_exists( 'WPSC_EN_Settings_TN' ) ) :
 								selector:'#'+selector,
 								body_id: body_id,
 								menubar: false,
-								statusbar: false,
 								height : '200',
 								plugins: [
 								'lists link image directionality'

@@ -70,25 +70,38 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 					<div class="wpsc-setting-header">
 						<h2><?php esc_attr_e( 'Customers', 'supportcandy' ); ?></h2>
 					</div>
-					<div class="wpsc-setting-section-body">						
-						<div class="wpsc-feedback-filter-container">
-							<div class="wpsc-filter-container">
-								<div class="wpsc-filter-item" style="min-width: 200px;">
-									<select name="wpsc-cust-list-filter" id="wpsc-cust-list-filter">
-										<?php
-										foreach ( $types as $key => $type ) {
-											$selected = 'selected="selected"';
-											?>
-											<option <?php echo esc_attr( $selected ); ?> value="<?php echo esc_attr( $key ); ?>"><?php echo esc_attr( $type ); ?></option>
-											<?php
-										}
-										?>
-									</select>
-								</div>
-								<div class="wpsc-filter-item" style="min-width: 250px;">
-									<input type="text" id="wpsc-cust-filter-search" placeholder="<?php esc_attr_e( 'Search...', 'supportcandy' ); ?>">
-								</div>
+					<div class="wpsc-setting-section-body">
+						<div class="wpsc-customers-toolbar">
+
+							<div class="wpsc-customers-toolbar-item">
+								<label><?php esc_attr_e( 'Users', 'supportcandy' ); ?></label>
+								<select name="wpsc-cust-list-filter" id="wpsc-cust-list-filter">
+									<?php foreach ( $types as $key => $type ) : ?>
+										<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $key, 'customer_with_tickets' ); ?>><?php echo esc_attr( $type ); ?></option>
+									<?php endforeach; ?>
+								</select>
 							</div>
+
+							<div class="wpsc-customers-toolbar-item">
+								<label><?php esc_attr_e( 'User Type', 'supportcandy' ); ?></label>
+								<select id="wpsc-cust-type-filter">
+									<option value="all"><?php esc_attr_e( 'All types', 'supportcandy' ); ?></option>
+									<option value="registered"><?php esc_attr_e( 'Registered', 'supportcandy' ); ?></option>
+									<option value="guest"><?php esc_attr_e( 'Guest', 'supportcandy' ); ?></option>
+								</select>
+							</div>
+
+							<div class="wpsc-customers-toolbar-item wpsc-customers-toolbar-search">
+								<label><?php esc_attr_e( 'Search', 'supportcandy' ); ?></label>
+								<input type="text" id="wpsc-cust-filter-search" autocomplete="off" placeholder="<?php esc_attr_e( 'Search...', 'supportcandy' ); ?>">
+							</div>
+
+							<div class="wpsc-customers-toolbar-item wpsc-customers-toolbar-reset">
+								<button type="button" class="wpsc-button normal secondary" id="wpsc-cust-reset-filter">
+									<?php esc_attr_e( 'Reset', 'supportcandy' ); ?>
+								</button>
+							</div>
+
 						</div>
 						<?php
 						self::load_customer_list();
@@ -122,17 +135,18 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				</table>
 			</div>
 			<script>
-				function load_customer_list(custType) {
+				function load_customer_list(custType, userType) {
 
 					jQuery('.wpsc_customer_list').dataTable({
 						processing: true,
 						serverSide: true,
 						serverMethod: 'post',
-						ajax: { 
+						ajax: {
 							url: supportcandy.ajax_url,
 							data: {
 								'action': 'wpsc_get_customer_list',
 								'cust_type': custType,
+								'user_type': userType,
 								'_ajax_nonce': '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_customer_list' ) ); ?>'
 							}
 						},
@@ -145,11 +159,13 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 						],
 						'bDestroy': true,
 						'searching': true,
-						'ordering': false,
+						'ordering': true,
+						order: [[ 3, 'desc' ]],
 						'bLengthChange': false,
 						pageLength: 20,
-						columnDefs: [ 
+						columnDefs: [
 							{ targets: '_all', className: 'dt-left' },
+							{ targets: [ 0, 1, 2, 4 ], orderable: false },
 						],
 						language: supportcandy.translations.datatables
 					});
@@ -157,16 +173,25 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 
 				jQuery(document).ready(function() {
 
-					load_customer_list('customer_with_tickets');
+					jQuery('#wpsc-cust-list-filter').selectWoo({ minimumResultsForSearch: 0, width: '100%' });
+					jQuery('#wpsc-cust-type-filter').selectWoo({ minimumResultsForSearch: 0, width: '100%' });
+
+					load_customer_list('customer_with_tickets', 'all');
 
 					jQuery('#wpsc-cust-filter-search').on('keyup', function() {
 						var searchTerm = jQuery(this).val();
 						jQuery('table.wpsc_customer_list').DataTable().search(searchTerm).draw();
 					});
 
-					jQuery('#wpsc-cust-list-filter').on('change', function(){
-						var custType = jQuery(this).val();
-						load_customer_list(custType);
+					jQuery('#wpsc-cust-list-filter, #wpsc-cust-type-filter').on('change', function(){
+						load_customer_list( jQuery('#wpsc-cust-list-filter').val(), jQuery('#wpsc-cust-type-filter').val() );
+					});
+
+					jQuery('#wpsc-cust-reset-filter').on('click', function() {
+						jQuery('#wpsc-cust-list-filter').val('customer_with_tickets').trigger('change.select2');
+						jQuery('#wpsc-cust-type-filter').val('all').trigger('change.select2');
+						jQuery('#wpsc-cust-filter-search').val('');
+						load_customer_list('customer_with_tickets', 'all');
 					});
 				});
 
@@ -197,12 +222,37 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 			$page_no    = ( $start / $rowperpage ) + 1;
 			$cust_type = isset( $_POST['cust_type'] ) ? sanitize_text_field( wp_unslash( $_POST['cust_type'] ) ) : 'customer_with_tickets';
 
+			$user_type = isset( $_POST['user_type'] ) ? sanitize_text_field( wp_unslash( $_POST['user_type'] ) ) : 'all';
+			if ( ! in_array( $user_type, array( 'all', 'guest', 'registered' ), true ) ) {
+				$user_type = 'all';
+			}
+
+			// Whitelisted map of sortable DataTables column index to actual DB column - only
+			// "Number of tickets" is backed by a real, sortable query column.
+			$sortable_columns = array(
+				3 => 'ticket_count',
+			);
+
+			$orderby = 'ticket_count';
+			$order   = 'DESC';
+
+			if ( isset( $_POST['order'][0]['column'] ) ) {
+				$order_column = intval( $_POST['order'][0]['column'] );
+				if ( isset( $sortable_columns[ $order_column ] ) ) {
+					$orderby = $sortable_columns[ $order_column ];
+				}
+			}
+
+			if ( isset( $_POST['order'][0]['dir'] ) && 'asc' === strtolower( sanitize_text_field( wp_unslash( $_POST['order'][0]['dir'] ) ) ) ) {
+				$order = 'ASC';
+			}
+
 			$args = array(
 				'search'         => $search,
 				'items_per_page' => $rowperpage,
 				'page_no'        => $page_no,
-				'orderby'        => 'ticket_count',
-				'order'          => 'DESC',
+				'orderby'        => $orderby,
+				'order'          => $order,
 				'meta_query'     => array(
 					'relation' => 'AND',
 				),
@@ -220,6 +270,20 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 			if ( $cust_type == 'all' ) {
 
 				$args['meta_query'][] = array();
+			}
+
+			if ( 'guest' === $user_type ) {
+				$args['meta_query'][] = array(
+					'slug'    => 'user',
+					'compare' => '=',
+					'val'     => 0,
+				);
+			} elseif ( 'registered' === $user_type ) {
+				$args['meta_query'][] = array(
+					'slug'    => 'user',
+					'compare' => '>',
+					'val'     => 0,
+				);
 			}
 
 			$args = apply_filters( 'wpsc_get_customer_list_filters', $args, $cust_type );
@@ -254,8 +318,13 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 				<?php
 				$actions = ob_get_clean();
 
+				$name_cell = '<div class="wpsc-cust-name-cell">
+						<div class="wpsc-cust-avatar">' . get_avatar( $customer->email, 28 ) . '</div>
+						<span class="wpsc-link" onclick="wpsc_view_customer_detailed_info( ' . $customer->id . ', \'' . wp_create_nonce( 'wpsc_view_customer_detailed_info' ) . '\' )">' . esc_html( $customer->name ) . '</span>
+					</div>';
+
 				$data[] = array(
-					'name'    => '<span class="wpsc-link" onclick="wpsc_view_customer_detailed_info( ' . $customer->id . ', \'' . wp_create_nonce( 'wpsc_view_customer_detailed_info' ) . '\' )">' . esc_html( $customer->name ) . '</span>',
+					'name'    => $name_cell,
 					'email'   => $customer->email,
 					'type'    => ! is_object( $customer->user ) ? esc_attr__( 'Guest', 'supportcandy' ) : esc_attr__( 'Registered', 'supportcandy' ),
 					'tickets' => $customer->ticket_count,
@@ -990,8 +1059,11 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 					$tickets = WPSC_Ticket::find( $filters )['results'];
 					if ( $tickets ) {
 						foreach ( $tickets as $ticket ) {
+							// Backend link (view = 0) so it opens the ticket in wp-admin, regardless
+							// of how the frontend "open ticket page" is configured.
+							$ticket_url = WPSC_Functions::get_ticket_url( $ticket->id, 0 );
 							?>
-							<tr>
+							<tr class="wpsc-cust-ticket-row" onclick="window.open('<?php echo esc_url( $ticket_url ); ?>', '_blank');" title="<?php esc_attr_e( 'Open ticket', 'supportcandy' ); ?>">
 							<?php
 							foreach ( $list_items as $slug ) {
 								$cf = WPSC_Custom_Field::get_cf_by_slug( $slug );
@@ -999,7 +1071,7 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 									continue;
 								}
 								?>
-								<td onmouseover="link=true;">
+								<td>
 									<?php
 									if ( in_array( $cf->field, array( 'ticket', 'agentonly' ) ) ) {
 										$cf->type::print_tl_ticket_field_val( $cf, $ticket );
@@ -1044,23 +1116,35 @@ if ( ! class_exists( 'WPSC_Customers' ) ) :
 		 * @return void
 		 */
 		public static function get_customers_customer_fields( $customer ) {
+
+			$properties = array(
+				'is-required' => 0,
+				'width'       => 'full',
+				'visibility'  => '',
+			);
+
+			// Render into a buffer first so we can tell whether there is anything to show at all
+			// (no applicable customer fields, and nothing added via the body hook either) before
+			// committing to the form + action buttons.
+			ob_start();
+			foreach ( WPSC_Custom_Field::$custom_fields as $cf ) {
+				if ( $cf->field !== 'customer' || in_array( $cf->slug, WPSC_DF_Customer::$ignore_customer_info_cft ) ) {
+					continue;
+				}
+				echo $cf->type::print_edit_customer_info( $cf, $customer, $properties ); // phpcs:ignore
+			}
+			do_action( 'wpsc_get_edit_customer_info_body', $customer );
+			$fields_html = ob_get_clean();
+
+			if ( '' === trim( $fields_html ) ) {
+				?>
+				<p class="wpsc-cust-cf-empty"><?php esc_attr_e( 'No custom fields found for this customer.', 'supportcandy' ); ?></p>
+				<?php
+				return;
+			}
 			?>
 			<form action="#" onsubmit="return false;" class="frm-edit-customer-info">
-				<?php
-				$cf = WPSC_Custom_Field::get_cf_by_slug( 'name' );
-				foreach ( WPSC_Custom_Field::$custom_fields as $cf ) {
-					if ( $cf->field !== 'customer' || in_array( $cf->slug, WPSC_DF_Customer::$ignore_customer_info_cft ) ) {
-						continue;
-					}
-					$properties = array(
-						'is-required' => 0,
-						'width'       => 'full',
-						'visibility'  => '',
-					);
-					echo $cf->type::print_edit_customer_info( $cf, $customer, $properties ); // phpcs:ignore
-				}
-				do_action( 'wpsc_get_edit_customer_info_body', $customer );
-				?>
+				<?php echo $fields_html; // phpcs:ignore ?>
 				<input type="hidden" name="action" value="wpsc_set_edit_customer_info"/>
 				<input type="hidden" name="id" value="<?php echo esc_attr( $customer->id ); ?>">
 				<input type="hidden" name="name" value="<?php echo esc_attr( $customer->name ); ?>">

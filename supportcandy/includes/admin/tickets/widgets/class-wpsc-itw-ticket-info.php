@@ -101,7 +101,7 @@ if ( ! class_exists( 'WPSC_ITW_Ticket_Info' ) ) :
 					</div>
 					<?php
 					$misc = is_array( $ticket->misc ) ? $ticket->misc : array();
-					if ( ! empty( $misc['chat_session_id'] && $current_user->has_cap( 'manage_options' ) ) ) :
+					if ( ! empty( $misc['chat_session_id'] ) && $current_user->has_cap( 'manage_options' ) ) :
 						$chat_session_url = admin_url( 'admin.php?page=wpsc-ai-chatbot&session_id=' . absint( $misc['chat_session_id'] ) );
 						?>
 						<div class="info-list-item">

@@ -110,7 +110,6 @@ if ( ! class_exists( 'WPSC_EN_Guest_Login_OTP' ) ) :
 									selector:'#'+selector,
 									body_id: body_id,
 									menubar: false,
-									statusbar: false,
 									height : '200',
 									plugins: [
 									'lists link image directionality paste'

@@ -1077,7 +1077,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 							if ( ! $has_auth ) {
 								$auth_code = isset( $_REQUEST['auth_code'] ) ? sanitize_text_field( $_REQUEST['auth_code'] ) : ''; // phpcs:ignore
-								if ( ! $auth_code || $auth_code != $ticket->auth_code ) {
+								if ( ! $auth_code || ! $ticket->auth_code || ! hash_equals( (string) $ticket->auth_code, $auth_code ) ) {
 									wp_send_json_error( 'Unauthorized!', 401 );
 								}
 							}
@@ -1093,7 +1093,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 								$has_access = (
 									( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
 									$ticket_class::is_customer() ||
-									( ! $advanced['ticket-url-auth'] && $ticket->auth_code === $auth_code )
+									( ! $advanced['ticket-url-auth'] && $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
 								);
 
 								if ( ! $has_access ) {
@@ -1132,7 +1132,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 						if ( ! $has_auth ) {
 							$auth_code = isset( $_REQUEST['auth_code'] ) ? sanitize_text_field( $_REQUEST['auth_code'] ) : ''; // phpcs:ignore
-							if ( ! $auth_code || $auth_code != $ticket->auth_code ) {
+							if ( ! $auth_code || ! $ticket->auth_code || ! hash_equals( (string) $ticket->auth_code, $auth_code ) ) {
 								wp_send_json_error( 'Unauthorized!', 401 );
 							}
 						}
@@ -1148,7 +1148,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 							$has_access = (
 								( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
 								$ticket_class::is_customer() ||
-								( ! $advanced['ticket-url-auth'] && $ticket->auth_code === $auth_code )
+								( ! $advanced['ticket-url-auth'] && $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
 							);
 
 							if ( ! $has_access ) {
@@ -1169,7 +1169,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 						if ( ! $has_auth ) {
 							$auth_code = isset( $_REQUEST['auth_code'] ) ? sanitize_text_field( $_REQUEST['auth_code'] ) : ''; // phpcs:ignore
-							if ( ! $auth_code || $auth_code != $ticket->auth_code ) {
+							if ( ! $auth_code || ! $ticket->auth_code || ! hash_equals( (string) $ticket->auth_code, $auth_code ) ) {
 								wp_send_json_error( 'Unauthorized!', 401 );
 							}
 						}
@@ -1212,7 +1212,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 								! (
 									( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
 									$ticket_class::is_customer() ||
-									( $ticket->auth_code == $auth_code )
+									( $ticket->auth_code && $auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
 								)
 							) {
 								wp_send_json_error( 'Unauthorized!', 401 );
@@ -1223,6 +1223,13 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 						}
 						break;
 					case 'img_editor_tmp':
+						// Not yet attached to any ticket/thread, so there is no auth-code
+						// to check it against. Gate on the per-attachment nonce that was
+						// handed only to whoever uploaded it.
+						$view_nonce = isset( $_REQUEST['wpsc_nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['wpsc_nonce'] ) ) : ''; // phpcs:ignore
+						if ( ! $view_nonce || ! wp_verify_nonce( $view_nonce, self::get_img_editor_tmp_nonce_action( $attachment->id ) ) ) {
+							wp_send_json_error( 'Unauthorized!', 401 );
+						}
 						self::file_download( $attachment );
 				}
 			}
@@ -1334,13 +1341,29 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 					wp_send_json_error( 'Something went wrong!', 500 );
 				}
 
-				wp_send_json( array( 'imgURL' => home_url( '/' ) . '?wpsc_attachment=' . $attachment->id ) );
+				// Temporary in-editor images have no ticket yet to check an auth-code
+				// against, so gate access with a per-attachment nonce instead, known
+				// only to whoever just uploaded it via this response.
+				$view_nonce = wp_create_nonce( self::get_img_editor_tmp_nonce_action( $attachment->id ) );
+
+				wp_send_json( array( 'imgURL' => home_url( '/' ) . '?wpsc_attachment=' . $attachment->id . '&wpsc_nonce=' . $view_nonce ) );
 
 			} else {
 
 				$error_message = isset( $uploaded_file['error'] ) ? $uploaded_file['error'] : 'Something went wrong!';
 				wp_send_json_error( $error_message, 500 );
 			}
+		}
+
+		/**
+		 * Nonce action used to gate access to a not-yet-attached (img_editor_tmp)
+		 * in-editor image, since it isn't yet tied to any ticket/auth-code.
+		 *
+		 * @param int $attachment_id - attachment id.
+		 * @return string
+		 */
+		private static function get_img_editor_tmp_nonce_action( $attachment_id ) {
+			return 'wpsc_view_img_editor_tmp_' . $attachment_id;
 		}
 	}
 endif;

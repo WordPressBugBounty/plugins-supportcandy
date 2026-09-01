@@ -107,24 +107,27 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting' ) ) :
 				self::$tabs = array_merge(
 					self::$tabs,
 					array(
-						'website'     => array(
+						'website'          => array(
 							'slug'     => 'website',
 							'label'    => esc_attr__( 'Websites', 'wpsc-ps' ),
 							'callback' => 'wpsc_get_aia_website_setting',
 						),
-						'file-upload' => array(
+						'file-upload'      => array(
 							'slug'     => 'file_upload',
 							'label'    => esc_attr__( 'File Uploads', 'wpsc-ps' ),
 							'callback' => 'wpsc_get_aia_file_upload_setting',
 						),
-					),
-					array(
-						'ai-logs' => array(
+						'ai-training-data' => array(
+							'slug'     => 'ai_training_data',
+							'label'    => esc_attr__( 'AI Training Data', 'wpsc-ps' ),
+							'callback' => 'wpsc_get_aia_training_data_setting',
+						),
+						'ai-logs'          => array(
 							'slug'     => 'ai_logs',
 							'label'    => esc_attr__( 'AI Logs', 'wpsc-ps' ),
 							'callback' => 'wpsc_get_aia_logs_setting',
 						),
-					)
+					),
 				);
 			}
 			self::$current_tab = isset( $_REQUEST['tab'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['tab'] ) ) : 'general'; // phpcs:ignore

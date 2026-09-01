@@ -265,6 +265,11 @@ if ( ! class_exists( 'WPSC_RAG_Training_File' ) ) :
 				return false;
 			}
 
+			// Stamp date_updated on every persisted change so staleness checks
+			// (e.g. reset_stale_processing_files()) measure time since the row was
+			// actually last touched, not just time since it was first inserted.
+			$this->data['date_updated'] = ( new DateTime() )->format( 'Y-m-d H:i:s' );
+
 			$data = $this->data;
 
 			unset( $data['id'] );

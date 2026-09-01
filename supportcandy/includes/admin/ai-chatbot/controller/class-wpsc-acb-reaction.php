@@ -38,14 +38,16 @@ if ( ! class_exists( 'WPSC_ACB_Reaction' ) ) :
 		/**
 		 * Get label by reaction.
 		 *
-		 * @param int $reaction Reaction value.
+		 * @param mixed $reaction Reaction value - callers may pass it straight from
+		 *                        $_POST (a string, e.g. via sanitize_text_field()), so
+		 *                        this must not assume it's already an int.
 		 * @return string
 		 */
-		public static function get_label( int $reaction ): string {
+		public static function get_label( $reaction ): string {
 
 			$labels = self::get_labels();
 
-			return $labels[ $reaction ] ?? esc_attr__( 'Unknown', 'wpsc-ps' );
+			return $labels[ (int) $reaction ] ?? esc_attr__( 'Unknown', 'wpsc-ps' );
 		}
 
 		/**
@@ -60,24 +62,34 @@ if ( ! class_exists( 'WPSC_ACB_Reaction' ) ) :
 		/**
 		 * Check if reaction is valid.
 		 *
-		 * @param int $reaction Reaction value.
+		 * @param mixed $reaction Reaction value - callers may pass it straight from
+		 *                        $_POST (a string, e.g. via sanitize_text_field()), so
+		 *                        this must not assume it's already an int: a strict
+		 *                        int-typed parameter would fatal with a TypeError on a
+		 *                        non-numeric string instead of just returning false.
 		 * @return bool
 		 */
-		public static function is_valid( int $reaction ): bool {
-			return in_array( $reaction, self::values(), true );
+		public static function is_valid( $reaction ): bool {
+
+			if ( ! is_numeric( $reaction ) ) {
+				return false;
+			}
+			return in_array( (int) $reaction, self::values(), true );
 		}
 
 		/**
 		 * Get formatted HTML badge for reaction.
 		 *
-		 * @param int $reaction Reaction value.
+		 * @param mixed $reaction Reaction value - see is_valid().
 		 * @return string
 		 */
-		public static function get_badge( int $reaction ): string {
+		public static function get_badge( $reaction ): string {
 
 			if ( ! self::is_valid( $reaction ) ) {
 				return '';
 			}
+			$reaction = (int) $reaction;
+
 			$classes = array(
 				self::HAPPY   => 'happy',
 				self::UNHAPPY => 'unhappy',

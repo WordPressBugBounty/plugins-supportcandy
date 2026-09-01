@@ -815,102 +815,108 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			$string_translations[ 'wpsc-cf-name-' . $wpdb->insert_id ] = $name;
 
-			// Insert default category.
-			$name = __( 'General', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_categories',
-				array(
-					'name'       => $name,
-					'load_order' => 1,
-				)
-			);
-			$string_translations[ 'wpsc-category-' . $wpdb->insert_id ] = $name;
+			// Insert default category, guarded against re-running initial_setup().
+			if ( ! $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_categories LIMIT 1" ) ) {
+				$name = __( 'General', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_categories',
+					array(
+						'name'       => $name,
+						'load_order' => 1,
+					)
+				);
+				$string_translations[ 'wpsc-category-' . $wpdb->insert_id ] = $name;
+			}
 
-			// Insert default statuses.
-			$name = __( 'Open', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_statuses',
-				array(
-					'name'       => $name,
-					'color'      => '#ec1010',
-					'bg_color'   => '#ffe7e1',
-					'load_order' => 1,
-				)
-			);
-			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
+			// Insert default statuses, guarded against re-running initial_setup().
+			if ( ! $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_statuses LIMIT 1" ) ) {
+				$name = __( 'Open', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_statuses',
+					array(
+						'name'       => $name,
+						'color'      => '#ec1010',
+						'bg_color'   => '#ffe7e1',
+						'load_order' => 1,
+					)
+				);
+				$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
-			$name = __( 'Awaiting customer reply', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_statuses',
-				array(
-					'name'       => $name,
-					'color'      => '#8222E6',
-					'bg_color'   => '#E9D3FF',
-					'load_order' => 2,
-				)
-			);
-			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
+				$name = __( 'Awaiting customer reply', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_statuses',
+					array(
+						'name'       => $name,
+						'color'      => '#8222E6',
+						'bg_color'   => '#E9D3FF',
+						'load_order' => 2,
+					)
+				);
+				$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
-			$name = __( 'Awaiting agent reply', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_statuses',
-				array(
-					'name'       => $name,
-					'color'      => '#EB961C',
-					'bg_color'   => '#FFEBCE',
-					'load_order' => 3,
-				)
-			);
-			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
+				$name = __( 'Awaiting agent reply', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_statuses',
+					array(
+						'name'       => $name,
+						'color'      => '#EB961C',
+						'bg_color'   => '#FFEBCE',
+						'load_order' => 3,
+					)
+				);
+				$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
 
-			$name = __( 'Closed', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_statuses',
-				array(
-					'name'       => $name,
-					'color'      => '#22940d',
-					'bg_color'   => '#c1ffcf',
-					'load_order' => 4,
-				)
-			);
-			$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
+				$name = __( 'Closed', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_statuses',
+					array(
+						'name'       => $name,
+						'color'      => '#22940d',
+						'bg_color'   => '#c1ffcf',
+						'load_order' => 4,
+					)
+				);
+				$string_translations[ 'wpsc-status-' . $wpdb->insert_id ] = $name;
+			}
 
-			// Insert default priorities.
-			$name = __( 'Low', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_priorities',
-				array(
-					'name'       => $name,
-					'color'      => '#22940d',
-					'bg_color'   => '#c1ffcf',
-					'load_order' => 1,
-				)
-			);
-			$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
+			// Insert default priorities, guarded against re-running initial_setup().
+			if ( ! $wpdb->get_var( "SELECT id FROM {$wpdb->prefix}psmsc_priorities LIMIT 1" ) ) {
+				$name = __( 'Low', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_priorities',
+					array(
+						'name'       => $name,
+						'color'      => '#22940d',
+						'bg_color'   => '#c1ffcf',
+						'load_order' => 1,
+					)
+				);
+				$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
 
-			$name = __( 'Medium', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_priorities',
-				array(
-					'name'       => $name,
-					'color'      => '#EB961C',
-					'bg_color'   => '#FFEBCE',
-					'load_order' => 2,
-				)
-			);
-			$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
+				$name = __( 'Medium', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_priorities',
+					array(
+						'name'       => $name,
+						'color'      => '#EB961C',
+						'bg_color'   => '#FFEBCE',
+						'load_order' => 2,
+					)
+				);
+				$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
 
-			$name = __( 'High', 'supportcandy' );
-			$wpdb->insert(
-				$wpdb->prefix . 'psmsc_priorities',
-				array(
-					'name'       => $name,
-					'color'      => '#ec1010',
-					'bg_color'   => '#ffe7e1',
-					'load_order' => 3,
-				)
-			);
-			$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
+				$name = __( 'High', 'supportcandy' );
+				$wpdb->insert(
+					$wpdb->prefix . 'psmsc_priorities',
+					array(
+						'name'       => $name,
+						'color'      => '#ec1010',
+						'bg_color'   => '#ffe7e1',
+						'load_order' => 3,
+					)
+				);
+				$string_translations[ 'wpsc-priority-' . $wpdb->insert_id ] = $name;
+			}
 
 			// company working hrs.
 			for ( $i = 1; $i <= 7; $i++ ) {
@@ -1467,10 +1473,21 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				)
 			);
 
+			// Create a support page with the [supportcandy] shortcode.
+			$support_page_id = wp_insert_post(
+				array(
+					'post_title'   => esc_html__( 'Support', 'supportcandy' ),
+					'post_content' => '[supportcandy]',
+					'post_status'  => 'publish',
+					'post_type'    => 'page',
+				)
+			);
+			$support_page_id = is_wp_error( $support_page_id ) ? 0 : $support_page_id;
+
 			update_option(
 				'wpsc-gs-page-settings',
 				array(
-					'support-page'            => 0,
+					'support-page'            => $support_page_id,
 					'open-ticket-page'        => 0,
 					'ticket-url-page'         => 'support-page',
 					'new-ticket-page'         => 'default',
@@ -2076,6 +2093,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					'popup-delay-status'      => '0',
 					'popup-delay'             => 10,
 					'popup-display-limit'     => 3,
+					'custom-prompt'           => '',
 				)
 			);
 
@@ -2889,6 +2907,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 							'popup-delay-status'      => '0',
 							'popup-delay'             => 10,
 							'popup-display-limit'     => 3,
+							'custom-prompt'           => '',
 						)
 					);
 				}
@@ -2994,6 +3013,13 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				$chatbot['popup-delay-status'] = '0';
 				$chatbot['popup-delay'] = 10;
 				$chatbot['popup-display-limit'] = 3;
+				update_option( 'wpsc-ps-acb-chatbot-settings', $chatbot );
+			}
+
+			if ( version_compare( self::$current_version, '3.5.3', '<' ) ) {
+
+				$chatbot = get_option( 'wpsc-ps-acb-chatbot-settings' );
+				$chatbot['custom-prompt'] = '';
 				update_option( 'wpsc-ps-acb-chatbot-settings', $chatbot );
 			}
 

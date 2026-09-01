@@ -38,6 +38,14 @@ if ( ! class_exists( 'WPSC_Frontend' ) ) :
 					return;
 				}
 
+				// Validate the submitted auth code against the stored one before
+				// doing anything with the ticket. Never redirect to (and thereby
+				// disclose) the real ticket URL/auth code for an invalid guess.
+				$submitted_auth_code = sanitize_text_field( wp_unslash( $_REQUEST['auth_code'] ) ); // phpcs:ignore
+				if ( ! $ticket->auth_code || ! $submitted_auth_code || ! hash_equals( (string) $ticket->auth_code, $submitted_auth_code ) ) {
+					return;
+				}
+
 				wp_safe_redirect( $ticket->get_url() );
 				exit;
 			}

@@ -42,12 +42,21 @@ if ( ! class_exists( 'WPSC_Content_Extractor' ) ) :
 		}
 
 		/**
-		 * Extracts the main content from raw HTML.
+		 * Extracts the main content from raw HTML (a fetched page or a WP post's
+		 * rendered content fragment) as deterministic, structure-preserving plain
+		 * text - no LLM involved, so nothing here summarizes or truncates the
+		 * document. Shared by fetch_and_extract_content() (URL training source)
+		 * and WPSC_PS_AIT_Controller::wpsc_prepare_post_content_for_rag() (post
+		 * type/website sync training source).
 		 *
 		 * @param string $html The raw HTML to extract content from.
 		 * @return string The extracted main content, or an empty string on failure.
 		 */
-		private static function extract_from_html( $html ) {
+		public static function extract_from_html( $html ) {
+
+			if ( empty( $html ) || ! is_string( $html ) ) {
+				return '';
+			}
 
 			libxml_use_internal_errors( true );
 

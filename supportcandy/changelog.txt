@@ -1,5 +1,19 @@
 == Changelog ==
 
+= 3.5.3 (September 01, 2026) =
+* New: Added custom chatbot prompt instructions
+* New: Added “Last Reply” ticket condition
+* New: Added sorting to ticket list headers
+* New: Added sorting handle for form fields
+* Fix: Cloned agent roles missing permissions
+* Fix: Fixed View More/Less link functionality
+* Fix: Custom field attachments missing from notifications
+* Fix: Preserved links in chatbot replies
+* Fix: Fixed chatbot button display on mobile
+* Fix: Skipped near-empty records during ai training synchronization
+* Fix: Prevented raw JSON from appearing in chatbot
+* Fix: Addressed security vulnerability issue
+
 = 3.5.2 (August 11, 2026) =
 * New: Added chatbot auto-popup setting
 * Fix: Addressed security vulnerability issue

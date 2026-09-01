@@ -117,6 +117,7 @@ window.WPSC_AI_Chatbot.render =
 		const wrapper = document.createElement( 'div' );
 		wrapper.innerHTML = this.getTemplate() + this.getModalTemplate();
 		this.shadowRoot.appendChild( wrapper );
+		this.setWelcomeTime();
 	};
 
 // Cache frequently accessed chatbot elements.
@@ -194,6 +195,7 @@ window.WPSC_AI_Chatbot.bindEvents =
 				const activeSessionId = launcher?.getAttribute( 'data-sessionid' ) || '';
 				if ( ! activeSessionId ) {
 					body.innerHTML = self.getWelcomeMessageTemplate();
+					self.setWelcomeTime( body );
 				}
 			}
 		);
@@ -361,7 +363,8 @@ window.WPSC_AI_Chatbot.bindEvents =
 							event.preventDefault();
 							const reaction = event.currentTarget?.dataset?.reaction || '';
 							const sessionId = event.currentTarget?.dataset?.sessionid || '';
-							self.saveChatReaction( reaction, sessionId );
+							const ticketCreated = event.currentTarget?.dataset?.ticketcreated === 'true';
+							self.saveChatReaction( reaction, sessionId, ticketCreated );
 						}
 					);
 				}
@@ -699,10 +702,13 @@ window.WPSC_AI_Chatbot.getPreviousMessages =
 				if ( ! body ) {
 					return;
 				}
-				self.debugLog( 'HISTORY_LOAD', 'rendering ' + ( response.data?.length || 0 ) + ' previous message(s)' );
+				const messages = response.data?.messages || [];
+				self.debugLog( 'HISTORY_LOAD', 'rendering ' + messages.length + ' previous message(s)' );
 				body.innerHTML = self.getWelcomeMessageTemplate();
-				response.data.forEach( ( message ) => {
-					self.appendMessage( message.role, message.content );
+				// Anchor the welcome message to when the session actually started, not to this refresh.
+				self.setWelcomeTime( body, response.data?.session_started );
+				messages.forEach( ( message ) => {
+					self.appendMessage( message.role, message.content, message.date_created );
 				} );
 			}
 		).fail(
@@ -819,7 +825,16 @@ window.WPSC_AI_Chatbot.sendMessage =
 					closeBtn?.setAttribute( 'data-sessionid', response.data.session_id );
 					modalFooterAskMeLater?.setAttribute( 'data-sessionid', response.data.session_id );
 					modalReactionBtns.forEach( ( btn ) => {
-						btn?.setAttribute( 'data-sessionid', response.data.session_id );
+						if ( ! btn ) {
+							return;
+						}
+						// A different session id means a brand-new chat session just started
+						// (e.g. after Skip/Cancel, or the post-ticket-creation auto-reset) - the
+						// previous session's "ticket already created" flag no longer applies here.
+						if ( btn.dataset.ticketcreated === 'true' && btn.getAttribute( 'data-sessionid' ) !== response.data.session_id ) {
+							btn.setAttribute( 'data-ticketcreated', 'false' );
+						}
+						btn.setAttribute( 'data-sessionid', response.data.session_id );
 					} );
 					submitBtn?.setAttribute( 'data-sessionid', response.data.session_id );
 					cancelBtn?.setAttribute( 'data-sessionid', response.data.session_id );
@@ -899,7 +914,7 @@ window.WPSC_AI_Chatbot.sendMessage =
 // Append message to chat body.
 window.WPSC_AI_Chatbot.appendMessage =
 
-	function( type, message ) {
+	function( type, message, date_created ) {
 		this.cacheElements();
 		const body = this.elements?.body;
 		if ( ! body ) {
@@ -908,11 +923,15 @@ window.WPSC_AI_Chatbot.appendMessage =
 		}
 
 		const wrapper = document.createElement( 'div' );
-		const currentTime = new Date().toLocaleTimeString( [], {
-					hour: 'numeric',
-					minute: '2-digit'
-				}
-			);
+		// Use the message's own stored date (e.g. when re-rendering history on refresh) so its
+		// displayed time stays fixed, rather than always showing the live current time.
+		// date_created is stored in UTC ('Y-m-d H:i:s'); mark it explicitly as UTC so the browser
+		// converts it to the visitor's local time instead of parsing it as already-local.
+		let messageDate = date_created ? new Date( String( date_created ).replace( ' ', 'T' ) + 'Z' ) : new Date();
+		if ( isNaN( messageDate.getTime() ) ) {
+			messageDate = new Date();
+		}
+		const currentTime = this.formatTime( messageDate );
 
 		let sender = 'Assistant';
 		let className = 'wpsc-chatbot__system__message';
@@ -944,6 +963,58 @@ window.WPSC_AI_Chatbot.appendMessage =
 		body.appendChild( wrapper );
 		body.scrollTop = body.scrollHeight;
 		this.debugLog( 'APPEND_MESSAGE', 'message node appended to DOM, sender=' + sender + ', length=' + formattedMessage.length );
+	};
+
+// Fill in the static welcome message's time using the visitor's local time.
+// The PHP templates render this markup once (server-side) with an empty
+// placeholder, since a static server-rendered time can't reflect each visitor's timezone.
+// When re-rendering an existing session (e.g. after a page refresh), pass the session's
+// own start date_created so this stays fixed instead of jumping to the refresh time.
+window.WPSC_AI_Chatbot.setWelcomeTime =
+
+	function( root, date_created ) {
+		const scope = root || this.shadowRoot;
+		if ( ! scope ) {
+			return;
+		}
+		let time = date_created ? new Date( String( date_created ).replace( ' ', 'T' ) + 'Z' ) : new Date();
+		if ( isNaN( time.getTime() ) ) {
+			time = new Date();
+		}
+		const formattedTime = this.formatTime( time );
+		scope.querySelectorAll( '.wpsc-chatbot__welcome-time' ).forEach( ( el ) => {
+			el.textContent = formattedTime;
+		} );
+	};
+
+// Format a Date using the site's WordPress "Time Format" setting (Settings > General),
+// so chat timestamps match the format admins/visitors already see elsewhere on the site.
+window.WPSC_AI_Chatbot.formatTime =
+
+	function( date ) {
+		const format = ( window.WPSC_AI_Chatbot_Config && window.WPSC_AI_Chatbot_Config.time_format ) || 'g:i a';
+		const hours24 = date.getHours();
+		const hours12 = ( hours24 % 12 ) || 12;
+		const pad = ( n ) => String( n ).padStart( 2, '0' );
+
+		const tokens = {
+			g: String( hours12 ),
+			G: String( hours24 ),
+			h: pad( hours12 ),
+			H: pad( hours24 ),
+			i: pad( date.getMinutes() ),
+			s: pad( date.getSeconds() ),
+			a: hours24 < 12 ? 'am' : 'pm',
+			A: hours24 < 12 ? 'AM' : 'PM',
+		};
+
+		return format.replace( /\\?[a-zA-Z]/g, ( token ) => {
+			// A backslash escapes the next character as a literal (PHP date() convention).
+			if ( token.startsWith( '\\' ) ) {
+				return token.slice( 1 );
+			}
+			return token in tokens ? tokens[ token ] : token;
+		} );
 	};
 
 // Escape HTML to prevent XSS attacks.
@@ -1071,9 +1142,10 @@ window.WPSC_AI_Chatbot.askMeLater =
 
 		if ( body ) {
 			body.innerHTML = self.getWelcomeMessageTemplate();
+			self.setWelcomeTime( body );
 		}
 		launcher?.classList.remove( 'wpsc-chatbot-launcher--hidden' );
-		
+
 		// Restore focus to the input field after closing the modal and clear textarea content.
 		if ( textarea ) {
 			textarea.value = '';
@@ -1218,14 +1290,13 @@ window.WPSC_AI_Chatbot.closeTicketModal =
 // Confirm end conversation.
 window.WPSC_AI_Chatbot.saveChatReaction =
 
-	function( reaction, sessionId ) {
+	function( reaction, sessionId, ticketCreated ) {
 		const self = this;
 		const chatbot = this.shadowRoot.querySelector( '.wpsc-chatbot' );
 		self.cacheElements();
 		const body = self.elements?.body;
 		const launcher = this.shadowRoot.querySelector( '.wpsc-chatbot-launcher' );
 		const textarea = this.shadowRoot.querySelector( '.wpsc-chatbot__input' );
-		const ticketCreated = this.isCreatingTicket;
 		if ( ! sessionId ) {
 			return;
 		}
@@ -1250,15 +1321,20 @@ window.WPSC_AI_Chatbot.saveChatReaction =
 		).done(
 			function( response ) {
 
+				if ( ! response || ! response.success ) {
+					self.debugLog( 'END_CONVERSATION', 'wpsc_chatbot_end_conversation returned success:false; reaction was not saved', response && response.data );
+					return;
+				}
+
 				self.isLimitReached = false;
 				if ( ! body ) {
 					return;
 				}
 				self.enableChatInput();
-			} 
+			}
 		).fail(
-			function() {
-				return;
+			function( jqXHR ) {
+				self.debugLog( 'END_CONVERSATION', 'wpsc_chatbot_end_conversation request failed; reaction was not saved', jqXHR && jqXHR.responseJSON );
 			}
 		).always(
 			function() {
@@ -1460,6 +1536,12 @@ window.WPSC_AI_Chatbot.handleTicketCreated =
 		this.isLimitReached = false;
 		this.isCreatingTicket = true;
 
+		// Keep the negative-reaction button's "ticket already created" flag in
+		// sync so, if the visitor closes the chat and reacts without a page
+		// reload, saveChatReaction() skips the ticket-escalation form.
+		const negativeReactionBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__modal-reaction--negative' );
+		negativeReactionBtn?.setAttribute( 'data-ticketcreated', 'true' );
+
 		if ( source === 'ticket-modal' ) {
 
 			// Close the ticket escalation modal now that the ticket has been created.
@@ -1516,6 +1598,7 @@ window.WPSC_AI_Chatbot.resetChatbotWidget =
 
 		if ( body ) {
 			body.innerHTML = this.getWelcomeMessageTemplate();
+			this.setWelcomeTime( body );
 		}
 
 		this.enableChatInput();

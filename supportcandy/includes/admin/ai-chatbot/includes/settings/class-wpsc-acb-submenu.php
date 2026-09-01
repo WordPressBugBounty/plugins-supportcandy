@@ -109,7 +109,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 		 */
 		public static function get_ai_chatbot_logs() {
 
-			if ( check_ajax_referer( 'wpsc_get_ai_chatbot_logs', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_get_ai_chatbot_logs', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -282,7 +282,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 		 */
 		public static function view_session_detailed_info() {
 
-			if ( check_ajax_referer( 'wpsc_view_session_detailed_info', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_view_session_detailed_info', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -446,7 +446,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 		 */
 		public static function get_ai_chatbot_sessions() {
 
-			if ( check_ajax_referer( 'wpsc_get_ai_chatbot_sessions', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_get_ai_chatbot_sessions', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 

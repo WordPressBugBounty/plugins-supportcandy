@@ -14,7 +14,8 @@ if ( ! class_exists( 'WPSC_Chatbot' ) ) :
 		 */
 		public static function init() {
 
-			add_action( 'init', array( __CLASS__, 'get_template' ), 1 );
+			// get_template() is only ever needed on demand, via
+			// WPSC_ACB_Admin::frontend_config() - no separate 'init' hook call needed.
 		}
 
 		/**
@@ -61,7 +62,7 @@ if ( ! class_exists( 'WPSC_Chatbot' ) ) :
 						<?php esc_html_e( 'Hey, I\'m your assistant. How can I help you today?', 'wpsc-ps' ); ?>
 						<div class="wpsc-chatbot__message-meta">
 							<span><?php esc_html_e( 'Assistant', 'wpsc-ps' ); ?></span>
-							<span><?php echo esc_html( wp_date( 'H:i' ) ); ?></span>
+							<span class="wpsc-chatbot__welcome-time"></span>
 						</div>
 					</div>
 				</div>

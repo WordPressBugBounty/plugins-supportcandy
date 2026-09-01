@@ -195,7 +195,7 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 			if ( ! $auth_code ) {
 				$auth_code = isset( $_REQUEST['auth_code'] ) ? sanitize_text_field( $_REQUEST['auth_code'] ) : ''; // phpcs:ignore
 			}
-			if ( $auth_code && $ticket->auth_code == $auth_code ) {
+			if ( $auth_code && $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) ) {
 				self::$url_auth = true;
 			}
 
@@ -462,25 +462,7 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 			?>
 			</div>
 			<script>
-				jQuery(document).find('.thread-text').each(function(){
-					var height = parseInt(jQuery(this).height());
-					<?php
-					$advanced = get_option( 'wpsc-ms-advanced-settings', array() );
-					if ( $advanced['view-more'] ) {
-						?>
-						if( height > 100){
-							jQuery(this).height(100);
-							jQuery(this).parent().find('.wpsc-ticket-thread-expander').text(supportcandy.translations.view_more);
-							jQuery(this).parent().find('.wpsc-ticket-thread-expander').show();
-						}
-						<?php
-					} else {
-						?>
-						jQuery(this).parent().find('.thread-text').height('auto');
-						<?php
-					}
-					?>
-				});
+				wpsc_init_thread_expanders(jQuery(document).find('.thread-text'));
 				supportcandy.threads = {last_thread: <?php echo esc_attr( $last_id ); ?>}
 			</script>
 			<?php
@@ -602,7 +584,7 @@ if ( ! class_exists( 'WPSC_Individual_Archive_Ticket' ) ) :
 
 					</div>
 
-					<div class="thread-text">
+					<div class="thread-text<?php echo $advanced['view-more'] ? ' wpsc-collapsed' : ''; ?>">
 						<?php
 						if ( $thread->is_active ) {
 							echo wp_kses_post( $thread->body );

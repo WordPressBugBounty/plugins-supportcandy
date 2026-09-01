@@ -180,6 +180,71 @@
   max-width: 250px;
 }
 
+/* Shared AI Assistant list filter toolbar (Status / Source / Type / Search / Reset) */
+.wpsc-aia-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.wpsc-aia-toolbar-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.wpsc-aia-toolbar-item label {
+  font-size: 12px;
+  color: #646970;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.wpsc-aia-toolbar-item select,
+.wpsc-aia-toolbar-item input {
+  min-width: 200px;
+}
+
+.wpsc-aia-toolbar-item .select2-container {
+  min-width: 200px;
+}
+
+.wpsc-aia-toolbar-reset {
+  flex: 1;
+}
+
+.wpsc-aia-toolbar-reset button {
+  width: fit-content;
+}
+
+.wpsc-aia-toolbar-search input {
+  width: 100%;
+}
+
+.wpsc-aia-actions-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+  .wpsc-aia-toolbar-item,
+  .wpsc-aia-toolbar-reset {
+    width: 100%;
+  }
+
+  .wpsc-aia-toolbar-item select,
+  .wpsc-aia-toolbar-item input {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
 /* Container styling */
 .wpsc-ai-training-list-actions-container {
   display: flex;
@@ -208,6 +273,12 @@
 
 .wpsc-ai-training-list-container .dt-search {
   display: none !important;
+}
+
+/* Length change is disabled and search/"Add new" are handled outside DataTables,
+   so the default top row would otherwise render empty. */
+.wpsc-ai-training-list-container .dt-container > .dt-layout-row:first-child {
+  display: none;
 }
 
 /* Responsive: Stack vertically on small devices (Tablets/Phones) */
@@ -254,7 +325,8 @@
 }
 
 #wpsc-bulk-actions-btn svg,
-#wpsc-file-upload-bulk-actions-btn svg {
+#wpsc-file-upload-bulk-actions-btn svg,
+#wpsc-training-data-bulk-actions-btn svg {
   height: 13px;
   margin-left: 15px;
 }
@@ -361,6 +433,15 @@
   content: "\21BB";
 }
 
+.wpsc-ait-sync-post-types li.failed {
+  color: #d63638;
+  font-weight: 600;
+}
+
+.wpsc-ait-sync-post-types li.failed::before {
+  content: "\2715";
+}
+
 .wpsc-ait-record-counts {
   display: flex;
   align-items: center;
@@ -423,4 +504,9 @@
 .wpsc-ait-upload-status--not-synced {
   background-color: #f1f1f1;
   color: #666;
+}
+
+/* AI Training Data tab list: keep the Action column's links (View Reason | Delete) on one line instead of wrapping. */
+.wpsc-ai-training-data-list-table td:last-child {
+  white-space: nowrap;
 }

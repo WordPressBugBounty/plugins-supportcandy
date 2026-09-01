@@ -120,6 +120,7 @@ if ( ! class_exists( 'WPSC_ACB_Admin' ) ) :
 				'ticket_modal_template' => WPSC_Chatbot_Ticket_Modal::get_ticket_modal_template(),
 				'welcome_template'      => WPSC_Chatbot_Welcome::get_welcome_template(),
 				'ticket_form_template'  => WPSC_Chatbot_Ticket_Form::get_ticket_form_template(),
+				'time_format'           => get_option( 'time_format', 'g:i a' ),
 			);
 		}
 

@@ -31,9 +31,12 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 		 */
 		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array(), $tool_context = array() ) {
 
+			// 'response' is intentionally left empty - the caller (WPSC_ACB_Chats::get_ai_response())
+			// substitutes its own translated, site-locale error message whenever the response is
+			// empty, so no hardcoded/untranslated text should be returned from here.
 			$fallback = array(
 				'success'       => false,
-				'response'      => 'Sorry, I am having trouble responding right now. Please try again shortly.',
+				'response'      => '',
 				'total_tokens'  => 0,
 				'create_ticket' => false,
 			);
@@ -679,6 +682,8 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			}
 
 			$reply = self::extract_text_reply( $body );
+			$reply = preg_replace( '#<\s*br\s*/?\s*>#i', "\n", $reply );
+			$reply = preg_replace( '#</\s*(p|div|li|ul|ol|h[1-6])\s*>#i', "\n", $reply );
 			$reply = trim( wp_strip_all_tags( $reply ) );
 			$reply_check = strtoupper( $reply );
 			if ( '[NO_KB_FOUND]' === $reply_check || '' === $reply_check ) {

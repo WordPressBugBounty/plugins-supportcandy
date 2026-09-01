@@ -31,9 +31,12 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 		 */
 		public function wpsc_get_chat_response( $ai_settings, $message, $system_prompt = '', $conversation_history = array(), $tools = array(), $tool_context = array() ) {
 
+			// 'response' is intentionally left empty - the caller (WPSC_ACB_Chats::get_ai_response())
+			// substitutes its own translated, site-locale error message whenever the response is
+			// empty, so no hardcoded/untranslated text should be returned from here.
 			$fallback = array(
 				'success'       => false,
-				'response'      => 'Sorry, I am having trouble responding right now. Please try again shortly.',
+				'response'      => '',
 				'total_tokens'  => 0,
 				'create_ticket' => false,
 			);
@@ -116,9 +119,9 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 			// 'none' tells the model it must not call a function on this turn -
 			// used to force final synthesis once the agentic loop must stop.
 			$request_body = array(
-				'model'             => $model,
-				'input'             => $input,
-				'text'              => array(
+				'model'               => $model,
+				'input'               => $input,
+				'text'                => array(
 					'format' => array(
 						'type'   => 'json_schema',
 						'name'   => 'chat_response',
@@ -140,9 +143,19 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 						),
 					),
 				),
-				'tool_choice'       => $tool_choice,
-				'tools'             => $openai_tools,
-				'max_output_tokens' => $max_tokens,
+				'tool_choice'         => $tool_choice,
+				'tools'               => $openai_tools,
+				// The agentic loop below (and its Gemini counterpart) is built to
+				// thread exactly one tool_call/tool_result pair per turn - see
+				// extract_openai_tool_call() in WPSC_AIBOT_Tool_Utils, which only
+				// ever reads the first function_call out of $body['output']. Left
+				// enabled (its API default), the model can return several function
+				// calls in one turn (e.g. detect_spam alongside create_ticket) and
+				// every call after the first would be silently discarded instead of
+				// executed. Disabling it keeps the model to one call per turn,
+				// matching what the rest of this loop already assumes.
+				'parallel_tool_calls' => false,
+				'max_output_tokens'   => $max_tokens,
 			);
 
 			$max_retries = isset( $tool_context['max_retries'] ) ? max( 1, (int) $tool_context['max_retries'] ) : 3;
@@ -183,6 +196,13 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 					$response,
 					$fallback
 				);
+
+				// A malformed/truncated structured-output parse is also worth retrying
+				// with the next escalated model, same as a transport-level failure.
+				if ( empty( $result['success'] ) && $attempt < $max_retries ) {
+					sleep( 1 );
+					continue;
+				}
 
 				if ( ! empty( $result['success'] ) ) {
 					$result['input'] = $input;
@@ -244,7 +264,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 			$parsed = self::extract_structured_chat_reply( $this->extract_text_from_openai_response( $body ) );
 
 			return array(
-				'success'           => true,
+				'success'           => $parsed['parsed'],
 				'response'          => $parsed['response'],
 				'create_ticket'     => $parsed['create_ticket'],
 				'tool_call'         => '',
@@ -257,11 +277,14 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 		/**
 		 * Parse the model's final text output against the 'chat_response'
 		 * json_schema requested in the request body ({response, create_ticket}).
-		 * Falls back to treating the raw text as the response if it isn't
-		 * valid JSON (defensive - shouldn't happen given the enforced schema).
+		 * The schema is only a request-time hint, not a guarantee (e.g. output can be
+		 * cut short by max_output_tokens) - if the text isn't valid, schema-conforming
+		 * JSON, 'parsed' is false and 'response' is left empty so the raw/undecodable
+		 * model text is never surfaced to the customer; the caller falls back to the
+		 * generic, site-locale translated error message instead.
 		 *
 		 * @param string $text Raw text output from the OpenAI response.
-		 * @return array{response: string, create_ticket: bool}
+		 * @return array{response: string, create_ticket: bool, parsed: bool}
 		 */
 		private static function extract_structured_chat_reply( $text ) {
 
@@ -272,12 +295,14 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 				return array(
 					'response'      => $decoded['response'],
 					'create_ticket' => ! empty( $decoded['create_ticket'] ),
+					'parsed'        => true,
 				);
 			}
 
 			return array(
-				'response'      => $text,
+				'response'      => '',
 				'create_ticket' => false,
+				'parsed'        => false,
 			);
 		}
 
@@ -775,6 +800,8 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_OpenAI' ) ) :
 			}
 
 			$reply = $this->extract_text_from_openai_response( $body );
+			$reply = preg_replace( '#<\s*br\s*/?\s*>#i', "\n", $reply );
+			$reply = preg_replace( '#</\s*(p|div|li|ul|ol|h[1-6])\s*>#i', "\n", $reply );
 			$reply = trim( wp_strip_all_tags( $reply ) );
 			$reply_check = strtoupper( $reply );
 			if ( '[NO_KB_FOUND]' === $reply_check || '' === $reply_check ) {

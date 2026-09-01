@@ -81,20 +81,30 @@ if ( ! class_exists( 'WPSC_EN_Change_Ticket_Priority' ) ) :
 					continue;
 				}
 
+				// macro attachments.
+				$en->attachments          = array_merge( $en->attachments, WPSC_Macros::$attachments );
+				WPSC_Macros::$attachments = array();
+
 				$en = apply_filters( 'wpsc_en_before_sending', $en );
 
 				// send an email.
+				$attachment_ids = array();
+				foreach ( $en->attachments as $attachment ) {
+					$attachment_ids[] = $attachment->id;
+				}
+
 				WPSC_Background_Email::insert(
 					array(
-						'from_name'  => $en->from_name,
-						'from_email' => $en->from_email,
-						'reply_to'   => $gs['reply-to'],
-						'subject'    => $en->subject,
-						'body'       => $en->body,
-						'to_email'   => implode( '|', $en->to ),
-						'cc_email'   => implode( '|', $en->cc ),
-						'bcc_email'  => implode( '|', $en->bcc ),
-						'priority'   => 2,
+						'from_name'   => $en->from_name,
+						'from_email'  => $en->from_email,
+						'reply_to'    => $gs['reply-to'],
+						'subject'     => $en->subject,
+						'body'        => $en->body,
+						'to_email'    => implode( '|', $en->to ),
+						'cc_email'    => implode( '|', $en->cc ),
+						'bcc_email'   => implode( '|', $en->bcc ),
+						'attachments' => implode( '|', $attachment_ids ),
+						'priority'    => 2,
 					)
 				);
 			}

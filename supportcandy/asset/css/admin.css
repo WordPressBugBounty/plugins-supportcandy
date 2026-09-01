@@ -91,9 +91,10 @@
   align-items: center;
   flex-grow: 1;
   padding-left: 10px;
+  gap: 10px;
 }
 .wpsc-setting-card span.title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 }
 .wpsc-setting-card span.card-subtitle {
@@ -117,6 +118,16 @@
   border-radius: 5px;
   margin-right: 5px;
 }
+table.wpsc-setting-tbl td.sort-handle {
+  width: 30px;
+  max-width: 30px;
+  text-align: center;
+  cursor: move;
+}
+table.wpsc-setting-tbl td.sort-handle svg {
+  width: 11px;
+  color: #c3c3c3;
+}
 .wpsc-setting-card .title-container {
   height: 100%;
   display: flex;
@@ -126,6 +137,67 @@
 }
 .wpsc-setting-card .title-container span.title {
   margin-bottom: 2px;
+}
+
+/* Dashboard cards enable/disable toggle switch (scoped/unique names to avoid
+   colliding with the Productivity Suite add-on's own .wpsc-toggle-switch/.wpsc-slider) */
+.wpsc-dbc-toggle-switch {
+  display: inline-block;
+  position: relative;
+  width: 32px;
+  height: 16px;
+  flex: none;
+}
+.wpsc-dbc-toggle-switch input {
+  display: none;
+}
+.wpsc-dbc-toggle-switch .wpsc-dbc-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 16px;
+  transition: 0.2s;
+}
+.wpsc-dbc-toggle-switch .wpsc-dbc-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 1px;
+  top: 1px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.wpsc-dbc-toggle-switch input:checked + .wpsc-dbc-slider {
+  background-color: #2271b1;
+}
+.wpsc-dbc-toggle-switch input:checked + .wpsc-dbc-slider:before {
+  transform: translateX(16px);
+}
+
+/* Setting cards enable all / disable all switcher */
+.wpsc-setting-cards-toggle-all {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+/* When placed next to the "Add widget" button (Dashboard > Widgets), the
+   parent .wpsc-actions-btn-setting already handles spacing/alignment. */
+.wpsc-actions-btn-setting .wpsc-setting-cards-toggle-all {
+  width: auto;
+  margin-bottom: 0;
+}
+.wpsc-setting-cards-toggle-all .wpsc-toggle-all-label {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* CF Option UI */
@@ -313,6 +385,77 @@
 }
 .wpsc-ra-log-details {
   display: grid;
+}
+/* Customers list filter toolbar (Users / User Type / Search / Reset). */
+.wpsc-customers-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.wpsc-customers-toolbar-item {
+  display: flex;
+  flex-direction: column;
+}
+.wpsc-customers-toolbar-item label {
+  font-size: 12px;
+  color: #646970;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.wpsc-customers-toolbar-item select,
+.wpsc-customers-toolbar-item input {
+  min-width: 200px;
+}
+.wpsc-customers-toolbar-item .select2-container {
+  min-width: 200px;
+}
+.wpsc-customers-toolbar-reset {
+  flex: 1;
+}
+.wpsc-customers-toolbar-reset button {
+  width: fit-content;
+}
+.wpsc-customers-toolbar-search input {
+  width: 100%;
+}
+@media (max-width: 782px) {
+  .wpsc-customers-toolbar-item,
+  .wpsc-customers-toolbar-reset {
+    width: 100%;
+  }
+  .wpsc-customers-toolbar-item select,
+  .wpsc-customers-toolbar-item input {
+    min-width: 0;
+    width: 100%;
+  }
+}
+/* Customers list "Name" column - avatar next to the customer's name. */
+.wpsc-cust-name-cell {
+  display: flex;
+  align-items: center;
+}
+.wpsc-cust-avatar img {
+  border-radius: 50%;
+  margin: 0px 10px 0px 0px;
+}
+/* Customer profile "Tickets" tab - whole row opens the ticket. */
+.my-profile-ticket-list .wpsc-cust-ticket-row {
+  cursor: pointer;
+}
+.my-profile-ticket-list .wpsc-cust-ticket-row:hover {
+  background-color: #f5f5f5;
+}
+/* Customer profile "Custom fields" tab - empty state when there are none. */
+.wpsc-cust-cf-empty {
+  padding: 20px;
+  text-align: center;
+  color: #646970;
 }
 .wpsc-ra-log-time {
   font-size: 10px;

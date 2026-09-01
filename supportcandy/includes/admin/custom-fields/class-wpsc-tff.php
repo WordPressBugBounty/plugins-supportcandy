@@ -33,6 +33,9 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 			// Delete.
 			add_action( 'wp_ajax_wpsc_delete_tff', array( __CLASS__, 'delete_tff' ) );
 
+			// Sorting.
+			add_action( 'wp_ajax_wpsc_set_tff_load_order', array( __CLASS__, 'set_load_order' ) );
+
 			// Remove if custom field deleted.
 			add_action( 'wpsc_delete_custom_field', array( __CLASS__, 'delete_custom_field' ), 10, 1 );
 
@@ -75,6 +78,7 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 				<table class="form-fields wpsc-setting-tbl">
 					<thead>
 						<tr>
+							<th style="width: 30px;"><?php esc_attr_e( 'Sort', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Field', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Required', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Visibility Conditions', 'supportcandy' ); ?></th>
@@ -92,7 +96,8 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 							$vis_decoded = is_string( $settings['visibility'] ) ? json_decode( $settings['visibility'], true ) : $settings['visibility'];
 							$visibility = ( ! empty( $vis_decoded ) ) ? __( 'Yes', 'supportcandy' ) : __( 'No', 'supportcandy' );
 							?>
-							<tr>
+							<tr data-id="<?php echo esc_attr( $slug ); ?>">
+								<td class="sort-handle"><?php WPSC_Icons::get( 'sort' ); ?></td>
 								<td><?php echo esc_attr( $cf->name ); ?></td>
 								<td><?php echo esc_attr( $settings['is-required'] ? __( 'Yes', 'supportcandy' ) : __( 'No', 'supportcandy' ) ); ?></td>
 								<td><?php echo esc_attr( $visibility ); ?></td>
@@ -118,9 +123,11 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 			<script>
 				jQuery('table.form-fields').DataTable({
 					ordering: false,
+					autoWidth: false,
 					pageLength: 20,
 					bLengthChange: false,
-					columnDefs: [ 
+					columnDefs: [
+						{ targets: 0, width: '30px', searchable: false },
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
@@ -149,6 +156,35 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 						},
 					},
 					language: supportcandy.translations.datatables
+				});
+
+				jQuery(function() {
+					// Enable sorting with jQuery UI.
+					jQuery('table.form-fields tbody').sortable({
+						handle: '.sort-handle',
+						helper: function(e, tr) {
+							var $originals = tr.children();
+							var $helper = tr.clone();
+							$helper.children().each(function(index) {
+								jQuery(this).width($originals.eq(index).width());
+							});
+							return $helper;
+						},
+						update: function(event, ui) {
+							var slugs = jQuery(this).sortable('toArray', { attribute: 'data-id' });
+							jQuery.post(
+								supportcandy.ajax_url,
+								{
+									action: 'wpsc_set_tff_load_order',
+									_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_tff_load_order' ) ); ?>',
+									slugs: slugs
+								},
+								function(response) {
+
+								}
+							);
+						}
+					});
 				});
 			</script>
 			<?php
@@ -576,6 +612,45 @@ if ( ! class_exists( 'WPSC_TFF' ) ) :
 
 			update_option( 'wpsc-tff', $tff );
 			wp_die();
+		}
+
+		/**
+		 * Set load order
+		 *
+		 * @return void
+		 */
+		public static function set_load_order() {
+
+			if ( check_ajax_referer( 'wpsc_set_tff_load_order', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 400 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$slugs = isset( $_POST['slugs'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['slugs'] ) ) : array();
+			if ( ! $slugs ) {
+				wp_send_json_error( 'Bad Request', 400 );
+			}
+
+			$tff = get_option( 'wpsc-tff', array() );
+			$new_tff = array();
+			foreach ( $slugs as $slug ) {
+				if ( isset( $tff[ $slug ] ) ) {
+					$new_tff[ $slug ] = $tff[ $slug ];
+				}
+			}
+
+			// Append any remaining fields (safety net) that were not part of the posted order.
+			foreach ( $tff as $slug => $field ) {
+				if ( ! isset( $new_tff[ $slug ] ) ) {
+					$new_tff[ $slug ] = $field;
+				}
+			}
+
+			update_option( 'wpsc-tff', $new_tff );
+			wp_send_json( array( 'success' => true ), 200 );
 		}
 
 		/**

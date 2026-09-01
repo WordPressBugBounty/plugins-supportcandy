@@ -67,7 +67,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 						<label for="wpsc-ai-api-key"><?php esc_attr_e( 'API Key', 'wpsc-ps' ); ?></label>
 						<span class="required-indicator">*</span>
 					</div>
-					<input type="text" id="wpsc-ai-api-key" name="wpsc-ai-api-key" value="<?php echo esc_attr( $ai_settings['api_key'] ); ?>" placeholder="<?php esc_attr_e( 'Enter your API Key', 'wpsc-ps' ); ?> "/>
+					<input type="text" id="wpsc-ai-api-key" name="wpsc-ai-api-key" value="<?php echo esc_attr( self::mask_api_key( $ai_settings['api_key'] ?? '' ) ); ?>" placeholder="<?php esc_attr_e( 'Enter your API Key', 'wpsc-ps' ); ?> "/>
 					<span class="extra-info">
 						<?php esc_attr_e( 'Enter your API key for the selected provider.', 'wpsc-ps' ); ?>
 					</span>
@@ -114,13 +114,54 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 		}
 
 		/**
+		 * Candidate models for a given provider, keyed by the literal value sent
+		 * to that provider's API. First entry is the default model used when
+		 * settings are saved or installed - there is no UI to pick a different
+		 * one. Kept intentionally small - these are also the only base models
+		 * resolve_retry_model() (in WPSC_PS_AI_OpenAI / WPSC_PS_AI_Gemini)
+		 * escalates from on a retry, so a model outside the ladder here won't
+		 * derail that behavior.
+		 *
+		 * @param string $provider 'openai' or 'google-gemini'.
+		 * @return array<string, string> model value => display label.
+		 */
+		private static function get_available_models( $provider ) {
+
+			if ( 'google-gemini' === $provider ) {
+				return array(
+					'gemini-2.5-flash-lite' => __( 'Gemini 2.5 Flash-Lite (fastest, lowest cost)', 'wpsc-ps' ),
+					'gemini-2.5-flash'      => __( 'Gemini 2.5 Flash (balanced)', 'wpsc-ps' ),
+					'gemini-2.5-pro'        => __( 'Gemini 2.5 Pro (most capable)', 'wpsc-ps' ),
+				);
+			}
+
+			return array(
+				'gpt-4o-mini'  => __( 'GPT-4o Mini (fastest, lowest cost)', 'wpsc-ps' ),
+				'gpt-4.1-mini' => __( 'GPT-4.1 Mini (balanced)', 'wpsc-ps' ),
+				'gpt-4.1'      => __( 'GPT-4.1 (most capable)', 'wpsc-ps' ),
+			);
+		}
+
+		/**
+		 * Default model for a provider - the first entry in get_available_models().
+		 *
+		 * @param string $provider 'openai' or 'google-gemini'.
+		 * @return string
+		 */
+		private static function get_default_model( $provider ) {
+
+			$models = self::get_available_models( $provider );
+			return (string) array_key_first( $models );
+		}
+
+		/**
 		 * Save AI assistant settings
 		 *
 		 * @return void
 		 */
 		public static function save_settings() {
 
-			if ( check_ajax_referer( 'wpsc_set_ai_settings', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_set_ai_settings', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -135,7 +176,18 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				wp_send_json_error( __( 'Invalid or missing service provider!', 'wpsc-ps' ), 400 );
 			}
 
-			$api_key = isset( $_POST['wpsc-ai-api-key'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc-ai-api-key'] ) ) : '';
+			$submitted_api_key = isset( $_POST['wpsc-ai-api-key'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc-ai-api-key'] ) ) : '';
+			$existing_api_key = isset( $ai_settings['api_key'] ) ? trim( $ai_settings['api_key'] ) : '';
+
+			// The field displays a masked version of the stored key (see mask_api_key()).
+			// If it comes back unchanged, keep the real stored key instead of overwriting
+			// it with the mask string itself.
+			if ( '' !== $existing_api_key && $submitted_api_key === self::mask_api_key( $existing_api_key ) ) {
+				$api_key = $existing_api_key;
+			} else {
+				$api_key = $submitted_api_key;
+			}
+
 			if ( empty( $api_key ) || strlen( $api_key ) < 10 ) {
 				wp_send_json_error( __( 'Invalid or missing API key!', 'wpsc-ps' ), 400 );
 			}
@@ -145,19 +197,14 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				wp_send_json_error( __( 'Max tokens must be between 500 and 16384.', 'wpsc-ps' ), 400 );
 			}
 
-			$temperature = isset( $_POST['wpsc-ai-temperature'] ) ? floatval( $_POST['wpsc-ai-temperature'] ) : 0;
-			if ( $temperature < 0 || $temperature > 1 ) {
-				wp_send_json_error( __( 'Temperature must be between 0 and 1.', 'wpsc-ps' ), 400 );
-			}
+			// No UI control for this - always use the provider's default model.
+			$model = self::get_default_model( $service_provider );
 
-			$model = $service_provider === 'openai' ? 'gpt-4o-mini' : 'gemini-2.5-flash-lite';
-
-			$old_api_key   = isset( $ai_settings['api_key'] ) ? trim( $ai_settings['api_key'] ) : '';
 			$old_provider  = isset( $ai_settings['provider'] ) ? trim( $ai_settings['provider'] ) : '';
 			$is_active     = ! empty( $ai_settings['is-active'] );
 
 			// Check if API key OR provider changed.
-			$is_key_changed = ( $api_key !== $old_api_key ) || ( $service_provider !== $old_provider );
+			$is_key_changed = ( $api_key !== $existing_api_key ) || ( $service_provider !== $old_provider );
 
 			// A changed key may belong to a different provider project. Vector/file-search
 			// stores are project-scoped and never re-validated once cached, so a stale
@@ -220,7 +267,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 		 */
 		public static function reset_settings() {
 
-			if ( check_ajax_referer( 'wpsc_reset_ai_settings', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_reset_ai_settings', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -258,6 +305,32 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				)
 			);
 			wp_die();
+		}
+
+		/**
+		 * Mask an API key for display in the settings form, keeping only enough of it
+		 * to let an admin recognize which key is stored (e.g. after rotating providers)
+		 * without exposing the full secret in the page's HTML source. save_settings()
+		 * compares the submitted value against this same output to detect whether the
+		 * admin actually changed the key or just resubmitted the form unedited.
+		 *
+		 * @param string $key The real, stored API key.
+		 * @return string Masked value, or '' if there's no key stored yet.
+		 */
+		private static function mask_api_key( $key ) {
+
+			$key = trim( (string) $key );
+			$length = strlen( $key );
+
+			if ( 0 === $length ) {
+				return '';
+			}
+
+			if ( $length <= 8 ) {
+				return str_repeat( '*', $length );
+			}
+
+			return substr( $key, 0, 4 ) . str_repeat( '*', 8 ) . substr( $key, -4 );
 		}
 
 		/**

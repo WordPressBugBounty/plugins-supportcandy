@@ -1485,6 +1485,23 @@ function wpsc_tl_apply_filter_btn_click( type ) {
 }
 
 /**
+ * Sort ticket list by clicking on a sortable column header.
+ * Toggles ASC/DESC when the same column is clicked again, otherwise
+ * defaults to ASC for the newly selected column.
+ */
+function wpsc_tl_sort_column( slug, type ) {
+  var filters = supportcandy.ticketList.filters;
+  if ( filters.orderby === slug ) {
+    filters.order = filters.order === 'ASC' ? 'DESC' : 'ASC';
+  } else {
+    filters.orderby = slug;
+    filters.order = 'ASC';
+  }
+  filters.page_no = 1;
+  type === 'ticket_list' ? wpsc_get_tickets() : wpsc_get_archive_tickets();
+}
+
+/**
  * Get custom filter UI
  */
 function wpsc_tl_get_custom_filter( type ) {
@@ -1971,15 +1988,31 @@ function wpsc_get_rb_info(el, ticket_id, nonce) {
 }
 
 /**
- *  Thread expander
+ * Thread expander.
  */
+function wpsc_init_thread_expanders($threadTexts) {
+  $threadTexts.filter(".wpsc-collapsed").each(function () {
+    if (this.scrollHeight > this.clientHeight + 1) {
+      jQuery(this)
+        .parent()
+        .find(".wpsc-ticket-thread-expander")
+        .text(supportcandy.translations.view_more)
+        .show();
+    } else {
+      // Content already fits within the collapsed max-height; no need
+      // for an expander link.
+      jQuery(this).removeClass("wpsc-collapsed");
+    }
+  });
+}
+
 function wpsc_ticket_thread_expander_toggle(el) {
-  var height = parseInt(jQuery(el).parent().find(".thread-text").height());
-  if (height === 100) {
-    jQuery(el).parent().find(".thread-text").height("auto");
+  var $threadText = jQuery(el).parent().find(".thread-text");
+  if ($threadText.hasClass("wpsc-collapsed")) {
+    $threadText.removeClass("wpsc-collapsed").addClass("wpsc-expanded");
     jQuery(el).text(supportcandy.translations.view_less);
   } else {
-    jQuery(el).parent().find(".thread-text").height(100);
+    $threadText.removeClass("wpsc-expanded").addClass("wpsc-collapsed");
     jQuery(el).text(supportcandy.translations.view_more);
   }
 }
@@ -2039,15 +2072,21 @@ function wpsc_load_older_threads(el, ticket_id) {
   jQuery.post(supportcandy.ajax_url, data, function (response) {
     jQuery(".wpsc-it-thread-section-container").find(".wpsc-loader").remove();
     // add threads.
+    var $container = jQuery(".wpsc-it-thread-section-container");
+    var $before = $container.find(".thread-text");
     if (supportcandy.reply_form_position === "top") {
-      jQuery(".wpsc-it-thread-section-container").append(response.threads);
+      $container.append(response.threads);
     } else {
       var scrollHeightBody = jQuery("body").prop("scrollHeight");
       var windowScrollTop = jQuery(window).scrollTop();
-      jQuery(".wpsc-it-thread-section-container").prepend(response.threads);
+      $container.prepend(response.threads);
       var scrollDiff = jQuery("body").prop("scrollHeight") - scrollHeightBody;
       jQuery(window).scrollTop(windowScrollTop + scrollDiff);
     }
+    // Newly injected threads also need their "view more" state evaluated -
+    // the initial page-load script only runs once, so without this the
+    // lazily-loaded threads never get truncated/expandable.
+    wpsc_init_thread_expanders($container.find(".thread-text").not($before));
     // show btn if there are more threads available.
     if (response.has_next_page) {
       supportcandy.threads.last_thread = response.last_thread;
@@ -3311,15 +3350,21 @@ function wpsc_load_older_archive_threads(el, ticket_id) {
   jQuery.post(supportcandy.ajax_url, data, function (response) {
     jQuery(".wpsc-it-thread-section-container").find(".wpsc-loader").remove();
     // add threads.
+    var $container = jQuery(".wpsc-it-thread-section-container");
+    var $before = $container.find(".thread-text");
     if (supportcandy.reply_form_position === "top") {
-      jQuery(".wpsc-it-thread-section-container").append(response.threads);
+      $container.append(response.threads);
     } else {
       var scrollHeightBody = jQuery("body").prop("scrollHeight");
       var windowScrollTop = jQuery(window).scrollTop();
-      jQuery(".wpsc-it-thread-section-container").prepend(response.threads);
+      $container.prepend(response.threads);
       var scrollDiff = jQuery("body").prop("scrollHeight") - scrollHeightBody;
       jQuery(window).scrollTop(windowScrollTop + scrollDiff);
     }
+    // Newly injected threads also need their "view more" state evaluated -
+    // the initial page-load script only runs once, so without this the
+    // lazily-loaded threads never get truncated/expandable.
+    wpsc_init_thread_expanders($container.find(".thread-text").not($before));
     // show btn if there are more threads available.
     if (response.has_next_page) {
       supportcandy.threads.last_thread = response.last_thread;

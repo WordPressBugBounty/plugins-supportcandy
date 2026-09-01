@@ -564,7 +564,29 @@ if ( ! class_exists( 'WPSC_Archive_Ticket_List' ) ) :
 									continue;
 								}
 								?>
-								<th style="min-width: <?php echo esc_attr( $cf->tl_width ); ?>px;"><?php echo esc_attr( $cf->name ); ?></th>
+								<?php
+								$is_sortable = $cf->type::$is_sort;
+								$is_active   = $is_sortable && self::$at_filters['orderby'] === $slug;
+								$order       = $is_active ? self::$at_filters['order'] : '';
+								?>
+								<th
+									style="min-width: <?php echo esc_attr( $cf->tl_width ); ?>px;"
+									<?php if ( $is_sortable ) : ?>
+										class="wpsc-tl-sortable-th<?php echo $is_active ? ' wpsc-tl-sorted-' . esc_attr( strtolower( $order ) ) : ''; ?>"
+										onclick="wpsc_tl_sort_column('<?php echo esc_attr( $slug ); ?>', 'archive_ticket_list');"
+									<?php endif; ?>
+								>
+									<?php if ( $is_sortable ) : ?>
+										<div class="wpsc-tl-th-inner">
+											<span class="wpsc-tl-th-label"><?php echo esc_attr( $cf->name ); ?></span>
+											<span class="wpsc-tl-sort-icon">
+												<?php WPSC_Icons::get( 'ASC' === $order ? 'chevron-up' : ( 'DESC' === $order ? 'chevron-down' : 'sort' ) ); ?>
+											</span>
+										</div>
+									<?php else : ?>
+										<span class="wpsc-tl-th-label"><?php echo esc_attr( $cf->name ); ?></span>
+									<?php endif; ?>
+								</th>
 								<?php
 							endforeach;
 							?>

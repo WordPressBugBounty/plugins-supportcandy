@@ -75,6 +75,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 			// Sync posts for source: kick off a background sync and let the client poll its progress.
 			add_action( 'wp_ajax_wpsc_sync_posts_for_ai_training', array( __CLASS__, 'sync_posts_for_ai_training' ) );
+			add_action( 'wp_ajax_wpsc_sync_missing_posts_for_ai_training', array( __CLASS__, 'sync_missing_posts_for_ai_training' ) );
 			add_action( 'wp_ajax_wpsc_get_ait_sync_progress', array( __CLASS__, 'get_ait_sync_progress' ) );
 			add_action( 'wpsc_ait_run_sync', array( __CLASS__, 'run_sync_tick' ) );
 
@@ -90,7 +91,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function get_delete_ai_training() {
 
-			if ( check_ajax_referer( 'wpsc_get_delete_ai_training', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_get_delete_ai_training', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request', 401 );
 			}
 
@@ -140,7 +141,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function delete_all_ait_posts() {
 
-			if ( check_ajax_referer( 'wpsc_delete_all_ait_posts', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_delete_all_ait_posts', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request', 401 );
 			}
 
@@ -186,7 +187,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function fetch_wordpress_endpoints_posts() {
 
-			if ( check_ajax_referer( 'wpsc_fetch_wordpress_endpoints_posts', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_fetch_wordpress_endpoints_posts', '_ajax_nonce', false ) ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized request' ), 401 );
 			}
 
@@ -250,7 +251,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function set_add_ai_training_source() {
 
-			if ( check_ajax_referer( 'wpsc_set_add_ai_training_source', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_set_add_ai_training_source', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request', 401 );
 			}
 
@@ -326,7 +327,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function update_edit_ai_training_source() {
 
-			if ( check_ajax_referer( 'wpsc_update_edit_ai_training_source', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_update_edit_ai_training_source', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request', 401 );
 			}
 
@@ -568,7 +569,62 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		}
 
 		/**
+		 * Shared request validation for the sync-trigger AJAX actions (sync_posts_for_ai_training()
+		 * and sync_missing_posts_for_ai_training()): checks the nonce for the calling
+		 * action, capability, and resolves the posted source slug to its saved config
+		 * and currently-enabled post types.
+		 *
+		 * Sends a JSON error response and exits (via wp_send_json_error()'s own wp_die())
+		 * on any failure, so callers can use the return value unconditionally.
+		 *
+		 * @param string $nonce_action The check_ajax_referer() action name for the calling endpoint.
+		 * @return array { source_slug, source, post_types }
+		 */
+		private static function validate_and_resolve_sync_request( $nonce_action ) {
+
+			if ( ! check_ajax_referer( $nonce_action, '_ajax_nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Unauthorized request', 'wpsc-ps' ) ), 401 );
+			}
+
+			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
+				wp_send_json_error( array( 'message' => __( 'Unauthorized access!', 'wpsc-ps' ) ), 401 );
+			}
+
+			$source_slug = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
+			if ( '' === $source_slug ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid source!', 'wpsc-ps' ) ), 400 );
+			}
+
+			$source = WPSC_PS_AIT_Source::get_training_source( $source_slug );
+			if ( empty( $source ) ) {
+				wp_send_json_error( array( 'message' => __( 'Training source not found.', 'wpsc-ps' ) ), 400 );
+			}
+
+			// Note: with the edit screen now hiding "Sync Posts"/"Sync Missing Posts" whenever
+			// no post type is enabled (see edit_ai_training_source()), this should be
+			// unreachable from the UI - kept as a defensive server-side check (e.g. a stale
+			// page, or a direct request) so the specific reason is still reported instead of
+			// a generic failure.
+			$post_types = self::get_enabled_post_types( $source );
+			if ( empty( $post_types ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please enable at least one post type to sync.', 'wpsc-ps' ) ), 400 );
+			}
+
+			return array(
+				'source_slug' => $source_slug,
+				'source'      => $source,
+				'post_types'  => $post_types,
+			);
+		}
+
+		/**
 		 * AJAX: Kick off a background sync for a training source's enabled post types.
+		 *
+		 * Inserts new posts, refreshes ones whose content has changed since they were
+		 * last synced, and (once every enabled post type has been fully paged through)
+		 * removes local records for posts no longer at the source. Use
+		 * sync_missing_posts_for_ai_training() to only add posts that have no local
+		 * record yet, without touching or deleting any existing one.
 		 *
 		 * The actual paging/importing happens in run_sync_tick(), driven by a
 		 * self-chaining cron event (see start_sync_for_source()). The client polls
@@ -578,32 +634,40 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function sync_posts_for_ai_training() {
 
-			if ( check_ajax_referer( 'wpsc_sync_posts_for_ai_training', '_ajax_nonce', false ) != 1 ) {
-				wp_send_json_error( 'Unauthorized request', 401 );
-			}
+			$resolved = self::validate_and_resolve_sync_request( 'wpsc_sync_posts_for_ai_training' );
 
-			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
-			}
+			self::start_sync_for_source( $resolved['source'], $resolved['post_types'], 'full' );
 
-			$source_slug = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
-			if ( '' === $source_slug ) {
-				wp_send_json_error( new WP_Error( '001', __( 'Invalid source!', 'wpsc-ps' ) ), 400 );
-			}
+			wp_send_json_success( array( 'source_slug' => $resolved['source_slug'] ) );
+		}
 
-			$source = WPSC_PS_AIT_Source::get_training_source( $source_slug );
-			if ( empty( $source ) ) {
-				wp_send_json_error( new WP_Error( '005', __( 'Training source not found.', 'wpsc-ps' ) ), 400 );
-			}
+		/**
+		 * AJAX: Kick off a background sync for a training source's enabled post types
+		 * that only inserts posts with no local training record yet.
+		 *
+		 * Example: local records exist for remote post ids 100-120; a new post 121 is
+		 * published and post 120's content is edited. This sync inserts only 121 -
+		 * 120 is left exactly as it already was, since it isn't missing, just changed.
+		 * Use sync_posts_for_ai_training() ("Sync Posts") to also pick up that kind of
+		 * change, or delete_all_ait_posts() to remove everything and start over.
+		 *
+		 * Every selected post type still has to be paged through in full (there is no
+		 * "posts since X" filter to ask a generic WordPress REST endpoint for), but each
+		 * page's cost past the existing-record lookup is a single lightweight check
+		 * rather than a content-modified-date comparison plus a possible delete+re-insert,
+		 * and the source-wide stale-record deletion pass at the end of a full sync is
+		 * skipped entirely - a missing-only run has no reliable basis for judging any
+		 * existing record stale (see insert_training_post() and process_sync_tick()).
+		 *
+		 * @return void
+		 */
+		public static function sync_missing_posts_for_ai_training() {
 
-			$post_types = self::get_enabled_post_types( $source );
-			if ( empty( $post_types ) ) {
-				wp_send_json_error( new WP_Error( '004', __( 'Please enable at least one post type to sync.', 'wpsc-ps' ) ), 400 );
-			}
+			$resolved = self::validate_and_resolve_sync_request( 'wpsc_sync_missing_posts_for_ai_training' );
 
-			self::start_sync_for_source( $source, $post_types );
+			self::start_sync_for_source( $resolved['source'], $resolved['post_types'], 'missing' );
 
-			wp_send_json_success( array( 'source_slug' => $source_slug ) );
+			wp_send_json_success( array( 'source_slug' => $resolved['source_slug'] ) );
 		}
 
 		/**
@@ -618,16 +682,24 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 * page 1/total_pages 1 and start over, which is what produced the repeated
 		 * "page 1 of 1, same post type" log pattern reported for stuck syncs.
 		 *
-		 * @param array $source     Training source.
-		 * @param array $post_types Enabled { slug, name } post types to sync.
+		 * @param array  $source     Training source.
+		 * @param array  $post_types Enabled { slug, name } post types to sync.
+		 * @param string $mode       'full' (default - insert new, refresh changed, delete
+		 *                           stale) or 'missing' (only insert posts with no local
+		 *                           record at all; see sync_missing_posts_for_ai_training()).
+		 *                           Only applied to post types not already tracked by an
+		 *                           in-progress job - one already being paged through keeps
+		 *                           running under whichever mode it started with.
 		 * @return void
 		 */
-		private static function start_sync_for_source( array $source, array $post_types ) {
+		private static function start_sync_for_source( array $source, array $post_types, $mode = 'full' ) {
 
 			$slug = $source['slug'] ?? '';
 			if ( '' === $slug || empty( $post_types ) ) {
 				return;
 			}
+
+			$mode = ( 'missing' === $mode ) ? 'missing' : 'full';
 
 			// Serialize against a concurrently running tick so we never read/merge state
 			// that a tick is simultaneously in the middle of writing. On contention, skip
@@ -658,6 +730,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 					$post_type_state[ $pt_slug ] = array(
 						'name'        => $post_type['name'],
+						'mode'        => $mode,
 						'done'        => false,
 						'failed'      => false,
 						'page'        => 1,
@@ -845,7 +918,8 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 			set_transient( $transient_key, $fetched_ids, self::SYNC_IDS_TRANSIENT_EXPIRY );
 
-			$result = self::process_training_posts( $source, $response, $current_post_type );
+			$mode = ( 'missing' === ( $pt_state['mode'] ?? 'full' ) ) ? 'missing' : 'full';
+			$result = self::process_training_posts( $source, $response, $current_post_type, $mode );
 
 			$pt_state['processed'] += $result['processed'];
 			$pt_state['inserted']  += $result['inserted'];
@@ -868,8 +942,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 			if ( $is_last_page ) {
 
-				// Last page for this post type - anything local not seen in this run no longer exists at the source.
-				$pt_state['deleted'] = self::delete_stale_training_posts( $source, $current_post_type, $fetched_ids );
+				// Last page for this post type - anything local not seen in this run no
+				// longer exists at the source. Only meaningful for a 'full' sync: a
+				// 'missing'-only run never inspects existing records for staleness, so it
+				// has no reliable basis for deciding any of them should be deleted.
+				$pt_state['deleted'] = ( 'full' === $mode )
+					? self::delete_stale_training_posts( $source, $current_post_type, $fetched_ids )
+					: 0;
 				delete_transient( $transient_key );
 				$pt_state['done'] = true;
 			} elseif ( $page >= self::MAX_PAGES_PER_POST_TYPE ) {
@@ -1022,7 +1101,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 */
 		public static function get_ait_sync_progress() {
 
-			if ( check_ajax_referer( 'wpsc_get_ait_sync_progress', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_get_ait_sync_progress', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request', 401 );
 			}
 
@@ -1050,6 +1129,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			$type_index = 0;
 			$found_current = false;
 			$post_types_breakdown = array();
+			$failed_post_types = array();
 
 			foreach ( $post_types as $pt_state ) {
 
@@ -1059,12 +1139,22 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				$total_pages = max( 1, (int) ( $pt_state['total_pages'] ?? 1 ) );
 				$page = (int) ( $pt_state['page'] ?? 1 );
 				$is_done = ! empty( $pt_state['done'] );
+				$is_failed = ! empty( $pt_state['failed'] );
+
+				if ( $is_failed ) {
+					$failed_post_types[] = trim( ( $pt_state['name'] ?? '' ) . ( ! empty( $pt_state['error'] ) ? ' (' . $pt_state['error'] . ')' : '' ) );
+				}
 
 				$post_types_breakdown[] = array(
 					'name'        => $pt_state['name'] ?? '',
-					'status'      => $is_done ? 'done' : ( $found_current ? 'pending' : 'processing' ),
+					// A post type that exhausted its retries is 'done' in the sense that the
+					// job has moved on from it, but reporting it the same as a genuine success
+					// is exactly what let a fully-failed post type sync as "completed" with
+					// nothing visibly wrong - see WPSC_PS_AIT_Controller upload/sync bug report.
+					'status'      => $is_failed ? 'failed' : ( $is_done ? 'done' : ( $found_current ? 'pending' : 'processing' ) ),
 					'page'        => $page,
 					'total_pages' => $total_pages,
+					'error'       => $is_failed ? ( $pt_state['error'] ?? '' ) : '',
 				);
 
 				// The first not-done post type is the one currently being paged through.
@@ -1086,10 +1176,25 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			$status = $job['status'] ?? 'idle';
+			$message = $job['message'] ?? '';
 
 			if ( 'completed' === $status ) {
 				$percent = 100;
 				$label = __( 'Completed', 'wpsc-ps' );
+
+				// The job itself finished running either way - but silently reporting this
+				// the same as a full success is what hid an entire post type failing (e.g.
+				// after exhausting its retries) from the admin. Surface it the same way a
+				// hard job failure already is (see the 'failed' === data.status branch in
+				// ai-training.js), instead of leaving $message empty.
+				if ( ! empty( $failed_post_types ) ) {
+					$label = __( 'Completed with errors', 'wpsc-ps' );
+					$message = sprintf(
+						/* translators: %s: comma-separated list of post type names (with error messages) that failed. */
+						__( 'Sync completed, but the following post type(s) failed and were not fully indexed: %s', 'wpsc-ps' ),
+						implode( ', ', $failed_post_types )
+					);
+				}
 			}
 
 			wp_send_json_success(
@@ -1098,7 +1203,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 					'percent'    => $percent,
 					'label'      => $label,
 					'deleted'    => $deleted,
-					'message'    => $job['message'] ?? '',
+					'message'    => $message,
 					'post_types' => $post_types_breakdown,
 				)
 			);
@@ -1331,6 +1436,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				return array(
 					'success' => false,
 					'error'   => 'Invalid endpoint URL.',
+				);
+			}
+
+			// SSRF protection: only allow http/https endpoints resolving to a public IP -
+			// same guard used for the manual URL-upload flow (wpsc_validate_ai_urls()).
+			if ( ! WPSC_PS_AI_Functions::wpsc_is_url_host_public( $endpoint ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'This endpoint could not be validated as a public website.', 'wpsc-ps' ),
 				);
 			}
 
@@ -1751,6 +1865,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				);
 			}
 
+			// SSRF protection: re-checked on every recurring sync tick (not just at
+			// source-add time), since this runs unattended on cron and the endpoint's
+			// DNS could resolve differently later than it did when first validated.
+			if ( ! WPSC_PS_AI_Functions::wpsc_is_url_host_public( $endpoint ) ) {
+				return new WP_Error(
+					'wpsc_invalid_endpoint',
+					__( 'Training source endpoint could not be validated as a public website.', 'wpsc-ps' )
+				);
+			}
+
 			$url = add_query_arg(
 				array(
 					'page'     => max( 1, absint( $page ) ),
@@ -1823,10 +1947,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 * @param array  $source        Training source.
 		 * @param array  $response_data Response returned by fetch_training_posts().
 		 * @param string $post_type     Post type slug.
+		 * @param string $mode          'full' (insert new, refresh changed) or 'missing'
+		 *                              (insert only posts with no existing record at all).
 		 *
 		 * @return array
 		 */
-		private static function process_training_posts( array $source, array $response_data, $post_type ) {
+		private static function process_training_posts( array $source, array $response_data, $post_type, $mode = 'full' ) {
 
 			$posts = isset( $response_data['posts'] ) && is_array( $response_data['posts'] ) ? $response_data['posts'] : array();
 
@@ -1844,7 +1970,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 					continue;
 				}
 
-				$result = self::insert_training_post( $source, $post_type, $post );
+				$result = self::insert_training_post( $source, $post_type, $post, $mode );
 				if ( $result ) {
 					++$inserted;
 				} else {
@@ -1862,16 +1988,19 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		/**
 		 * Insert a post into the AI training queue.
 		 *
-		 * If a record already exists for the same source and source_id,
-		 * it will be skipped.
+		 * If a record already exists for the same source and source_id, the default
+		 * 'full' mode refreshes it in place when the remote post is newer; 'missing'
+		 * mode leaves any existing record untouched no matter how old it is - it only
+		 * ever adds a record for a post that has none yet (see sync_missing_posts_for_ai_training()).
 		 *
 		 * @param array  $source    Training source.
 		 * @param string $post_type Post type slug.
 		 * @param array  $post      REST API post object.
+		 * @param string $mode      'full' or 'missing'.
 		 *
 		 * @return bool True if inserted, false if skipped.
 		 */
-		private static function insert_training_post( array $source, $post_type, array $post ) {
+		private static function insert_training_post( array $source, $post_type, array $post, $mode = 'full' ) {
 
 			$post_type = sanitize_key( $post_type );
 			$post_id = absint( $post['id'] ?? 0 );
@@ -1895,6 +2024,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			$existing = self::get_existing_training_records( $doc_source, $post_type, $post_id, $current_provider );
 
 			if ( ! empty( $existing ) ) {
+
+				// 'missing' mode only ever fills in posts with no local record at all - an
+				// existing one (however stale) is intentionally left alone; use the 'full'
+				// mode ("Sync Posts") to also refresh changed content.
+				if ( 'missing' === $mode ) {
+					return false;
+				}
 
 				$post_modified_raw = isset( $post['modified'] ) ? sanitize_text_field( $post['modified'] ) : '';
 

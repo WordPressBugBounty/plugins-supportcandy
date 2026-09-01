@@ -106,7 +106,14 @@ if ( ! class_exists( 'WPSC_Current_Agent_Profile' ) ) :
 					foreach ( $menu_tabs as $section_key => $section_menu ) {
 						?>
 						<div class="wpsc-up-content wpsc-up-<?php echo esc_attr( $section_key ); ?> <?php echo ( $section_key === 'general' ) ? 'active' : ''; ?>">
-							<?php echo esc_attr( self::{$section_menu['callback']}() ); ?>
+							<?php
+							$callback = $section_menu['callback'];
+							if ( is_string( $callback ) && method_exists( __CLASS__, $callback ) ) {
+								echo esc_attr( self::{$callback}() );
+							} elseif ( is_callable( $callback ) ) {
+								echo esc_attr( call_user_func( $callback ) );
+							}
+							?>
 						</div>
 						<?php
 					}

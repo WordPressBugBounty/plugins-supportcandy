@@ -372,6 +372,32 @@ function wpsc_get_delete_ai_training_item(el, id, nonce) {
 }
 
 /**
+ * View the recorded failure reason of an AI training item
+ */
+function wpsc_view_reason_for_failed_ai_training_item(el, id, nonce) {
+
+	wpsc_show_modal();
+	var data = {
+		action: 'wpsc_view_reason_for_failed_ai_training_item',
+		id,
+		_ajax_nonce: nonce,
+	};
+	jQuery.post(
+		supportcandy.ajax_url,
+		data,
+		function (res) {
+
+			// Set to modal.
+			jQuery( '.wpsc-modal-header' ).text( res.title );
+			jQuery( '.wpsc-modal-body' ).html( res.body );
+			jQuery( '.wpsc-modal-footer' ).html( res.footer );
+			// Display modal.
+			wpsc_show_modal_inner_container();
+		}
+	);
+}
+
+/**
  * Download an AI training item
  */
 function wpsc_download_ai_training_item(el, id, nonce) {

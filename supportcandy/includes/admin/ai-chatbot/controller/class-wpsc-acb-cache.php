@@ -54,10 +54,19 @@ if ( ! class_exists( 'WPSC_ACB_Cache' ) ) :
 
 			$cached_data = $cache_hit ? array_merge( $default_data, $cached_data ) : $default_data;
 
+			$previous_user = $cached_data['user'];
+
 			// Refresh identity in case a guest has since logged in during the conversation.
 			$cached_data['user'] = $default_data['user'];
 
-			set_transient( $cache_label, $cached_data, HOUR_IN_SECONDS );
+			// Only persist when something actually changed (fresh cache needing its
+			// defaults saved, or the identity refresh above found a real change) -
+			// this is called on every read (including from inside a per-message loop
+			// while rebuilding the transcript from the database), so writing the
+			// transient unconditionally here would turn every plain read into a write.
+			if ( ! $cache_hit || $previous_user !== $cached_data['user'] ) {
+				set_transient( $cache_label, $cached_data, HOUR_IN_SECONDS );
+			}
 
 			return $cached_data;
 		}
@@ -94,6 +103,31 @@ if ( ! class_exists( 'WPSC_ACB_Cache' ) ) :
 				'content'      => $message,
 				'date_created' => ( new DateTime() )->format( 'Y-m-d H:i:s' ),
 			);
+			set_transient( $cache_label, $cached_data, HOUR_IN_SECONDS );
+		}
+
+		/**
+		 * Replace the full cached transcript for a session in a single write.
+		 *
+		 * Used when rebuilding the transcript from the database after a cache
+		 * miss - looping N messages through set_acb_chat_messages() there would
+		 * cost 2 set_transient() writes per message (one from its internal
+		 * get_acb_cache() call, one of its own) instead of the single write here.
+		 *
+		 * @param int   $session_id Session ID.
+		 * @param array $transcript Ordered list of ['role' => ..., 'content' => ..., 'date_created' => ...] entries.
+		 * @return void
+		 */
+		public static function set_acb_transcript( $session_id, array $transcript ) {
+
+			$session_id = (int) $session_id;
+			if ( $session_id <= 0 ) {
+				return;
+			}
+
+			$cache_label = self::get_cache_label( $session_id );
+			$cached_data = self::get_acb_cache( $session_id );
+			$cached_data['transcript'] = $transcript;
 			set_transient( $cache_label, $cached_data, HOUR_IN_SECONDS );
 		}
 

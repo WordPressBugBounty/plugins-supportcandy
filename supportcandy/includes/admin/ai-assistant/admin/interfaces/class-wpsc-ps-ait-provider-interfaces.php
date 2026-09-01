@@ -26,16 +26,6 @@ if ( ! interface_exists( 'WPSC_PS_AIT_Provider_Interface' ) ) :
 		public function wpsc_clear_provider_store_id();
 
 		/**
-		 * Extract AI metadata from a prompt.
-		 *
-		 * @param array  $ai_settings The AI settings array.
-		 * @param string $system_prompt The system prompt used for AI training.
-		 * @param string $user_prompt The user prompt containing the draft reply and context for the AI.
-		 * @return array The extracted metadata.
-		 */
-		public function wpsc_get_file_meta_data( $ai_settings, $system_prompt, $user_prompt );
-
-		/**
 		 * Attach a file to the vector store.
 		 *
 		 * @param string $vector_store_id ID of the vector store.
@@ -83,13 +73,14 @@ if ( ! interface_exists( 'WPSC_PS_AIT_Provider_Interface' ) ) :
 		public function wpsc_auto_draft_ticket_reply( $ai_settings, $ticket );
 
 		/**
-		 * Clean the content of a row for RAG (Retrieval-Augmented Generation) processing.
+		 * Maximum training file size (in bytes) this provider's file upload/indexing
+		 * endpoint accepts, used to validate a generated training file before it is
+		 * uploaded - independent of (and in addition to) the locally configured
+		 * 'ai-max-upload-file-size' setting.
 		 *
-		 * @param string $system_prompt The system prompt used for AI training.
-		 * @param array  $ai_settings The AI settings array.
-		 * @return string The cleaned content ready for RAG processing.
+		 * @return int Maximum file size in bytes.
 		 */
-		public function wpsc_clean_row_content_for_rag( $system_prompt, $ai_settings );
+		public function wpsc_max_training_file_size();
 
 		/**
 		 * Delete a training record from Gemini.
@@ -99,5 +90,20 @@ if ( ! interface_exists( 'WPSC_PS_AIT_Provider_Interface' ) ) :
 		 * @return mixed The response from the provider after attempting to delete the training record.
 		 */
 		public function wpsc_delete_training_record( $file, $ai_settings );
+
+		/**
+		 * Ask the AI provider to judge whether prepared content is useful enough to
+		 * index into the RAG knowledge base (e.g. cart/checkout boilerplate, empty
+		 * listings, and other content that would cost a provider embedding/indexing
+		 * call and vector store space without ever being useful for retrieval).
+		 *
+		 * @param array  $ai_settings AI settings array.
+		 * @param string $content Prepared plain-text content to judge.
+		 * @return array|false {'quality_score' => int (0-100), 'useful_for_rag' => bool},
+		 *                      or false if the provider couldn't be reached or its
+		 *                      response couldn't be parsed - callers should treat that
+		 *                      as "unable to judge" rather than "not useful".
+		 */
+		public function wpsc_assess_content_quality_for_rag( $ai_settings, $content );
 	}
 endif;

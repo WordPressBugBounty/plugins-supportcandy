@@ -44,6 +44,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			add_action( 'wp_ajax_wpsc_get_edit_customer_tl_item', array( __CLASS__, 'get_edit_customer_tl_item' ) );
 			add_action( 'wp_ajax_wpsc_set_edit_customer_tl_item', array( __CLASS__, 'set_edit_customer_tl_item' ) );
 			add_action( 'wp_ajax_wpsc_delete_customer_tl_item', array( __CLASS__, 'delete_customer_tl_item' ) );
+			add_action( 'wp_ajax_wpsc_sort_customer_tl_items', array( __CLASS__, 'sort_customer_tl_items' ) );
 
 			// customer ticket list filter items.
 			add_action( 'wp_ajax_wpsc_get_customer_filter_items', array( __CLASS__, 'get_customer_filter_items' ) );
@@ -52,6 +53,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			add_action( 'wp_ajax_wpsc_get_edit_ctl_filter_item', array( __CLASS__, 'get_edit_ctl_filter_item' ) );
 			add_action( 'wp_ajax_wpsc_set_edit_ctl_filter_item', array( __CLASS__, 'set_edit_ctl_filter_item' ) );
 			add_action( 'wp_ajax_wpsc_delete_ctl_filter_item', array( __CLASS__, 'delete_ctl_filter_item' ) );
+			add_action( 'wp_ajax_wpsc_sort_customer_filter_items', array( __CLASS__, 'sort_customer_filter_items' ) );
 
 			// customer default filters.
 			add_action( 'wp_ajax_wpsc_get_ctl_default_filters', array( __CLASS__, 'get_ctl_default_filters' ) );
@@ -61,6 +63,9 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			add_action( 'wp_ajax_wpsc_set_edit_ctl_default_filter', array( __CLASS__, 'set_edit_ctl_default_filter' ) );
 			add_action( 'wp_ajax_wpsc_delete_ctl_default_filter', array( __CLASS__, 'delete_ctl_default_filter' ) );
 			add_action( 'wp_ajax_wpsc_sort_ctl_default_filters', array( __CLASS__, 'sort_ctl_default_filters' ) );
+
+			// Toggle enable/disable of a single default filter.
+			add_action( 'wp_ajax_wpsc_toggle_ctl_default_filter_status', array( __CLASS__, 'toggle_ctl_default_filter_status' ) );
 
 			// Delete custom field actions.
 			add_action( 'wpsc_delete_custom_field', array( __CLASS__, 'delete_custom_field' ), 10, 1 );
@@ -165,6 +170,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			<table class="wpsc-atl wpsc-setting-tbl">
 				<thead>
 					<tr>
+						<th style="width: 30px;"><?php esc_attr_e( 'Sort', 'supportcandy' ); ?></th>
 						<th><?php esc_attr_e( 'Field', 'supportcandy' ); ?></th>
 						<th><?php esc_attr_e( 'Actions', 'supportcandy' ); ?></th>
 					</tr>
@@ -177,7 +183,8 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 							continue;
 						}
 						?>
-						<tr>
+						<tr data-id="<?php echo esc_attr( $slug ); ?>">
+							<td class="sort-handle"><?php WPSC_Icons::get( 'sort' ); ?></td>
 							<td><?php echo esc_attr( $cf->name ); ?></td>
 							<td>
 								<span class="wpsc-link" onclick="wpsc_get_edit_customer_tl_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_customer_tl_item' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
@@ -192,9 +199,11 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			<script>
 				jQuery('table.wpsc-atl').DataTable({
 					ordering: false,
+					autoWidth: false,
 					pageLength: 20,
 					bLengthChange: false,
-					columnDefs: [ 
+					columnDefs: [
+						{ targets: 0, width: '30px', searchable: false },
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
@@ -229,6 +238,34 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 					language: supportcandy.translations.datatables
 				});
 
+				jQuery(function() {
+					// Enable sorting with jQuery UI.
+					jQuery('table.wpsc-atl tbody').sortable({
+						handle: '.sort-handle',
+						helper: function(e, tr) {
+							var $originals = tr.children();
+							var $helper = tr.clone();
+							$helper.children().each(function(index) {
+								jQuery(this).width($originals.eq(index).width());
+							});
+							return $helper;
+						},
+						update: function(event, ui) {
+							var slugs = jQuery(this).sortable('toArray', { attribute: 'data-id' });
+							jQuery.post(
+								supportcandy.ajax_url,
+								{
+									action: 'wpsc_sort_customer_tl_items',
+									_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_sort_customer_tl_items' ) ); ?>',
+									slugs: slugs
+								},
+								function(response) {
+
+								}
+							);
+						}
+					});
+				});
 			</script>
 			<?php
 			wp_die();
@@ -383,6 +420,46 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		}
 
 		/**
+		 * Sort customer ticket list items
+		 *
+		 * @return void
+		 */
+		public static function sort_customer_tl_items() {
+
+			if ( check_ajax_referer( 'wpsc_sort_customer_tl_items', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 400 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$slugs = isset( $_POST['slugs'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['slugs'] ) ) : array();
+			if ( ! $slugs ) {
+				wp_send_json_error( 'Bad Request', 400 );
+			}
+
+			$list_items = get_option( 'wpsc-ctl-list-items', array() );
+
+			$new_list_items = array();
+			foreach ( $slugs as $slug ) {
+				if ( in_array( $slug, $list_items ) ) {
+					$new_list_items[] = $slug;
+				}
+			}
+
+			// Append any remaining items (safety net) that were not part of the posted order.
+			foreach ( $list_items as $slug ) {
+				if ( ! in_array( $slug, $new_list_items ) ) {
+					$new_list_items[] = $slug;
+				}
+			}
+
+			update_option( 'wpsc-ctl-list-items', $new_list_items );
+			wp_send_json( array( 'success' => true ), 200 );
+		}
+
+		/**
 		 * Get default filter ajax callback
 		 *
 		 * @return void
@@ -416,6 +493,15 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 						?>
 						<span class="title"><?php echo esc_attr( $filter_label ); ?></span>
 						<div class="actions">
+							<label class="wpsc-dbc-toggle-switch" onclick="event.stopPropagation();">
+								<input
+									type="checkbox"
+									class="wpsc-toggle-ctl-default-filter"
+									<?php checked( ! empty( $filter['is_enable'] ) ); ?>
+									onchange="wpsc_toggle_ctl_default_filter_status( this, '<?php echo esc_attr( $key ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_toggle_ctl_default_filter_status' ) ); ?>' );"
+								/>
+								<span class="wpsc-dbc-slider"></span>
+							</label>
 							<span class="action-btn" onclick="wpsc_get_edit_ctl_default_filter('<?php echo esc_attr( $key ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ctl_default_filter' ) ); ?>');"><?php WPSC_Icons::get( 'edit' ); ?></span>
 							<?php
 							if ( is_numeric( $key ) ) :
@@ -910,6 +996,44 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 		}
 
 		/**
+		 * Toggle enable/disable status of a single default filter
+		 *
+		 * Note: mirrors the protection in set_edit_ctl_default_filter() - the
+		 * filter currently set as the customer view's active default filter
+		 * can not be disabled.
+		 *
+		 * @return void
+		 */
+		public static function toggle_ctl_default_filter_status() {
+
+			if ( check_ajax_referer( 'wpsc_toggle_ctl_default_filter_status', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 401 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$slug      = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
+			$is_enable = isset( $_POST['is_enable'] ) ? intval( $_POST['is_enable'] ) : 0;
+
+			$ctl_filters = get_option( 'wpsc-ctl-default-filters', array() );
+			if ( ! $slug || ! isset( $ctl_filters[ $slug ] ) ) {
+				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
+			}
+
+			$more_settings = get_option( 'wpsc-tl-ms-customer-view' );
+			if ( ! $is_enable && $more_settings['default-filter'] == $slug ) {
+				$is_enable = 1;
+			}
+
+			$ctl_filters[ $slug ]['is_enable'] = $is_enable;
+			update_option( 'wpsc-ctl-default-filters', $ctl_filters );
+
+			wp_send_json_success( array( 'is_enable' => $is_enable ) );
+		}
+
+		/**
 		 * Get customer filter items
 		 *
 		 * @return void
@@ -934,6 +1058,7 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			<table class="wpsc-cfl wpsc-setting-tbl">
 				<thead>
 					<tr>
+						<th style="width: 30px;"><?php esc_attr_e( 'Sort', 'supportcandy' ); ?></th>
 						<th><?php esc_attr_e( 'Field', 'supportcandy' ); ?></th>
 						<th><?php esc_attr_e( 'Actions', 'supportcandy' ); ?></th>
 					</tr>
@@ -946,7 +1071,8 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 							continue;
 						}
 						?>
-						<tr>
+						<tr data-id="<?php echo esc_attr( $slug ); ?>">
+							<td class="sort-handle"><?php WPSC_Icons::get( 'sort' ); ?></td>
 							<td><?php echo esc_attr( $cf->name ); ?></td>
 							<td>
 								<span class="wpsc-link" onclick="wpsc_get_edit_ctl_filter_item('<?php echo esc_attr( $slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_get_edit_ctl_filter_item' ) ); ?>');"><?php esc_attr_e( 'Edit', 'supportcandy' ); ?></span> |
@@ -961,9 +1087,11 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			<script>
 				jQuery('table.wpsc-cfl').DataTable({
 					ordering: false,
+					autoWidth: false,
 					pageLength: 20,
 					bLengthChange: false,
-					columnDefs: [ 
+					columnDefs: [
+						{ targets: 0, width: '30px', searchable: false },
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
@@ -998,6 +1126,34 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 					language: supportcandy.translations.datatables
 				});
 
+				jQuery(function() {
+					// Enable sorting with jQuery UI.
+					jQuery('table.wpsc-cfl tbody').sortable({
+						handle: '.sort-handle',
+						helper: function(e, tr) {
+							var $originals = tr.children();
+							var $helper = tr.clone();
+							$helper.children().each(function(index) {
+								jQuery(this).width($originals.eq(index).width());
+							});
+							return $helper;
+						},
+						update: function(event, ui) {
+							var slugs = jQuery(this).sortable('toArray', { attribute: 'data-id' });
+							jQuery.post(
+								supportcandy.ajax_url,
+								{
+									action: 'wpsc_sort_customer_filter_items',
+									_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_sort_customer_filter_items' ) ); ?>',
+									slugs: slugs
+								},
+								function(response) {
+
+								}
+							);
+						}
+					});
+				});
 			</script>
 			<?php
 			wp_die();
@@ -1154,6 +1310,46 @@ if ( ! class_exists( 'WPSC_Customer_Ticket_List_Settings' ) ) :
 			}
 
 			wp_die();
+		}
+
+		/**
+		 * Sort customer ticket list filter items
+		 *
+		 * @return void
+		 */
+		public static function sort_customer_filter_items() {
+
+			if ( check_ajax_referer( 'wpsc_sort_customer_filter_items', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 400 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$slugs = isset( $_POST['slugs'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['slugs'] ) ) : array();
+			if ( ! $slugs ) {
+				wp_send_json_error( 'Bad Request', 400 );
+			}
+
+			$filter_items = get_option( 'wpsc-ctl-filter-items', array() );
+
+			$new_filter_items = array();
+			foreach ( $slugs as $slug ) {
+				if ( in_array( $slug, $filter_items ) ) {
+					$new_filter_items[] = $slug;
+				}
+			}
+
+			// Append any remaining items (safety net) that were not part of the posted order.
+			foreach ( $filter_items as $slug ) {
+				if ( ! in_array( $slug, $new_filter_items ) ) {
+					$new_filter_items[] = $slug;
+				}
+			}
+
+			update_option( 'wpsc-ctl-filter-items', $new_filter_items );
+			wp_send_json( array( 'success' => true ), 200 );
 		}
 
 		/**

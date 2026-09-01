@@ -104,7 +104,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Ticket_Summary' ) ) :
 		 */
 		public static function generate_ticket_summary() {
 
-			if ( check_ajax_referer( 'wpsc_generate_ticket_summary', '_ajax_nonce', false ) != 1 ) {
+			if ( ! check_ajax_referer( 'wpsc_generate_ticket_summary', '_ajax_nonce', false ) ) {
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
@@ -133,7 +133,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Ticket_Summary' ) ) :
 			}
 
 			$history = WPSC_PS_AI_Functions::wpsc_get_clean_ticket_history( $ticket_id, 0 );
-			$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+
+			try {
+				$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
+			} catch ( \Throwable $e ) {
+				wp_send_json_error( array( 'message' => 'Failed to generate summary.' ) );
+			}
 
 			$summary = false;
 			$summary = $provider->wpsc_generate_ticket_summary( $ai_settings, $history, $ticket_id );
@@ -158,7 +163,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Ticket_Summary' ) ) :
 				)
 			);
 
-			wp_send_json_success( array( 'summary' => $summary['summary'] ) );
+			// Sanitize AI-generated HTML before returning to client (same allow-list used when re-rendering the persisted summary).
+			$allowed_tags = array(
+				'ul'     => array(),
+				'li'     => array(),
+				'p'      => array(),
+				'strong' => array(),
+			);
+
+			wp_send_json_success( array( 'summary' => wp_kses( $summary['summary'], $allowed_tags ) ) );
 		}
 
 		/**

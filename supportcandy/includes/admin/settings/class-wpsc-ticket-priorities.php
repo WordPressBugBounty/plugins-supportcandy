@@ -26,6 +26,9 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			// Delete.
 			add_action( 'wp_ajax_wpsc_get_delete_priority', array( __CLASS__, 'get_delete_priority' ) );
 			add_action( 'wp_ajax_wpsc_set_delete_priority', array( __CLASS__, 'set_delete_priority' ) );
+
+			// Sorting.
+			add_action( 'wp_ajax_wpsc_set_priority_load_order', array( __CLASS__, 'set_priority_load_order' ) );
 		}
 
 		/**
@@ -58,6 +61,7 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 				<table class="wpsc-ticket-priorities wpsc-setting-tbl">
 					<thead>
 						<tr>
+							<th style="width: 30px;"><?php esc_attr_e( 'Sort', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Name', 'supportcandy' ); ?></th>
 							<th><?php esc_attr_e( 'Actions', 'supportcandy' ); ?></th>
 						</tr>
@@ -66,7 +70,8 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 						<?php
 						foreach ( $priorities  as  $priority ) {
 							?>
-							<tr>
+							<tr data-id="<?php echo esc_attr( $priority->id ); ?>">
+								<td class="sort-handle"><?php WPSC_Icons::get( 'sort' ); ?></td>
 								<td><span class="wpsc-tag" style="color: <?php echo esc_attr( $priority->color ); ?>; background-color: <?php echo esc_attr( $priority->bg_color ); ?>;" ><?php echo esc_attr( $priority->name ); ?></span></td>
 								<td>
 									<div class="actions">
@@ -90,9 +95,11 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			<script>
 				jQuery('table.wpsc-ticket-priorities').DataTable({
 					ordering: false,
+					autoWidth: false,
 					pageLength: 20,
 					bLengthChange: false,
-					columnDefs: [ 
+					columnDefs: [
+						{ targets: 0, width: '30px', searchable: false },
 						{ targets: -1, searchable: false },
 						{ targets: '_all', className: 'dt-left' }
 					],
@@ -126,6 +133,34 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 					language: supportcandy.translations.datatables
 				});
 
+				jQuery(function() {
+					// Enable sorting with jQuery UI.
+					jQuery('table.wpsc-ticket-priorities tbody').sortable({
+						handle: '.sort-handle',
+						helper: function(e, tr) {
+							var $originals = tr.children();
+							var $helper = tr.clone();
+							$helper.children().each(function(index) {
+								jQuery(this).width($originals.eq(index).width());
+							});
+							return $helper;
+						},
+						update: function(event, ui) {
+							var ids = jQuery(this).sortable('toArray', { attribute: 'data-id' });
+							jQuery.post(
+								supportcandy.ajax_url,
+								{
+									action: 'wpsc_set_priority_load_order',
+									_ajax_nonce: '<?php echo esc_attr( wp_create_nonce( 'wpsc_set_priority_load_order' ) ); ?>',
+									ids: ids
+								},
+								function(response) {
+
+								}
+							);
+						}
+					});
+				});
 			</script>
 			<?php
 			wp_die();
@@ -610,6 +645,41 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			$priority->destroy( $priority );
 
 			wp_die();
+		}
+
+		/**
+		 * Set load order for ticket priorities
+		 *
+		 * @return void
+		 */
+		public static function set_priority_load_order() {
+
+			if ( check_ajax_referer( 'wpsc_set_priority_load_order', '_ajax_nonce', false ) != 1 ) {
+				wp_send_json_error( 'Unauthorized request!', 400 );
+			}
+
+			if ( ! WPSC_Functions::is_site_admin() ) {
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
+			}
+
+			$ids = isset( $_POST['ids'] ) ? array_map( 'intval', wp_unslash( $_POST['ids'] ) ) : array();
+			if ( ! $ids ) {
+				wp_send_json_error( 'Bad Request', 400 );
+			}
+
+			$count = 1;
+			foreach ( $ids as $id ) {
+
+				$priority = new WPSC_Priority( $id );
+				if ( ! $priority->id ) {
+					continue;
+				}
+
+				$priority->load_order = $count++;
+				$priority->save();
+			}
+
+			wp_send_json( array( 'success' => true ), 200 );
 		}
 	}
 endif;

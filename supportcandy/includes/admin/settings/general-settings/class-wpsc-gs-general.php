@@ -25,6 +25,9 @@ if ( ! class_exists( 'WPSC_GS_General' ) ) :
 			// after new agent role added.
 			add_action( 'wpsc_after_add_agent_role', array( __CLASS__, 'after_add_new_role' ) );
 
+			// after agent role cloned.
+			add_action( 'wpsc_after_clone_agent_role', array( __CLASS__, 'after_clone_role' ), 10, 2 );
+
 			// after delete agent role.
 			add_action( 'wpsc_after_delete_agent_role', array( __CLASS__, 'after_delete_role' ) );
 		}
@@ -381,6 +384,29 @@ if ( ! class_exists( 'WPSC_GS_General' ) ) :
 			$gs['allow-create-ticket']   = $allow_ticket;
 			$gs['allow-ar-thread-email'] = $allow_thread;
 			$gs['allow-close-ticket']    = $allow_close;
+			update_option( 'wpsc-gs-general', $gs );
+		}
+
+		/**
+		 * After agent role cloned, add the new role wherever the source role was allowed.
+		 *
+		 * @param integer $new_role_id - newly cloned agent role id.
+		 * @param integer $source_role_id - source agent role id that was cloned.
+		 * @return void
+		 */
+		public static function after_clone_role( $new_role_id, $source_role_id ) {
+
+			$gs = get_option( 'wpsc-gs-general' );
+
+			foreach ( array( 'allow-create-ticket', 'allow-ar-thread-email', 'allow-close-ticket' ) as $key ) {
+
+				$allowed = isset( $gs[ $key ] ) ? $gs[ $key ] : array();
+				if ( in_array( $source_role_id, $allowed ) ) {
+					$allowed[]   = $new_role_id;
+					$gs[ $key ] = $allowed;
+				}
+			}
+
 			update_option( 'wpsc-gs-general', $gs );
 		}
 

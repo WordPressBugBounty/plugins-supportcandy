@@ -2635,6 +2635,42 @@ function wpsc_delete_atl_default_filter(slug, nonce) {
 }
 
 /**
+ * Toggle enable/disable status of a single default filter.
+ * Note: the currently active default filter can't be disabled - if the
+ * server refuses the disable, it sends back is_enable: 1 and we resync
+ * the checkbox/row to reflect that.
+ */
+function wpsc_toggle_atl_default_filter_status(el, slug, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+  var filter = checkbox.closest(".wpsc-setting-card");
+
+  var data = {
+    action: "wpsc_toggle_atl_default_filter_status",
+    slug,
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    var saved_enable = response.data.is_enable;
+    checkbox.prop("checked", !!saved_enable);
+    filter.attr(
+      "style",
+      saved_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+    var total = jQuery(".wpsc-toggle-atl-default-filter").length;
+    var checked = jQuery(".wpsc-toggle-atl-default-filter:checked").length;
+    jQuery(".wpsc-toggle-all-atl-default-filters").prop(
+      "checked",
+      total > 0 && total === checked
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
+  });
+}
+
+/**
  * Get customer ticket list items
  */
 function wpsc_get_customer_tl_items() {
@@ -2828,6 +2864,36 @@ function wpsc_delete_ctl_default_filter(slug, nonce) {
   };
   jQuery.post(supportcandy.ajax_url, data, function (response) {
     wpsc_get_ctl_default_filters();
+  });
+}
+
+/**
+ * Toggle enable/disable status of a single default filter.
+ * Note: the currently active default filter can't be disabled - if the
+ * server refuses the disable, it sends back is_enable: 1 and we resync
+ * the checkbox/row to reflect that.
+ */
+function wpsc_toggle_ctl_default_filter_status(el, slug, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+  var filter = checkbox.closest(".wpsc-setting-card");
+
+  var data = {
+    action: "wpsc_toggle_ctl_default_filter_status",
+    slug,
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function (response) {
+    var saved_enable = response.data.is_enable;
+    checkbox.prop("checked", !!saved_enable);
+    filter.attr(
+      "style",
+      saved_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
   });
 }
 
@@ -3596,6 +3662,61 @@ function wpsc_set_tw_load_order(slugs, nonce) {
   var data = { action: "wpsc_set_tw_load_order", slugs, _ajax_nonce: nonce };
   jQuery.post(supportcandy.ajax_url, data, function (res) {
     wpsc_get_ticket_widget();
+  });
+}
+
+/**
+ * Toggle enable/disable status of a single ticket widget
+ */
+function wpsc_toggle_ticket_widget_status(el, slug, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+  var widget = checkbox.closest(".wpsc-setting-card");
+
+  var data = {
+    action: "wpsc_toggle_ticket_widget_status",
+    slug,
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function () {
+    widget.attr(
+      "style",
+      is_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+    var total = jQuery(".wpsc-toggle-ticket-widget").length;
+    var checked = jQuery(".wpsc-toggle-ticket-widget:checked").length;
+    jQuery(".wpsc-toggle-all-ticket-widgets").prop(
+      "checked",
+      total > 0 && total === checked
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
+  });
+}
+
+/**
+ * Enable or disable all ticket widgets at once
+ */
+function wpsc_toggle_all_ticket_widgets(el, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+
+  var data = {
+    action: "wpsc_toggle_all_ticket_widgets_status",
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function () {
+    jQuery(".wpsc-toggle-ticket-widget").prop("checked", !!is_enable);
+    jQuery(".wpsc-setting-card").attr(
+      "style",
+      is_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
   });
 }
 
@@ -5782,6 +5903,61 @@ function wpsc_set_dashboard_card_load_order(slugs, nonce) {
 }
 
 /**
+ * Toggle enable/disable status of a single dashboard card
+ */
+function wpsc_toggle_dashboard_card_status(el, slug, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+  var card = checkbox.closest(".wpsc-setting-card");
+
+  var data = {
+    action: "wpsc_toggle_dashboard_card_status",
+    slug,
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function () {
+    card.attr(
+      "style",
+      is_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+    var total = jQuery(".wpsc-toggle-dashboard-card").length;
+    var checked = jQuery(".wpsc-toggle-dashboard-card:checked").length;
+    jQuery(".wpsc-toggle-all-dashboard-cards").prop(
+      "checked",
+      total > 0 && total === checked
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
+  });
+}
+
+/**
+ * Enable or disable all dashboard cards at once
+ */
+function wpsc_toggle_all_dashboard_cards(el, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+
+  var data = {
+    action: "wpsc_toggle_all_dashboard_cards_status",
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function () {
+    jQuery(".wpsc-toggle-dashboard-card").prop("checked", !!is_enable);
+    jQuery(".wpsc-setting-card").attr(
+      "style",
+      is_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
+  });
+}
+
+/**
  * Get dashboard widgets settings
  */
 function wpsc_get_dashboard_widgets_settings() {
@@ -5946,6 +6122,61 @@ function wpsc_set_dashboard_widget_load_order(slugs, nonce) {
   };
   jQuery.post(supportcandy.ajax_url, data, function (res) {
     wpsc_get_dashboard_widgets_settings();
+  });
+}
+
+/**
+ * Toggle enable/disable status of a single dashboard widget
+ */
+function wpsc_toggle_dashboard_widget_status(el, slug, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+  var widget = checkbox.closest(".wpsc-setting-card");
+
+  var data = {
+    action: "wpsc_toggle_dashboard_widget_status",
+    slug,
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function () {
+    widget.attr(
+      "style",
+      is_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+    var total = jQuery(".wpsc-toggle-dashboard-widget").length;
+    var checked = jQuery(".wpsc-toggle-dashboard-widget:checked").length;
+    jQuery(".wpsc-toggle-all-dashboard-widgets").prop(
+      "checked",
+      total > 0 && total === checked
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
+  });
+}
+
+/**
+ * Enable or disable all dashboard widgets at once
+ */
+function wpsc_toggle_all_dashboard_widgets(el, nonce) {
+  var checkbox = jQuery(el);
+  var is_enable = checkbox.is(":checked") ? 1 : 0;
+
+  var data = {
+    action: "wpsc_toggle_all_dashboard_widgets_status",
+    is_enable,
+    _ajax_nonce: nonce,
+  };
+  jQuery.post(supportcandy.ajax_url, data, function () {
+    jQuery(".wpsc-toggle-dashboard-widget").prop("checked", !!is_enable);
+    jQuery(".wpsc-setting-card").attr(
+      "style",
+      is_enable ? "" : "background-color:#eec7ca;color:#dc2222"
+    );
+  }).fail(function () {
+    // Revert checkbox on failure.
+    checkbox.prop("checked", !is_enable);
   });
 }
 

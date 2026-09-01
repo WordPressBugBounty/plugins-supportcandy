@@ -66,7 +66,7 @@ if ( ! class_exists( 'WPSC_MS_Recaptcha' ) ) :
 					printf(
 						/* translators: Click here to see the documentation */
 						esc_attr__( '%s to see the documentation!', 'supportcandy' ),
-						'<a href="https://supportcandy.net/docs/google-recaptcha/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
+						'<a href="https://supportcandy.net/docs/recaptcha-setting/" target="_blank">' . esc_attr__( 'Click here', 'supportcandy' ) . '</a>'
 					);
 					?>
 				</div>

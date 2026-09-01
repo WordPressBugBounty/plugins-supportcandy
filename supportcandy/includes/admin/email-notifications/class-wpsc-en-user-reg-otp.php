@@ -112,7 +112,6 @@ if ( ! class_exists( 'WPSC_EN_User_Reg_OTP' ) ) :
 									selector:'#'+selector,
 									body_id: body_id,
 									menubar: false,
-									statusbar: false,
 									height : '200',
 									plugins: [
 									'lists link image directionality paste'

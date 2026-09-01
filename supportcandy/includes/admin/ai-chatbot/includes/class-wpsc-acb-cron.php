@@ -65,7 +65,7 @@ if ( ! class_exists( 'WPSC_ACB_Cron' ) ) :
 
 			$acb_settings = get_option( 'wpsc-ps-acb-chatbot-settings', array() );
 
-			$auto_delete_acb_logs_time = isset( $acb_settings['retention-policy-time'] ) ? intval( $acb_settings['retention-policy-time'] ) : 0;
+			$auto_delete_acb_logs_time = isset( $acb_settings['delete-acb-session-time'] ) ? intval( $acb_settings['delete-acb-session-time'] ) : 0;
 			if ( $auto_delete_acb_logs_time > 0 && ! wp_next_scheduled( 'wpsc_delete_acb_logs' ) ) {
 				wp_schedule_single_event( time(), 'wpsc_delete_acb_logs' );
 			}
@@ -90,6 +90,8 @@ if ( ! class_exists( 'WPSC_ACB_Cron' ) ) :
 			$sessions = WPSC_ACB_Sessions::find(
 				array(
 					'items_per_page' => 50,
+					'orderby'        => 'last_activity',
+					'order'          => 'ASC',
 					'meta_query'     => array(
 						'relation' => 'AND',
 						array(
@@ -173,8 +175,8 @@ if ( ! class_exists( 'WPSC_ACB_Cron' ) ) :
 			$today = new DateTime( 'now', $tz );
 
 			// Get auto delete time and unit from setting.
-			$unit = isset( $acb_settings['retention-policy-unit'] ) ? $acb_settings['retention-policy-unit'] : 'year';
-			$time = isset( $acb_settings['retention-policy-time'] ) ? $acb_settings['retention-policy-time'] : 0;
+			$unit = isset( $acb_settings['delete-acb-session-unit'] ) ? $acb_settings['delete-acb-session-unit'] : 'year';
+			$time = isset( $acb_settings['delete-acb-session-time'] ) ? $acb_settings['delete-acb-session-time'] : 0;
 			if ( $time === 0 ) {
 				return;
 			}

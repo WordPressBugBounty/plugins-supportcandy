@@ -465,6 +465,32 @@ input[type="text"].select2-search__field:focus {
 .wpsc-ticket-list-tbl tbody tr:hover {
   cursor: pointer;
 }
+.wpsc-ticket-list-tbl th.wpsc-tl-sortable-th {
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.wpsc-ticket-list-tbl th .wpsc-tl-th-inner {
+  display: flex;
+  align-items: center;
+}
+.wpsc-ticket-list-tbl th .wpsc-tl-sort-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 12px;
+  margin-right: 6px;
+}
+.wpsc-ticket-list-tbl th .wpsc-tl-sort-icon svg {
+  width: auto;
+  height: 100%;
+  fill: #a7aaad;
+}
+.wpsc-ticket-list-tbl th.wpsc-tl-sorted-asc .wpsc-tl-sort-icon svg,
+.wpsc-ticket-list-tbl th.wpsc-tl-sorted-desc .wpsc-tl-sort-icon svg {
+  fill: #2271b1;
+}
 
 /* Modal Popup */
 .wpsc-modal .loader,
@@ -868,6 +894,12 @@ input[type="text"].select2-search__field:focus {
 .wpsc-thread .thread-text {
   overflow: hidden;
 }
+.wpsc-thread .thread-text.wpsc-collapsed {
+  max-height: 100px;
+}
+.wpsc-thread .thread-text.wpsc-expanded {
+  max-height: none;
+}
 .wpsc-thread .thread-text ul{
   list-style-type: disc !important;
   padding-inline-start: 2em;
@@ -1212,9 +1244,18 @@ input[type="text"].select2-search__field:focus {
 .wpsc-switch-editor.active {
   background: #c3c3c3;
 }
-.wpsc_textarea {
+.wpsc_textarea:not(#wpsc-en-body) {
   height: 160px !important;
   width: 100% !important;
+}
+/* Email Notifications body editor (Ticket Notifications, OTP, Satisfaction Survey,
+   Auto Close Ticket, WooCommerce create ticket): allow vertical resize handle to work
+   by not forcing height with !important. Scoped to this id only so other .wpsc_textarea
+   usages (canned replies, GDPR/T&C, ticket description, print templates, etc.) are unaffected. */
+#wpsc-en-body.wpsc_textarea {
+  height: 160px;
+  width: 100% !important;
+  resize: vertical;
 }
 
 /* Ticket form field */
@@ -1896,6 +1937,10 @@ table.wpsc-working-hrs {
 }
 
 .wpsc-actions-btn-setting {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding-bottom: 15px;
 }
 
