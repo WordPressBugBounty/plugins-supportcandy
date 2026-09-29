@@ -21,6 +21,25 @@ if ( ! class_exists( 'WPSC_Appearence_Indidual_Ticket' ) ) :
 		}
 
 		/**
+		 * Sanitize a posted color value, falling back to the given default when it isn't a valid hex color.
+		 *
+		 * @param string $key - $_POST key.
+		 * @param string $default_color - fallback hex color.
+		 * @return string
+		 */
+		private static function sanitize_color( $key, $default_color ) {
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already verified in save_settings() before this is called
+			if ( ! isset( $_POST[ $key ] ) ) {
+				return $default_color;
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already verified in save_settings() before this is called
+			$color = sanitize_hex_color( wp_unslash( $_POST[ $key ] ) );
+			return $color ? $color : $default_color;
+		}
+
+		/**
 		 * Reset settings
 		 *
 		 * @return void
@@ -206,25 +225,25 @@ if ( ! class_exists( 'WPSC_Appearence_Indidual_Ticket' ) ) :
 				'wpsc-ap-individual-ticket',
 				array(
 
-					'reply-primary-color'      => isset( $_POST['reply-primary-color'] ) ? sanitize_text_field( wp_unslash( $_POST['reply-primary-color'] ) ) : '#2c3e50',
-					'reply-secondary-color'    => isset( $_POST['reply-secondary-color'] ) ? sanitize_text_field( wp_unslash( $_POST['reply-secondary-color'] ) ) : '#777',
-					'reply-icon-color'         => isset( $_POST['reply-icon-color'] ) ? sanitize_text_field( wp_unslash( $_POST['reply-icon-color'] ) ) : '#777',
+					'reply-primary-color'      => self::sanitize_color( 'reply-primary-color', '#2c3e50' ),
+					'reply-secondary-color'    => self::sanitize_color( 'reply-secondary-color', '#777' ),
+					'reply-icon-color'         => self::sanitize_color( 'reply-icon-color', '#777' ),
 
-					'note-primary-color'       => isset( $_POST['note-primary-color'] ) ? sanitize_text_field( wp_unslash( $_POST['note-primary-color'] ) ) : '#8e6600',
-					'note-secondary-color'     => isset( $_POST['note-secondary-color'] ) ? sanitize_text_field( wp_unslash( $_POST['note-secondary-color'] ) ) : '#8e8d45',
-					'note-icon-color'          => isset( $_POST['note-icon-color'] ) ? sanitize_text_field( wp_unslash( $_POST['note-icon-color'] ) ) : '#8e8d45',
+					'note-primary-color'       => self::sanitize_color( 'note-primary-color', '#8e6600' ),
+					'note-secondary-color'     => self::sanitize_color( 'note-secondary-color', '#8e8d45' ),
+					'note-icon-color'          => self::sanitize_color( 'note-icon-color', '#8e8d45' ),
 
-					'log-text'                 => isset( $_POST['log-text'] ) ? sanitize_text_field( wp_unslash( $_POST['log-text'] ) ) : '#2c3e50',
+					'log-text'                 => self::sanitize_color( 'log-text', '#2c3e50' ),
 
-					'widget-header-bg-color'   => isset( $_POST['widget-header-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-header-bg-color'] ) ) : '#fff8e5',
-					'widget-header-text-color' => isset( $_POST['widget-header-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-header-text-color'] ) ) : '#ff8f2b',
+					'widget-header-bg-color'   => self::sanitize_color( 'widget-header-bg-color', '#fff8e5' ),
+					'widget-header-text-color' => self::sanitize_color( 'widget-header-text-color', '#ff8f2b' ),
 
-					'widget-body-bg-color'     => isset( $_POST['widget-body-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-body-bg-color'] ) ) : '#f9f9f9',
-					'widget-body-label-color'  => isset( $_POST['widget-body-label-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-body-label-color'] ) ) : '#777',
-					'widget-body-text-color'   => isset( $_POST['widget-body-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-body-text-color'] ) ) : '#2c3e50',
+					'widget-body-bg-color'     => self::sanitize_color( 'widget-body-bg-color', '#f9f9f9' ),
+					'widget-body-label-color'  => self::sanitize_color( 'widget-body-label-color', '#777' ),
+					'widget-body-text-color'   => self::sanitize_color( 'widget-body-text-color', '#2c3e50' ),
 
-					'reply-close-bg-color'     => isset( $_POST['reply-close-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['reply-close-bg-color'] ) ) : '#fff',
-					'reply-close-text-color'   => isset( $_POST['reply-close-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['reply-close-text-color'] ) ) : '#707070',
+					'reply-close-bg-color'     => self::sanitize_color( 'reply-close-bg-color', '#fff' ),
+					'reply-close-text-color'   => self::sanitize_color( 'reply-close-text-color', '#707070' ),
 
 				)
 			);

@@ -91,28 +91,36 @@ if ( ! class_exists( 'WPSC_DBC_Closed_Tickets' ) ) :
 			$range = $dashboard_settings['default-date-range'] ?? 'last-week';
 			$date_range = WPSC_Functions::get_dashboard_date_range( $range );
 
-			$filters = array();
-			$count = WPSC_Ticket::count(
-				array(
-					'items_per_page' => 0,
-					'system_query'   => $current_user->get_tl_system_query( $filters ),
-					'meta_query'     => array(
-						'relation' => 'AND',
+			// Differs per viewing agent (system_query depends on the viewer's visibility capabilities),
+			// so this is cached per agent rather than shared across everyone.
+			$count = WPSC_Stats_Cache::remember(
+				'card-closed-tickets',
+				array( $closed_statuses, $date_range ),
+				function () use ( $current_user, $closed_statuses, $date_range ) {
+					$filters = array();
+					return WPSC_Ticket::count(
 						array(
-							'slug'    => 'status',
-							'compare' => 'IN',
-							'val'     => $closed_statuses,
-						),
-						array(
-							'slug'    => 'date_closed',
-							'compare' => 'BETWEEN',
-							'val'     => array(
-								'operand_val_1' => $date_range[0],
-								'operand_val_2' => $date_range[1],
+							'system_query' => $current_user->get_tl_system_query( $filters ),
+							'meta_query'   => array(
+								'relation' => 'AND',
+								array(
+									'slug'    => 'status',
+									'compare' => 'IN',
+									'val'     => $closed_statuses,
+								),
+								array(
+									'slug'    => 'date_closed',
+									'compare' => 'BETWEEN',
+									'val'     => array(
+										'operand_val_1' => $date_range[0],
+										'operand_val_2' => $date_range[1],
+									),
+								),
 							),
-						),
-					),
-				)
+						)
+					);
+				},
+				true
 			);
 			wp_send_json( array( 'count' => $count ) );
 		}

@@ -31,12 +31,12 @@ if ( ! class_exists( 'WPSC_ACB_Status' ) ) :
 
 			if ( self::$labels === null ) {
 				self::$labels = array(
-					self::ACTIVE    => esc_attr__( 'Active', 'wpsc-ps' ),
-					self::INACTIVE  => esc_attr__( 'Inactive', 'wpsc-ps' ),
-					self::ABANDONED => esc_attr__( 'Abandoned', 'wpsc-ps' ),
-					self::HANDOFF   => esc_attr__( 'Handoff', 'wpsc-ps' ),
-					self::RESOLVED  => esc_attr__( 'Resolved', 'wpsc-ps' ),
-					self::CLOSED    => esc_attr__( 'Closed', 'wpsc-ps' ),
+					self::ACTIVE    => esc_attr__( 'Active', 'supportcandy' ),
+					self::INACTIVE  => esc_attr__( 'Inactive', 'supportcandy' ),
+					self::ABANDONED => esc_attr__( 'Abandoned', 'supportcandy' ),
+					self::HANDOFF   => esc_attr__( 'Handoff', 'supportcandy' ),
+					self::RESOLVED  => esc_attr__( 'Resolved', 'supportcandy' ),
+					self::CLOSED    => esc_attr__( 'Closed', 'supportcandy' ),
 				);
 			}
 
@@ -53,7 +53,7 @@ if ( ! class_exists( 'WPSC_ACB_Status' ) ) :
 
 			$labels = self::get_labels();
 
-			return $labels[ $status ] ?? esc_attr__( 'Unknown', 'wpsc-ps' );
+			return $labels[ $status ] ?? esc_attr__( 'Unknown', 'supportcandy' );
 		}
 
 		/**

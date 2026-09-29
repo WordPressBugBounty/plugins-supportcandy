@@ -76,8 +76,9 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 			// so deferring is safe: no row, no cron state. The event that triggered this call
 			// was a one-off wp_schedule_single_event() and is already consumed by WP-Cron, so
 			// simply returning here does not lose it or leave a duplicate behind - the pending
-			// records get picked up again once every active sync finishes (see the finalize
-			// step of WPSC_PS_AI_Setting_AI_Training_Actions::process_sync_tick()).
+			// records get picked up again once every active sync finishes (see
+			// WPSC_PS_AI_Setting_AI_Training_Actions::maybe_kick_upload_phase(), called once
+			// process_sync_tick_page() finalizes a job).
 			if ( WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
 				return;
 			}
@@ -791,8 +792,9 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 			);
 
 			// Do not requeue while a sync is active - if one started while this file was
-			// uploading, the finalize step of process_sync_tick() will schedule the next
-			// upload run once every source's sync has finished instead.
+			// uploading, WPSC_PS_AI_Setting_AI_Training_Actions::maybe_kick_upload_phase()
+			// will schedule (and immediately drive) the next upload run once every source's
+			// sync has finished instead.
 			if ( $pending > 0 && ! wp_next_scheduled( 'wpsc_ai_training_upload' ) && ! WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
 				wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
 			}
@@ -983,7 +985,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 
 			// Validate input content.
 			if ( empty( $cleaned_content ) || ! is_string( $cleaned_content ) ) {
-				return new WP_Error( 'wpsc_ai_training_empty_content', __( 'Ticket content is empty or invalid.', 'wpsc-ps' ) );
+				return new WP_Error( 'wpsc_ai_training_empty_content', __( 'Ticket content is empty or invalid.', 'supportcandy' ) );
 			}
 
 			$id = isset( $meta_data['id'] ) ? intval( $meta_data['id'] ) : 0;
@@ -993,7 +995,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 
 			// Validate upload directory.
 			if ( empty( $upload_dir['basedir'] ) || empty( $upload_dir['baseurl'] ) ) {
-				return new WP_Error( 'wpsc_ai_training_no_upload_dir', __( 'Upload directory not available.', 'wpsc-ps' ) );
+				return new WP_Error( 'wpsc_ai_training_no_upload_dir', __( 'Upload directory not available.', 'supportcandy' ) );
 			}
 
 			$today = new DateTime( 'now' );
@@ -1003,13 +1005,13 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 			// Create directory if not exists.
 			if ( ! file_exists( $base_dir ) ) {
 				if ( ! wp_mkdir_p( $base_dir ) ) {
-					return new WP_Error( 'wpsc_ai_training_mkdir_failed', __( 'Failed to create directory.', 'wpsc-ps' ) );
+					return new WP_Error( 'wpsc_ai_training_mkdir_failed', __( 'Failed to create directory.', 'supportcandy' ) );
 				}
 			}
 
 			// Check writable.
 			if ( ! is_writable( $base_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
-				return new WP_Error( 'wpsc_ai_training_dir_not_writable', __( 'Directory is not writable: ', 'wpsc-ps' ) . $base_dir );
+				return new WP_Error( 'wpsc_ai_training_dir_not_writable', __( 'Directory is not writable: ', 'supportcandy' ) . $base_dir );
 			}
 
 			// Normalize content.
@@ -1033,14 +1035,14 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 			$result = file_put_contents( $file_path, $cleaned_content, LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 			if ( false === $result || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'wpsc_ai_training_write_failed', __( 'Failed to write file.', 'wpsc-ps' ) );
+				return new WP_Error( 'wpsc_ai_training_write_failed', __( 'Failed to write file.', 'supportcandy' ) );
 			}
 
 			// Validate file size.
 			$file_size = filesize( $file_path );
 			if ( false === $file_size || $file_size <= 0 ) {
 				wp_delete_file( $file_path );
-				return new WP_Error( 'wpsc_ai_training_empty_file', __( 'Generated file is empty.', 'wpsc-ps' ) );
+				return new WP_Error( 'wpsc_ai_training_empty_file', __( 'Generated file is empty.', 'supportcandy' ) );
 			}
 
 			// Get file type.
@@ -1051,7 +1053,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 			$tmp_file = tempnam( $base_dir . '/', $file_name );
 			if ( ! $tmp_file || ! copy( $file_path, $tmp_file ) ) {
 				wp_delete_file( $file_path );
-				return new WP_Error( 'wpsc_ai_training_tmp_file_failed', __( 'Failed to create temp file.', 'wpsc-ps' ) );
+				return new WP_Error( 'wpsc_ai_training_tmp_file_failed', __( 'Failed to create temp file.', 'supportcandy' ) );
 			}
 
 			// Prepare files array.
@@ -1116,6 +1118,19 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 				- Focus only on unresolved or latest user intent
 				- Keep response short, clear, and actionable
 				- Prefer step-by-step guidance when troubleshooting
+				- NEVER invent exact UI specifics - menu paths, tab names, button/checkbox
+				  labels, or settings names - that are not present in the retrieved
+				  knowledge base content. Only state a specific navigation step or label if
+				  it appears (verbatim or near-verbatim) in that content.
+				- If the knowledge base confirms a feature/capability exists but does not
+				  give the exact steps or labels to use it, describe the capability itself
+				  in general terms and say the exact steps should be confirmed with the
+				  team, instead of guessing plausible-sounding menu paths or labels
+				- Before answering a yes/no question about whether something is possible
+				  (e.g. "can I add X to Y"), check whether the retrieved knowledge base
+				  content actually confirms it. If it does not, do not guess "yes" - say
+				  you are not certain and that it should be confirmed with the team, rather
+				  than affirming a capability that may not exist
 
 				CITATION RULES:
 				- Do NOT include references, citations, or source links
@@ -1123,19 +1138,46 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 				- Return only the final clean answer
 
 				CONTENT RULES:
-				- Ignore greetings, signatures, and irrelevant text
+				- Ignore greetings, signatures, and irrelevant text found in the customer
+				  messages when identifying what to answer - this does not apply to your own
+				  reply, which must still open with a greeting and close politely as below
 				- Preserve technical accuracy (errors, logs, configurations)
 				- Do NOT mention PII or placeholders
 
-				HTML OUTPUT RULES:
-				- Return clean HTML suitable for TinyMCE editor
-				- Use <p> for paragraphs
-				- Use <ul> and <li> for steps or lists
+				LANGUAGE & GREETING RULES:
+				- Detect the language the customer used in their latest message and write
+				  the entire reply - including the greeting and closing - in that same
+				  language. Do not default to English if the customer wrote in another
+				  language.
+				- Always start the reply with a short, natural greeting (the equivalent of
+				  "Hi," or "Hello," translated into that language) and end with a brief,
+				  polite closing offering further help - regardless of what language the
+				  reply is in.
+
+				HTML OUTPUT RULES (MANDATORY):
+				- Return clean HTML suitable for direct insertion into a TinyMCE editor
+				- Wrap every paragraph in <p>...</p> - never leave a paragraph as bare text
+				- Wrap every step list or set of bullet points in <ul><li>...</li></ul>
+				  (or <ol><li>...</li></ol> for numbered steps) - never write "-", "*", or
+				  "1." as plain text
 				- Use <strong> for important points
 				- Keep HTML minimal and clean
 				- Avoid excessive <br> tags
-				- Do NOT use markdown
-				- Do NOT wrap output in code blocks
+				- Do NOT use markdown syntax anywhere (no **bold**, no "- " bullets, no "1. "
+				  numbering) - use the equivalent HTML tag instead
+				- Do NOT wrap output in code blocks or backticks
+				- Forbidden anywhere in output: ``` , ```html , ```markdown
+				- The first character of your response must be an HTML tag itself, not a
+				  code fence, label, or plain text
+
+				STRUCTURE EXAMPLE (MUST FOLLOW):
+				<p>Hello,</p>
+				<p>To resolve this, please follow these steps:</p>
+				<ul>
+				<li>Go to <strong>Settings > General</strong></li>
+				<li>Enable the required option</li>
+				</ul>
+				<p>Let us know if you need further help.</p>
 
 				OUTPUT:
 				Return ONLY the final HTML reply.';
@@ -1384,7 +1426,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Controller' ) ) :
 
 			$url = $endpoint . 'wp/v2/' . $post_type . '/' . $post_id;
 
-			$response = wp_remote_get(
+			$response = WPSC_PS_AI_Functions::rest_remote_get(
 				$url,
 				array(
 					'timeout' => 30,

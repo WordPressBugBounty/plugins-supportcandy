@@ -1429,65 +1429,6 @@ function wpsc_reset_ap_modal_popup(el, nonce) {
 }
 
 /**
- * Get appearence agent collision settigns
- */
-function wpsc_get_ap_agent_collision() {
-  supportcandy.current_tab = "agent-collision";
-  jQuery(".wpsc-setting-tab-container button").removeClass("active");
-  jQuery(
-    ".wpsc-setting-tab-container button." + supportcandy.current_tab
-  ).addClass("active");
-
-  window.history.replaceState(
-    {},
-    null,
-    "admin.php?page=wpsc-settings&section=" +
-      supportcandy.current_section +
-      "&tab=" +
-      supportcandy.current_tab
-  );
-  jQuery(".wpsc-setting-section-body").html(supportcandy.loader_html);
-
-  wpsc_scroll_top();
-  var data = { action: "wpsc_get_ap_agent_collision" };
-  jQuery.post(supportcandy.ajax_url, data, function (response) {
-    jQuery(".wpsc-setting-section-body").html(response);
-    wpsc_reset_responsive_style();
-  });
-}
-
-/**
- * Set appearence agent collision settings
- */
-function wpsc_set_ap_agent_collision(el) {
-  var form = jQuery(".wpsc-frm-ap-agent-collision")[0];
-  var dataform = new FormData(form);
-  jQuery(el).text(supportcandy.translations.please_wait);
-  jQuery
-    .ajax({
-      url: supportcandy.ajax_url,
-      type: "POST",
-      data: dataform,
-      processData: false,
-      contentType: false,
-    })
-    .done(function (res) {
-      wpsc_get_ap_agent_collision();
-    });
-}
-
-/**
- * Reset appearence agent collision settings
- */
-function wpsc_reset_ap_agent_collision(el, nonce) {
-  jQuery(el).text(supportcandy.translations.please_wait);
-  var data = { action: "wpsc_reset_ap_agent_collision", _ajax_nonce: nonce };
-  jQuery.post(supportcandy.ajax_url, data, function (res) {
-    wpsc_get_ap_agent_collision();
-  });
-}
-
-/**
  *  Set add new category
  */
 function wpsc_set_add_category(el) {

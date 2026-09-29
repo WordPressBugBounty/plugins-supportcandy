@@ -252,7 +252,8 @@ if ( ! class_exists( 'WPSC_GS_File_Attachments' ) ) :
 								success: function (response, textStatus, xhr) {
 									if (xhr.status === 200) {
 										// Upload created
-										var attachmentInput = '<input type="hidden" name="' + slug + '[]" value="' + response.id + '"/>';
+										var attachmentInput = '<input type="hidden" name="' + slug + '[]" value="' + response.id + '"/>' +
+											'<input type="hidden" name="wpsc_attachment_token[' + response.id + ']" value="' + response.token + '"/>';
 										attachment.append(attachmentInput);
 										attachment.removeClass('upload-waiting');
 										attachment.addClass('upload-success');
@@ -301,7 +302,8 @@ if ( ! class_exists( 'WPSC_GS_File_Attachments' ) ) :
 						success: function (response, textStatus, xhr) {
 							if (xhr.status === 200) {
 								// Upload created
-								var attachmentInput = '<input type="hidden" name="' + slug + '[]" value="' + response.id + '"/>';
+								var attachmentInput = '<input type="hidden" name="' + slug + '[]" value="' + response.id + '"/>' +
+											'<input type="hidden" name="wpsc_attachment_token[' + response.id + ']" value="' + response.token + '"/>';
 								attachment.append(attachmentInput);
 								attachment.removeClass('upload-waiting');
 								attachment.addClass('upload-success');

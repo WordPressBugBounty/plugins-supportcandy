@@ -245,7 +245,7 @@ if ( ! class_exists( 'WPSC_Admin' ) ) :
 					'page_title'  => 'Task Manager',
 					'menu_title'  => '',
 					'capability'  => 'manage_options',
-					'menu_slug'   => 'wpsc - task - manager',
+					'menu_slug'   => 'wpsc-task-manager',
 					'callback'    => array( 'WPSC_Task_Scheduler', 'perform_manual_scheduler' ),
 				),
 				array(

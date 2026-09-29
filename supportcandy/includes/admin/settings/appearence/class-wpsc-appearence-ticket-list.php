@@ -161,41 +161,49 @@ if ( ! class_exists( 'WPSC_Appearence_Ticket_List' ) ) :
 			}
 
 			$list_header_bg_color = isset( $_POST['list-header-background-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-header-background-color'] ) ) : '';
+			$list_header_bg_color = ( 'transparent' === $list_header_bg_color ) ? $list_header_bg_color : sanitize_hex_color( $list_header_bg_color );
 			if ( ! $list_header_bg_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_header_text_color = isset( $_POST['list-header-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-header-text-color'] ) ) : '';
+			$list_header_text_color = ( 'transparent' === $list_header_text_color ) ? $list_header_text_color : sanitize_hex_color( $list_header_text_color );
 			if ( ! $list_header_text_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_item_odd_bg_color = isset( $_POST['list-item-odd-background-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-item-odd-background-color'] ) ) : '';
+			$list_item_odd_bg_color = ( 'transparent' === $list_item_odd_bg_color ) ? $list_item_odd_bg_color : sanitize_hex_color( $list_item_odd_bg_color );
 			if ( ! $list_item_odd_bg_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_item_odd_text_color = isset( $_POST['list-item-odd-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-item-odd-text-color'] ) ) : '';
+			$list_item_odd_text_color = ( 'transparent' === $list_item_odd_text_color ) ? $list_item_odd_text_color : sanitize_hex_color( $list_item_odd_text_color );
 			if ( ! $list_item_odd_text_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_item_even_bg_color = isset( $_POST['list-item-even-background-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-item-even-background-color'] ) ) : '';
+			$list_item_even_bg_color = ( 'transparent' === $list_item_even_bg_color ) ? $list_item_even_bg_color : sanitize_hex_color( $list_item_even_bg_color );
 			if ( ! $list_item_even_bg_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_item_even_text_color = isset( $_POST['list-item-even-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-item-even-text-color'] ) ) : '';
+			$list_item_even_text_color = ( 'transparent' === $list_item_even_text_color ) ? $list_item_even_text_color : sanitize_hex_color( $list_item_even_text_color );
 			if ( ! $list_item_even_text_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_item_hover_bg_color = isset( $_POST['list-item-hover-background-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-item-hover-background-color'] ) ) : '';
+			$list_item_hover_bg_color = ( 'transparent' === $list_item_hover_bg_color ) ? $list_item_hover_bg_color : sanitize_hex_color( $list_item_hover_bg_color );
 			if ( ! $list_item_hover_bg_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$list_item_hover_text_color = isset( $_POST['list-item-hover-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['list-item-hover-text-color'] ) ) : '';
+			$list_item_hover_text_color = ( 'transparent' === $list_item_hover_text_color ) ? $list_item_hover_text_color : sanitize_hex_color( $list_item_hover_text_color );
 			if ( ! $list_item_hover_text_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}

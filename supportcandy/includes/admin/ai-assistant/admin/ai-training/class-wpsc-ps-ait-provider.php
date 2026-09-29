@@ -26,8 +26,8 @@ if ( ! class_exists( 'WPSC_PS_AIT_Provider' ) ) :
 
 			if ( self::$labels === null ) {
 				self::$labels = array(
-					self::OPENAI        => esc_attr__( 'OpenAI', 'wpsc-ps' ),
-					self::GOOGLE_GEMINI => esc_attr__( 'Google Gemini', 'wpsc-ps' ),
+					self::OPENAI        => esc_attr__( 'OpenAI', 'supportcandy' ),
+					self::GOOGLE_GEMINI => esc_attr__( 'Google Gemini', 'supportcandy' ),
 				);
 			}
 

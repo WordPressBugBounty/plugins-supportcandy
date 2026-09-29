@@ -25,13 +25,13 @@ if ( ! class_exists( 'WPSC_ACB_Search_Knowledge_Base' ) ) :
 
 			$registry['search_knowledge_base'] = array(
 				'name'        => 'search_knowledge_base',
-				'description' => 'Search the knowledge base for information relevant to the user question. Use this tool for informational questions, troubleshooting, setup steps, policy/process questions, and product capability queries when an action tool does not fit. Do not use this tool for ticket-confirmation decisions or spam moderation decisions (use detect_spam for spam).',
+				'description' => 'Search internal help articles for troubleshooting, how-to/setup steps, and store policy or process questions (shipping, returns, business hours, and similar topics). Never use this for a message that names or asks about a specific, concrete, sellable item/product/thing by name (e.g. "jacket", "tell me about the jacket", "do you have jacket", "I want information about jacket") - use the specific catalog/product tool for that instead, even if this tool would otherwise be tried first and finds nothing. Worked example: customer says "I want information about jacket" - "jacket" names a sellable item, so the correct tool is the product/catalog search tool with query="jacket", NOT this tool; calling this tool for that message is wrong. Do not use this tool for ticket-confirmation decisions or spam moderation decisions (use detect_spam for spam).',
 				'parameters'  => array(
 					'type'                 => 'object',
 					'properties'           => array(
 						'query' => array(
 							'type'        => 'string',
-							'description' => __( 'A focused, standalone search query derived from the user request. If the customer message is a follow-up that relies on earlier conversation context (for example "how do I set it up?" or "what about email notifications?"), resolve any pronouns or vague references using the conversation history and write the query as a fully self-contained question naming the actual topic - never pass an ambiguous reference as-is.', 'wpsc-ps' ),
+							'description' => __( 'A focused, standalone search query derived from the user request. If the customer message is a follow-up that relies on earlier conversation context (for example "how do I set it up?" or "what about email notifications?"), resolve any pronouns or vague references using the conversation history and write the query as a fully self-contained question naming the actual topic - never pass an ambiguous reference as-is.', 'supportcandy' ),
 						),
 					),
 					'required'             => array( 'query' ),

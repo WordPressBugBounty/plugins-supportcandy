@@ -1818,29 +1818,34 @@ table.wpsc-working-hrs {
   gap: 5px;
   padding: 10px;
 }
-.wpsc-ac-agent {
-  display: flex;
-  width: fit-content;
-  align-items: center;
-  gap: 5px;
-  padding: 5px;
-  border-radius: 5px;
-  font-size: 13px;
-}
-.wpsc-ac-agent img {
-  border-radius: 50%;
-}
-
 /* Dashboard widgets css */
 
+/* Card/widget background, text and icon colors are NOT set here - they come from the "Appearance
+   > Dashboard" settings (wpsc-ap-dashboard option), injected as inline !important styles by
+   WPSC_Tickets::get_agent_dashboard() (core/includes/admin/tickets/class-wpsc-tickets.php). This
+   stylesheet only handles structure/spacing/shape, so it never fights that setting. */
+
+:root {
+  --wpsc-dash-border: #e7eaf0;
+  --wpsc-dash-divider: #eef0f4;
+  --wpsc-dash-surface-hover: #f8fafc;
+  --wpsc-dash-accent: #0079bf;
+  --wpsc-dash-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
 .wpsc-dash-widget svg {
-  color: #ccc;
   height: 80px !important;
 }
 
 .wpsc-dashboard-widget-icon-header {
   display: flex;
   align-items: center;
+}
+
+.wpsc-dashboard-widget-icon-header span {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .wpsc-dashboard-card-icon-header {
@@ -1858,15 +1863,14 @@ table.wpsc-working-hrs {
   margin: 10px;
   position: relative;
   box-sizing: border-box;
-  background-color: #f4f6f9;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--wpsc-dash-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: var(--wpsc-dash-shadow);
 }
 
 .wpsc-dash-widget2 {
-  padding: 10px;
+  padding: 16px 18px;
 }
 
 .wpsc-dash-widget-small {
@@ -1879,12 +1883,16 @@ table.wpsc-working-hrs {
 
 .wpsc-dash-widget-small .wpsc-dash-widget-icon {
   font-size: 70px; /* Increase the size as needed */
-  color: #ccc; /* Change the icon color as needed */
   margin-left: 10px; /* Add margin to separate from the text */
 }
 
 .wpsc-dash-widget-small svg {
-  opacity: 0.2;
+  opacity: 0.5;
+  flex-shrink: 0;
+  overflow: visible;
+  height: 48px !important;
+  width: 48px !important;
+  margin-right: 10px;
 }
 
 .wpsc-dash-widget-mid {
@@ -1898,12 +1906,19 @@ table.wpsc-working-hrs {
 .wpsc-widget h2 {
   font-size: 18px;
   margin-bottom: 5px;
+  font-weight: 600;
 }
 
 .wpsc-dash-widget-small h2 {
-  margin-bottom: 5px;
-  font-size: 35px;
-  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.wpsc-dash-widget-small p {
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* Style the header of widgets with icons and actions */
@@ -1911,29 +1926,67 @@ table.wpsc-working-hrs {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--wpsc-dash-divider);
+  padding-bottom: 12px;
 }
 
 .wpsc-dash-widget-header svg {
-  color: #ccc;
   height: 15px !important;
   margin: 0px 0px 0px 5px;
 }
 
 .wpsc-dash-widget-actions {
-  /* Widget action links styles here */
+  font-size: 12px;
 }
 
 .wpsc-dash-widget-actions a {
   cursor: pointer;
   text-decoration: none;
+  color: var(--wpsc-dash-accent);
+  font-weight: 500;
+}
+
+.wpsc-dash-widget-actions a:hover {
+  text-decoration: underline;
 }
 
 /* Style the content of widgets */
 .wpsc-dash-widget-content {
-  /* Widget content styles here */
+  font-size: 13px;
+}
+
+/* Tables rendered inside a widget's content area (agent list, recent tickets, todos, out-of-sla,
+   timers, usergroups, agent performance, feedback, ...) - scoped to the content wrapper so this
+   doesn't touch tables anywhere else in the app. Text color is intentionally left unset here so
+   it inherits the widget's appearance-setting-driven text color instead of overriding it. */
+.wpsc-dash-widget-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wpsc-dash-widget-content table thead th {
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--wpsc-dash-divider);
+  white-space: nowrap;
+}
+
+.wpsc-dash-widget-content table tbody td {
+  padding: 10px;
+  border-bottom: 1px solid var(--wpsc-dash-divider);
+}
+
+.wpsc-dash-widget-content table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.wpsc-dash-widget-content table tbody tr:hover td {
+  background-color: var(--wpsc-dash-surface-hover);
 }
 
 .wpsc-actions-btn-setting {
@@ -1974,7 +2027,7 @@ table.wpsc-working-hrs {
 
 .wpsc-dash-widget-content::-webkit-scrollbar-track,
 .wpsc-widget-body::-webkit-scrollbar-track {
-  background-color: #ffffff;
+  background-color: transparent;
 }
 /* table scrollable end */
 
@@ -2084,12 +2137,24 @@ table.wpsc-working-hrs {
 }
 
 .wpsc-widget-list {
-  border-bottom: 1px solid #ccc;
-  padding: 10px 0px;
+  border-bottom: 1px solid var(--wpsc-dash-divider, #eef0f4);
+  padding: 10px 2px;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .wpsc-widget-list:last-child {
   border-bottom: none;
+}
+
+.wpsc-widget-list a {
+  color: var(--wpsc-dash-accent, #0079bf);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.wpsc-widget-list a:hover {
+  text-decoration: underline;
 }
 
 #wpsc-dash-agent-list .dt-search {

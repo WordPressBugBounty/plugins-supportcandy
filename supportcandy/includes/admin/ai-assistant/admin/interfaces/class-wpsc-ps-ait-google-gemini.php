@@ -95,7 +95,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			if ( json_last_error() !== JSON_ERROR_NONE ) {
 				return new WP_Error(
 					'invalid_json',
-					__( 'Invalid JSON response from API.', 'wpsc-ps' )
+					__( 'Invalid JSON response from API.', 'supportcandy' )
 				);
 			}
 
@@ -104,13 +104,13 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 
 				$error_message = isset( $data['error']['message'] )
 					? $data['error']['message']
-					: __( 'Unknown API error.', 'wpsc-ps' );
+					: __( 'Unknown API error.', 'supportcandy' );
 
 				return new WP_Error(
 					'api_error',
 					sprintf(
 						/* translators: %1$d: HTTP status code, %2$s: Error message */
-						__( 'API request failed with status %1$d: %2$s', 'wpsc-ps' ),
+						__( 'API request failed with status %1$d: %2$s', 'supportcandy' ),
 						$status_code,
 						sanitize_text_field( $error_message )
 					)
@@ -142,7 +142,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 
 			// Validate file.
 			if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'invalid_file', __( 'File does not exist.', 'wpsc-ps' ) );
+				return new WP_Error( 'invalid_file', __( 'File does not exist.', 'supportcandy' ) );
 			}
 
 			// Get store ID.
@@ -158,7 +158,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			}
 
 			if ( empty( $store_id ) || ! is_string( $store_id ) ) {
-				return new WP_Error( 'invalid_store_id', __( 'File search store ID is missing.', 'wpsc-ps' ) );
+				return new WP_Error( 'invalid_store_id', __( 'File search store ID is missing.', 'supportcandy' ) );
 			}
 
 			$filename = basename( $file_path );
@@ -166,7 +166,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			$filedata = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
 			if ( $filedata === false ) {
-				return new WP_Error( 'file_read_error', __( 'Unable to read file.', 'wpsc-ps' ) );
+				return new WP_Error( 'file_read_error', __( 'Unable to read file.', 'supportcandy' ) );
 			}
 
 			// Detect MIME type.
@@ -179,7 +179,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			$file_contents = file_get_contents( $file_path ); // phpcs:ignore
 
 			if ( false === $file_contents ) {
-				return new WP_Error( 'file_read_error', __( 'Unable to read file.', 'wpsc-ps' ) );
+				return new WP_Error( 'file_read_error', __( 'Unable to read file.', 'supportcandy' ) );
 			}
 
 			// Boundary.
@@ -235,7 +235,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			if ( json_last_error() !== JSON_ERROR_NONE ) {
 				return new WP_Error(
 					'invalid_json',
-					__( 'Invalid JSON response from Gemini API.', 'wpsc-ps' ),
+					__( 'Invalid JSON response from Gemini API.', 'supportcandy' ),
 					array( 'raw_response' => $res_body )
 				);
 			}
@@ -245,7 +245,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 
 				$error_message = isset( $data['error']['message'] )
 					? $data['error']['message']
-					: __( 'Unknown API error.', 'wpsc-ps' );
+					: __( 'Unknown API error.', 'supportcandy' );
 
 				// Google returns 404 when the configured file search store doesn't exist for
 				// this key/project (e.g. after a key rotation) — flagged with a distinct code
@@ -261,7 +261,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 					'gemini_upload_failed',
 					sprintf(
 					/* translators: %d: HTTP status code */
-						__( 'Upload failed (HTTP %1$d): %2$s', 'wpsc-ps' ),
+						__( 'Upload failed (HTTP %1$d): %2$s', 'supportcandy' ),
 						$code,
 						sanitize_text_field( $error_message )
 					),
@@ -285,7 +285,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			if ( ! empty( $operation['error'] ) ) {
 				$error_message = isset( $operation['error']['message'] )
 					? $operation['error']['message']
-					: __( 'Unknown API error.', 'wpsc-ps' );
+					: __( 'Unknown API error.', 'supportcandy' );
 
 				return new WP_Error(
 					'gemini_upload_failed',
@@ -298,7 +298,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			if ( empty( $operation['response']['documentName'] ) ) {
 				return new WP_Error(
 					'invalid_response',
-					__( 'Missing file ID in API response.', 'wpsc-ps' ),
+					__( 'Missing file ID in API response.', 'supportcandy' ),
 					array(
 						'response' => $operation,
 					)
@@ -344,7 +344,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 					// Nothing to poll against - fail rather than looping forever.
 					return new WP_Error(
 						'invalid_response',
-						__( 'Missing operation name in Gemini upload response.', 'wpsc-ps' ),
+						__( 'Missing operation name in Gemini upload response.', 'supportcandy' ),
 						array( 'response' => $operation )
 					);
 				}
@@ -363,19 +363,19 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 				$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 				if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $body ) ) {
-					return new WP_Error( 'invalid_json', __( 'Invalid JSON response from Gemini API.', 'wpsc-ps' ) );
+					return new WP_Error( 'invalid_json', __( 'Invalid JSON response from Gemini API.', 'supportcandy' ) );
 				}
 
 				if ( $code < 200 || $code >= 300 ) {
 					$error_message = isset( $body['error']['message'] )
 						? $body['error']['message']
-						: __( 'Unknown API error.', 'wpsc-ps' );
+						: __( 'Unknown API error.', 'supportcandy' );
 
 					return new WP_Error(
 						'gemini_upload_failed',
 						sprintf(
 						/* translators: %1$d: HTTP status code, %2$s: error message */
-							__( 'Upload failed (HTTP %1$d): %2$s', 'wpsc-ps' ),
+							__( 'Upload failed (HTTP %1$d): %2$s', 'supportcandy' ),
 							$code,
 							sanitize_text_field( $error_message )
 						),
@@ -388,7 +388,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 
 			return new WP_Error(
 				'gemini_operation_pending',
-				__( 'Gemini upload is still processing.', 'wpsc-ps' ),
+				__( 'Gemini upload is still processing.', 'supportcandy' ),
 				array( 'response' => $operation )
 			);
 		}
@@ -496,8 +496,10 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 					$tokens = (int) $data['usage']['totalTokens'];
 				}
 				if ( ! empty( $data['candidates'][0]['content']['parts'][0]['text'] ) ) {
+					$reply = WPSC_PS_AI_Functions::wpsc_strip_ai_markdown_fences( trim( $data['candidates'][0]['content']['parts'][0]['text'] ) );
+					$reply = WPSC_PS_AI_Functions::wpsc_normalize_ai_markdown_to_html( $reply );
 					return array(
-						'reply'  => WPSC_PS_AI_Functions::wpsc_strip_ai_markdown_fences( trim( $data['candidates'][0]['content']['parts'][0]['text'] ) ),
+						'reply'  => $reply,
 						'tokens' => $tokens,
 					);
 				}
@@ -746,6 +748,14 @@ if ( ! class_exists( 'WPSC_PS_AIT_Google_Gemini' ) ) :
 			if ( empty( $reply ) ) {
 				return false;
 			}
+
+			// Unlike the polished-reply path, this path was never stripping a markdown
+			// code fence or normalizing plain markdown (bullets/paragraphs) into HTML
+			// before sanitizing - so a response that reverted to markdown despite the
+			// system prompt's instructions went straight into wp_kses() as plain text
+			// and rendered as one inline blob in TinyMCE.
+			$reply = WPSC_PS_AI_Functions::wpsc_strip_ai_markdown_fences( $reply );
+			$reply = WPSC_PS_AI_Functions::wpsc_normalize_ai_markdown_to_html( $reply );
 
 			$allowed_tags = array(
 				'a'      => array(

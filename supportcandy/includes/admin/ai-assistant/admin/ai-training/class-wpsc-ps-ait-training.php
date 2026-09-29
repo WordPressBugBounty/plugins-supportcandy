@@ -28,12 +28,12 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		 */
 		public static function add_ai_training_item() {
 
-			$title = esc_attr__( 'Add training item', 'wpsc-ps' );
+			$title = esc_attr__( 'Add training item', 'supportcandy' );
 			// Check capability and setting.
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
 				ob_start();
 				?>
-				<div style="margin-top: 15px; color: #ff0000;"><?php esc_html_e( 'Your AI provider is not connected. Please connect AI provider to use AI chatbot', 'wpsc-ps' ); ?></div>
+				<div style="margin-top: 15px; color: #ff0000;"><?php esc_html_e( 'Your AI provider is not connected. Please connect AI provider to use AI chatbot', 'supportcandy' ); ?></div>
 				<?php
 				$body = ob_get_clean();
 				$response = array(
@@ -48,25 +48,25 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 			<form action="#" onsubmit="return false;" class="wpsc-frm-add-ai-training-item">
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for="wpsc_training_item"><?php esc_attr_e( 'File type', 'wpsc-ps' ); ?></label>
+						<label for="wpsc_training_item"><?php esc_attr_e( 'File type', 'supportcandy' ); ?></label>
 					</div>
 					<select name="wpsc_training_type" id="wpsc_training_item">
 						<option value=""></option>
-						<option value="wpsc_ai_file_type"><?php echo esc_attr__( 'PDF/Text file', 'wpsc-ps' ); ?></option>
-						<option value="wpsc_ai_url_type"><?php echo esc_attr__( 'URL', 'wpsc-ps' ); ?></option>
+						<option value="wpsc_ai_file_type"><?php echo esc_attr__( 'PDF/Text file', 'supportcandy' ); ?></option>
+						<option value="wpsc_ai_url_type"><?php echo esc_attr__( 'URL', 'supportcandy' ); ?></option>
 					</select>
 				</div>
 				<div class="wpsc-input-group wpsc_ai_file_visibility" style="display: none;">
 					<div class="label-container">
-						<label for="wpsc_ai_file"><?php esc_attr_e( 'Upload files (.pdf,.txt only)', 'wpsc-ps' ); ?></label>
+						<label for="wpsc_ai_file"><?php esc_attr_e( 'Upload files (.pdf,.txt only)', 'supportcandy' ); ?></label>
 					</div>
 					<input id="wpsc_ai_file" type="file" name="wpsc_ai_file_input[]" accept=".pdf,.txt" multiple>
 				</div>
 				<div class="wpsc-input-group wpsc_ai_url_visibility" style="display: none;">
 					<div class="label-container">
-						<label for="wpsc_ai_url"><?php esc_attr_e( 'Enter URLs (one per line)', 'wpsc-ps' ); ?></label>
+						<label for="wpsc_ai_url"><?php esc_attr_e( 'Enter URLs (one per line)', 'supportcandy' ); ?></label>
 					</div>
-					<textarea id="wpsc_ai_url" name="wpsc_ai_url_input" placeholder="<?php esc_attr_e( 'Enter URL', 'wpsc-ps' ); ?>" rows="4"></textarea>
+					<textarea id="wpsc_ai_url" name="wpsc_ai_url_input" placeholder="<?php esc_attr_e( 'Enter URL', 'supportcandy' ); ?>" rows="4"></textarea>
 				</div>
 				<input type="hidden" name="action" value="wpsc_set_add_ai_training_item">
 				<input type="hidden" name="_ajax_nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpsc_set_add_ai_training_item' ) ); ?>">
@@ -108,10 +108,10 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 			ob_start();
 			?>
 			<button class="wpsc-button small primary" onclick="wpsc_set_add_ai_training_item(this);">
-				<?php esc_attr_e( 'Submit', 'wpsc-ps' ); ?>
+				<?php esc_attr_e( 'Submit', 'supportcandy' ); ?>
 			</button>
 			<button class="wpsc-button small secondary" onclick="wpsc_close_modal();">
-				<?php esc_attr_e( 'Cancel', 'wpsc-ps' ); ?>
+				<?php esc_attr_e( 'Cancel', 'supportcandy' ); ?>
 			</button>
 			<?php
 			do_action( 'wpsc_get_edit_ai_training_item_footer' );
@@ -134,22 +134,22 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wpsc_set_add_ai_training_item', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			// Check capability and setting.
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			// Get selected training type.
 			$wpsc_training_type = isset( $_POST['wpsc_training_type'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc_training_type'] ) ) : '';
 			if ( empty( $wpsc_training_type ) ) {
-				wp_send_json_error( __( 'Training type is required.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Training type is required.', 'supportcandy' ), 400 );
 			}
 
 			if ( ! in_array( $wpsc_training_type, array( 'wpsc_ai_file_type', 'wpsc_ai_url_type' ), true ) ) {
-				wp_send_json_error( __( 'Invalid training type selected.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid training type selected.', 'supportcandy' ), 400 );
 			}
 
 			// Get settings.
@@ -178,7 +178,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 						: array();
 
 					if ( empty( $wpsc_ai_file_input ) ) {
-						wp_send_json_error( __( 'No files received.', 'wpsc-ps' ), 400 );
+						wp_send_json_error( __( 'No files received.', 'supportcandy' ), 400 );
 					}
 
 					// Call file upload processor. Validate files, move to uploads dir and get file details like path, name and other meta data for training.
@@ -259,7 +259,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 
 					// Error if no URL provided.
 					if ( empty( $wpsc_ai_url_input ) ) {
-						wp_send_json_error( __( 'Please enter at least one URL.', 'wpsc-ps' ), 400 );
+						wp_send_json_error( __( 'Please enter at least one URL.', 'supportcandy' ), 400 );
 					}
 
 					foreach ( $wpsc_ai_url_input as $url ) {
@@ -319,7 +319,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 					break;
 
 				default:
-					wp_send_json_error( __( 'Invalid training type selected.', 'wpsc-ps' ), 400 );
+					wp_send_json_error( __( 'Invalid training type selected.', 'supportcandy' ), 400 );
 			}
 
 			// Defer to an in-progress website sync, same as every other caller of this
@@ -338,27 +338,27 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		public static function get_delete_ai_training_item() {
 
 			if ( ! check_ajax_referer( 'wpsc_get_delete_ai_training_item', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			// Check capability and setting.
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 			if ( ! $id ) {
-				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad Request', 'supportcandy' ), 400 );
 			}
 
 			$training_item = new WPSC_RAG_Training_File( $id );
 			if ( ! $training_item->id ) {
-				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad Request', 'supportcandy' ), 400 );
 			}
 
 			$result = WPSC_RAG_Training_File::safe_delete( $training_item );
 			if ( ! $result ) {
-				wp_send_json_error( __( 'Failed to delete AI training item.', 'wpsc-ps' ), 500 );
+				wp_send_json_error( __( 'Failed to delete AI training item.', 'supportcandy' ), 500 );
 			}
 
 			// AI training delete scheduler.
@@ -379,28 +379,28 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		public static function view_reason_for_failed_ai_training_item() {
 
 			if ( ! check_ajax_referer( 'wpsc_view_reason_for_failed_ai_training_item', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			// Check capability and setting.
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			$id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 			if ( ! $id ) {
-				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad Request', 'supportcandy' ), 400 );
 			}
 
 			$training_item = new WPSC_RAG_Training_File( $id );
 			if ( ! $training_item->id ) {
-				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad Request', 'supportcandy' ), 400 );
 			}
 
 			$meta   = json_decode( $training_item->meta_data, true );
 			$reason = is_array( $meta ) && ! empty( $meta['failure_reason'] ) ? $meta['failure_reason'] : '';
 
-			$title = $training_item->name ? $training_item->name : esc_attr__( 'Reason', 'wpsc-ps' );
+			$title = $training_item->name ? $training_item->name : esc_attr__( 'Reason', 'supportcandy' );
 
 			ob_start();
 			?>
@@ -409,7 +409,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 				if ( $reason ) {
 					echo esc_html( $reason );
 				} else {
-					esc_html_e( 'No reason recorded for this training item.', 'wpsc-ps' );
+					esc_html_e( 'No reason recorded for this training item.', 'supportcandy' );
 				}
 				?>
 			</div>
@@ -419,7 +419,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 			ob_start();
 			?>
 			<button class="wpsc-button small secondary" onclick="wpsc_close_modal();">
-				<?php esc_attr_e( 'Cancel', 'wpsc-ps' ); ?>
+				<?php esc_attr_e( 'Cancel', 'supportcandy' ); ?>
 			</button>
 			<?php
 			$footer = ob_get_clean();
@@ -440,7 +440,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 		public static function download_ai_training_item() {
 
 			if ( ! check_ajax_referer( 'wpsc_download_ai_training_item', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			/* phpcs:ignore Squiz.PHP.CommentedOutCode.Found
@@ -459,7 +459,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 					$edit_actions[] = sprintf(
 						'<a class="wpsc-link" href="%s" target="_blank">%s</a>',
 						esc_url( $url ),
-						esc_html__( 'Download', 'wpsc-ps' )
+						esc_html__( 'Download', 'supportcandy' )
 					);
 				}
 			}
@@ -467,23 +467,23 @@ if ( ! class_exists( 'WPSC_PS_AIT_Training' ) ) :
 
 			// Check capability and setting.
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized request.', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request.', 'supportcandy' ), 401 );
 			}
 
 			$file_id = isset( $_GET['file_id'] ) ? intval( $_GET['file_id'] ) : 0;
 			if ( ! $file_id ) {
-				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad Request', 'supportcandy' ), 400 );
 			}
 
 			$training_item = new WPSC_RAG_Training_File( $file_id );
 			if ( ! $training_item->id ) {
-				wp_send_json_error( __( 'Bad Request', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad Request', 'supportcandy' ), 400 );
 			}
 
 			$upload_dir = wp_upload_dir();
 			$file_path = $upload_dir['basedir'] . $training_item->file_path;
 			if ( ! file_exists( $file_path ) ) {
-				wp_send_json_error( __( 'File not found.', 'wpsc-ps' ), 404 );
+				wp_send_json_error( __( 'File not found.', 'supportcandy' ), 404 );
 			}
 
 			$file_name = ! empty( $training_item->name ) ? $training_item->name : basename( $file_path );

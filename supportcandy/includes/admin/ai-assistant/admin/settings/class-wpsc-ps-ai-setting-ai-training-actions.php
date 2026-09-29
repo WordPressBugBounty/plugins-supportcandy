@@ -8,11 +8,24 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 	final class WPSC_PS_AI_Setting_AI_Training_Actions {
 
 		/**
-		 * Number of posts to import per request/page. Kept small on purpose so a single
-		 * cron tick (one page) stays cheap on shared hosting - large post types are paged
-		 * across many small ticks instead of a few huge ones.
+		 * Number of posts to import per REST page. Kept at WordPress core's own per_page
+		 * ceiling (100) - a tick now pages through as many of these as fit in its time
+		 * budget (see SYNC_TICK_TIME_BUDGET / process_sync_tick()), so fewer, larger pages
+		 * mean fewer round trips to the source for the same corpus. Filtered per-source in
+		 * fetch_training_posts() (wpsc_ait_import_posts_per_page) in case a remote source has
+		 * customized its REST collection to cap per_page below this.
 		 */
-		private const IMPORT_POSTS_PER_REQUEST = 10;
+		private const IMPORT_POSTS_PER_REQUEST = 100;
+
+		/**
+		 * Wall-clock budget (seconds) for a single sync tick - whether driven by a cron
+		 * dispatch (run_sync_tick()) or by an admin's progress-bar poll
+		 * (try_drive_sync_tick()) - to page through as many REST pages as fit rather than
+		 * exactly one. Checked only between pages, not during an individual REST fetch, so a
+		 * tick can still run somewhat longer in practice (see SYNC_LOCK_TIMEOUT). Filterable
+		 * so a host with a short max_execution_time can tune it down.
+		 */
+		private const SYNC_TICK_TIME_BUDGET = 15;
 
 		/**
 		 * How long to keep the accumulated remote-post-ids transient around.
@@ -41,10 +54,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 		/**
 		 * How long the per-source sync lock (see acquire_sync_lock()) is honored before it
-		 * is considered abandoned (the holder crashed/timed out mid-tick) and reclaimed.
-		 * Generous enough to cover one REST fetch (30s timeout) plus processing.
+		 * is considered abandoned (the holder crashed/timed out mid-tick) and reclaimed. A
+		 * tick can now legitimately hold this for up to SYNC_TICK_TIME_BUDGET plus one page's
+		 * worst-case REST fetch timeout (30s) before its own budget check is even reached, so
+		 * this is kept well above that combined worst case rather than just one fetch.
 		 */
-		private const SYNC_LOCK_TIMEOUT = MINUTE_IN_SECONDS;
+		private const SYNC_LOCK_TIMEOUT = 3 * MINUTE_IN_SECONDS;
 
 		/**
 		 * Maximum consecutive recoverable-error retries for a single post type's current
@@ -60,6 +75,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 * per-post-type corpus.
 		 */
 		private const MAX_PAGES_PER_POST_TYPE = 5000;
+
+		/**
+		 * Return values for process_sync_tick_page(), consumed by process_sync_tick()'s loop
+		 * and by its two callers (run_sync_tick(), try_drive_sync_tick()) to decide whether to
+		 * keep looping, schedule a cron fallback, or kick off the upload phase.
+		 */
+		private const TICK_CONTINUE  = 'continue';  // More work remains for this job.
+		private const TICK_FINALIZED = 'finalized'; // Job just completed (all post types done).
+		private const TICK_STOPPED   = 'stopped';   // Job is already terminal / source vanished - nothing to do.
 
 		/**
 		 * Initialize this class
@@ -96,12 +120,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 
 			$slug = isset( $_POST['slug'] ) ? sanitize_text_field( wp_unslash( $_POST['slug'] ) ) : '';
 			if ( '' === $slug || 'local' == $slug ) {
-				wp_send_json_error( new WP_Error( '001', __( 'Invalid source!', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( new WP_Error( '001', __( 'Invalid source!', 'supportcandy' ) ), 400 );
 			}
 
 			$sources = get_option( 'wpsc-ps-ai-training-sources', array() );
@@ -146,12 +170,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 
 			$slug = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
 			if ( '' === $slug ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid source!', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Invalid source!', 'supportcandy' ) ), 400 );
 			}
 
 			$sources = get_option( 'wpsc-ps-ai-training-sources', array() );
@@ -166,7 +190,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( null === $source_index ) {
-				wp_send_json_error( array( 'message' => __( 'Training source not found.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Training source not found.', 'supportcandy' ) ), 400 );
 			}
 
 			foreach ( $sources[ $source_index ]['post-types'] as &$post_type ) {
@@ -177,7 +201,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 			update_option( 'wpsc-ps-ai-training-sources', $sources );
 			self::clear_sync_progress( $slug );
-			wp_send_json_success( array( 'message' => __( 'All posts deleted successfully.', 'wpsc-ps' ) ) );
+			wp_send_json_success( array( 'message' => __( 'All posts deleted successfully.', 'supportcandy' ) ) );
 		}
 
 		/**
@@ -192,12 +216,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 
 			$endpoint = isset( $_POST['ait-wp-endpoint'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['ait-wp-endpoint'] ) ) ) : '';
 			if ( empty( $endpoint ) || ! filter_var( $endpoint, FILTER_VALIDATE_URL ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please enter a valid URL.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Please enter a valid URL.', 'supportcandy' ) ), 400 );
 			}
 
 			$ait_post_types = isset( $_POST['ait-post-types'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['ait-post-types'] ) ) : array();
@@ -221,23 +245,23 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 			$rag_types_response = self::get_rag_types( $endpoint );
 			if ( ! is_array( $rag_types_response ) || empty( $rag_types_response ) ) {
-				wp_send_json_error( array( 'message' => __( 'No valid post types found at the provided endpoint.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'No valid post types found at the provided endpoint.', 'supportcandy' ) ), 400 );
 			}
 
 			if ( empty( $rag_types_response['success'] ) ) {
-				$error_message = ! empty( $rag_types_response['error'] ) ? sanitize_text_field( $rag_types_response['error'] ) : __( 'Failed to fetch post types from the endpoint.', 'wpsc-ps' );
+				$error_message = ! empty( $rag_types_response['error'] ) ? sanitize_text_field( $rag_types_response['error'] ) : __( 'Failed to fetch post types from the endpoint.', 'supportcandy' );
 				wp_send_json_error( array( 'message' => $error_message ), 400 );
 			}
 
 			$rag_types = isset( $rag_types_response['data'] ) && is_array( $rag_types_response['data'] ) ? $rag_types_response['data'] : array();
 			if ( empty( $rag_types ) ) {
-				wp_send_json_error( array( 'message' => __( 'No valid post types found at the provided endpoint.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'No valid post types found at the provided endpoint.', 'supportcandy' ) ), 400 );
 			}
 
 			$rag_types_html = self::get_rag_types_html( $rag_types, $ait_post_types );
 			wp_send_json_success(
 				array(
-					'message'        => esc_attr__( 'Select Post Types', 'wpsc-ps' ),
+					'message'        => esc_attr__( 'Select Post Types', 'supportcandy' ),
 					'rag_types_html' => $rag_types_html,
 				),
 				200
@@ -256,21 +280,20 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 
 			$endpoint    = isset( $_POST['ait-wp-endpoint'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['ait-wp-endpoint'] ) ) ) : '';
 			$source_slug = isset( $_POST['ait-name'] ) ? sanitize_text_field( wp_unslash( $_POST['ait-name'] ) ) : '';
 
 			if ( '' === trim( $source_slug ) || '' === trim( $endpoint ) ) {
-				wp_send_json_error( new WP_Error( '002', __( 'Required fields are missing!', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( new WP_Error( '002', __( 'Required fields are missing!', 'supportcandy' ) ), 400 );
 			}
 
 			// Build site url with wp-json appended to it.
-			$site_url = untrailingslashit( esc_url_raw( $endpoint ) );
-			$site_url = preg_replace( '#(?:/wp-json)+/?$#i', '', $site_url );
+			$site_url = WPSC_PS_AI_Setting_AI_Training::get_site_url_from_api_url( esc_url_raw( $endpoint ) );
 			if ( '' === $site_url || ! filter_var( $site_url, FILTER_VALIDATE_URL ) ) {
-				wp_send_json_error( new WP_Error( '003', __( 'Please enter a valid URL.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( new WP_Error( '003', __( 'Please enter a valid URL.', 'supportcandy' ) ), 400 );
 			}
 			$api_url = trailingslashit( $site_url ) . 'wp-json/';
 
@@ -282,7 +305,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				if ( is_array( $source ) && ! empty( $source['api-url'] ) && untrailingslashit( $source['api-url'] ) === untrailingslashit( $api_url ) ) {
 					wp_send_json_error(
 						array(
-							'message' => __( 'Website endpoint already available.', 'wpsc-ps' ),
+							'message' => __( 'Website endpoint already available.', 'supportcandy' ),
 						),
 						400
 					);
@@ -306,7 +329,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			);
 
 			if ( ! update_option( 'wpsc-ps-ai-training-sources', $ait_sources ) ) {
-				wp_send_json_error( new WP_Error( '005', __( 'Failed to save training source.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( new WP_Error( '005', __( 'Failed to save training source.', 'supportcandy' ) ), 400 );
 			}
 
 			wp_send_json_success(
@@ -332,7 +355,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 
 			$source_slug          = isset( $_POST['ait-training-type'] ) ? sanitize_key( wp_unslash( $_POST['ait-training-type'] ) ) : '';
@@ -341,7 +364,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			$post_types_data      = '' !== $post_types_data_json ? json_decode( $post_types_data_json, true ) : array();
 
 			if ( '' === $source_slug || '' === trim( $source_name ) ) {
-				wp_send_json_error( new WP_Error( '002', __( 'Required fields are missing!', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( new WP_Error( '002', __( 'Required fields are missing!', 'supportcandy' ) ), 400 );
 			}
 
 			$ait_sources = get_option( 'wpsc-ps-ai-training-sources', array() );
@@ -356,7 +379,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			if ( null === $source_index ) {
-				wp_send_json_error( new WP_Error( '005', __( 'Training source not found.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( new WP_Error( '005', __( 'Training source not found.', 'supportcandy' ) ), 400 );
 			}
 
 			$api_url             = $ait_sources[ $source_index ]['api-url'] ?? '';
@@ -373,7 +396,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				wp_send_json_error(
 					array(
 						'source_slug' => $source_slug,
-						'message'     => __( 'No training source is updated.', 'wpsc-ps' ),
+						'message'     => __( 'No training source is updated.', 'supportcandy' ),
 					)
 				);
 			}
@@ -388,7 +411,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				array(
 					'is_sync'     => $is_sync,
 					'source_slug' => $source_slug,
-					'message'     => __( 'Training source updated successfully.', 'wpsc-ps' ),
+					'message'     => __( 'Training source updated successfully.', 'supportcandy' ),
 				)
 			);
 		}
@@ -471,7 +494,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 *
 		 * Every training row records the provider it was uploaded to at insert time, and
 		 * each provider keeps its own independent copy of a document rather than sharing or
-		 * overwriting another provider's (see insert_training_post()) - switching the
+		 * overwriting another provider's (see process_training_posts()) - switching the
 		 * configured provider back and forth does not delete anything. So the only thing
 		 * worth warning about is a document that has a copy under some other provider but
 		 * none yet under the current one - it existed for the AI Assistant before, but
@@ -583,21 +606,21 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		private static function validate_and_resolve_sync_request( $nonce_action ) {
 
 			if ( ! check_ajax_referer( $nonce_action, '_ajax_nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Unauthorized request', 'wpsc-ps' ) ), 401 );
+				wp_send_json_error( array( 'message' => __( 'Unauthorized request', 'supportcandy' ) ), 401 );
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( array( 'message' => __( 'Unauthorized access!', 'wpsc-ps' ) ), 401 );
+				wp_send_json_error( array( 'message' => __( 'Unauthorized access!', 'supportcandy' ) ), 401 );
 			}
 
 			$source_slug = isset( $_POST['slug'] ) ? sanitize_key( wp_unslash( $_POST['slug'] ) ) : '';
 			if ( '' === $source_slug ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid source!', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Invalid source!', 'supportcandy' ) ), 400 );
 			}
 
 			$source = WPSC_PS_AIT_Source::get_training_source( $source_slug );
 			if ( empty( $source ) ) {
-				wp_send_json_error( array( 'message' => __( 'Training source not found.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Training source not found.', 'supportcandy' ) ), 400 );
 			}
 
 			// Note: with the edit screen now hiding "Sync Posts"/"Sync Missing Posts" whenever
@@ -607,7 +630,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			// a generic failure.
 			$post_types = self::get_enabled_post_types( $source );
 			if ( empty( $post_types ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please enable at least one post type to sync.', 'wpsc-ps' ) ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Please enable at least one post type to sync.', 'supportcandy' ) ), 400 );
 			}
 
 			return array(
@@ -657,7 +680,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		 * rather than a content-modified-date comparison plus a possible delete+re-insert,
 		 * and the source-wide stale-record deletion pass at the end of a full sync is
 		 * skipped entirely - a missing-only run has no reliable basis for judging any
-		 * existing record stale (see insert_training_post() and process_sync_tick()).
+		 * existing record stale (see process_training_posts() and process_sync_tick()).
 		 *
 		 * @return void
 		 */
@@ -777,14 +800,14 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		}
 
 		/**
-		 * Cron: process one page of the next pending post type for a source's sync job,
-		 * then reschedule itself until every enabled post type has been fully paged
-		 * through (or skipped after exhausting retries), at which point the job is
-		 * finalized.
+		 * Cron: process as many pages as fit within the sync tick time budget for a source's
+		 * sync job, then reschedule itself until every enabled post type has been fully paged
+		 * through (or skipped after exhausting retries), at which point the job is finalized.
 		 *
 		 * Wrapped in the same per-source lock used by start_sync_for_source() so an
 		 * overlapping tick (a duplicate WP-Cron fire, spawn_cron() racing a second
-		 * request, etc.) cannot read/save state concurrently with this one.
+		 * request, a concurrent try_drive_sync_tick() poll, etc.) cannot read/save state
+		 * concurrently with this one.
 		 *
 		 * @param string $source_slug Training source slug.
 		 * @return void
@@ -802,32 +825,98 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			}
 
 			try {
-				self::process_sync_tick( $source_slug );
+				$result = self::process_sync_tick( $source_slug, time() + self::SYNC_TICK_TIME_BUDGET );
 			} finally {
 				self::release_sync_lock( $source_slug );
+			}
+
+			if ( self::TICK_FINALIZED === $result ) {
+				self::maybe_kick_upload_phase();
 			}
 		}
 
 		/**
-		 * Lock-held body of run_sync_tick() - see that method for the locking contract.
+		 * AJAX-adjacent: attempt to drive one budgeted sync tick for a source, called from
+		 * get_ait_sync_progress() so a job makes real progress on every poll while an admin
+		 * has the settings screen open, instead of depending entirely on an external
+		 * wp-cron.php dispatch to advance it (see run_sync_tick()'s docblock history for why
+		 * that can stall for minutes on some hosts).
+		 *
+		 * Uses the exact same lock as run_sync_tick(), so a poll and a genuinely concurrent
+		 * cron dispatch can never process the same job at once - on a lock miss (another
+		 * poll, or a cron tick, already holds it), this simply does nothing this round rather
+		 * than waiting: the next poll ~2s later will very likely succeed instead, and cron
+		 * remains the fallback if the tab is closed before the job finishes.
 		 *
 		 * @param string $source_slug Training source slug.
 		 * @return void
 		 */
-		private static function process_sync_tick( $source_slug ) {
+		private static function try_drive_sync_tick( $source_slug ) {
+
+			if ( '' === $source_slug || ! self::acquire_sync_lock( $source_slug ) ) {
+				return;
+			}
+
+			try {
+				$result = self::process_sync_tick( $source_slug, time() + self::SYNC_TICK_TIME_BUDGET );
+			} finally {
+				self::release_sync_lock( $source_slug );
+			}
+
+			if ( self::TICK_FINALIZED === $result ) {
+				self::maybe_kick_upload_phase();
+			}
+		}
+
+		/**
+		 * Lock-held body shared by run_sync_tick() and try_drive_sync_tick(): pages through
+		 * process_sync_tick_page() until the job stops needing another page (finalized, or
+		 * genuinely terminal) or the time budget runs out - whichever comes first - so a
+		 * small sync completes within a single request/dispatch instead of always needing
+		 * one more round trip per page.
+		 *
+		 * @param string $source_slug Training source slug.
+		 * @param int    $deadline    Unix timestamp; stop paging once reached.
+		 * @return string One of the TICK_* constants, reflecting the last page processed.
+		 */
+		private static function process_sync_tick( $source_slug, $deadline ) {
+
+			do {
+				$result = self::process_sync_tick_page( $source_slug );
+			} while ( self::TICK_CONTINUE === $result && time() < $deadline );
+
+			// Time ran out with more work left (or a single page overran the budget on its
+			// own) - ensure a cron tick is still scheduled so the job keeps moving even if
+			// nothing polls it again (e.g. the admin closed the tab).
+			if ( self::TICK_CONTINUE === $result ) {
+				self::reschedule_tick( $source_slug );
+			}
+
+			return $result;
+		}
+
+		/**
+		 * Process a single page of the next pending post type for a source's sync job. See
+		 * process_sync_tick() for the budget loop this is called from, and run_sync_tick()/
+		 * try_drive_sync_tick() for the locking contract both callers share.
+		 *
+		 * @param string $source_slug Training source slug.
+		 * @return string One of the TICK_* constants.
+		 */
+		private static function process_sync_tick_page( $source_slug ) {
 
 			$job = self::get_sync_job( $source_slug );
 			if ( empty( $job ) || in_array( $job['status'] ?? '', array( 'completed', 'failed' ), true ) ) {
-				return;
+				return self::TICK_STOPPED;
 			}
 
 			$source = WPSC_PS_AIT_Source::get_training_source( $source_slug );
 			if ( empty( $source ) ) {
 				$job['status']     = 'failed';
-				$job['message']    = __( 'Training source no longer exists.', 'wpsc-ps' );
+				$job['message']    = __( 'Training source no longer exists.', 'supportcandy' );
 				$job['updated_at'] = current_time( 'mysql' );
 				self::save_sync_job( $source_slug, $job );
-				return;
+				return self::TICK_STOPPED;
 			}
 
 			$job['status'] = 'running';
@@ -840,7 +929,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				}
 			}
 
-			// All post types processed (successfully or skipped) - finalize the job.
+			// All post types processed (successfully or skipped) - finalize the job. Kicking
+			// off the upload phase is left to the caller (run_sync_tick()/try_drive_sync_tick()
+			// via maybe_kick_upload_phase()), once the sync lock held for this tick is released.
 			if ( '' === $current_post_type ) {
 
 				foreach ( array_keys( $job['post_types'] ) as $pt_slug ) {
@@ -851,13 +942,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				$job['updated_at'] = current_time( 'mysql' );
 				self::save_sync_job( $source_slug, $job );
 
-				// Only kick off the upload once every source's database sync has finished -
-				// otherwise a source that finishes early would send the AI provider uploads
-				// racing against another source's sync that is still inserting/updating rows.
-				if ( ! self::is_any_sync_active() && ! wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
-					wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
-				}
-				return;
+				return self::TICK_FINALIZED;
 			}
 
 			$pt_state = $job['post_types'][ $current_post_type ];
@@ -881,8 +966,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 					$job['updated_at'] = current_time( 'mysql' );
 					self::save_sync_job( $source_slug, $job );
 
-					self::reschedule_tick( $source_slug );
-					return;
+					return self::TICK_CONTINUE;
 				}
 
 				// Permanent error, or recoverable retries exhausted - skip only this post
@@ -897,8 +981,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				$job['updated_at'] = current_time( 'mysql' );
 				self::save_sync_job( $source_slug, $job );
 
-				self::reschedule_tick( $source_slug );
-				return;
+				return self::TICK_CONTINUE;
 			}
 
 			// Successful fetch - clear any retry state accumulated for this page.
@@ -929,7 +1012,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			// stripped by a proxy/cache. When it's missing/invalid, infer end-of-data from
 			// whether this page came back full (a short/empty page means there is no more
 			// data) instead of defaulting to "1 page" and stopping prematurely.
-			$batch_size = self::IMPORT_POSTS_PER_REQUEST;
+			$batch_size = self::get_import_posts_per_page( $source );
 			if ( ! empty( $response['has_reliable_total'] ) ) {
 				$total_pages  = max( (int) $response['total_pages'], $page );
 				$is_last_page = $page >= $total_pages;
@@ -957,7 +1040,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				// page could otherwise page forever since end-of-data is never detected.
 				$pt_state['done']   = true;
 				$pt_state['failed'] = true;
-				$pt_state['error']  = __( 'Reached maximum page limit for this post type; stopped to avoid an endless sync.', 'wpsc-ps' );
+				$pt_state['error']  = __( 'Reached maximum page limit for this post type; stopped to avoid an endless sync.', 'supportcandy' );
 				delete_transient( $transient_key );
 			} else {
 				$pt_state['page'] = $page + 1;
@@ -968,7 +1051,47 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			self::save_sync_job( $source_slug, $job );
 
 			// More work remains (at least the finalize pass) - keep the chain going.
-			self::reschedule_tick( $source_slug );
+			return self::TICK_CONTINUE;
+		}
+
+		/**
+		 * Kick off the AI provider upload phase once every source's database sync has
+		 * finished - otherwise a source that finishes early would send uploads racing
+		 * against another source's sync that is still inserting/updating rows (see
+		 * is_any_sync_active()).
+		 *
+		 * Called by run_sync_tick()/try_drive_sync_tick() only after the sync lock they held
+		 * for the tick that just finalized a job has already been released - upload_file_to_training()
+		 * has its own independent lock/time budget, so it must not extend the sync lock's
+		 * hold time by running underneath it.
+		 *
+		 * Schedules the existing upload cron event exactly as before (so an abandoned/unpolled
+		 * job still eventually uploads), but also nudges it via spawn_cron() - which the
+		 * pre-existing scheduling here never did, unlike reschedule_tick() - and, now that
+		 * nothing is being called from inside a request that still holds the sync lock, runs
+		 * the first upload batch inline so uploads visibly start immediately rather than
+		 * waiting for that cron dispatch to actually land.
+		 *
+		 * @return void
+		 */
+		private static function maybe_kick_upload_phase() {
+
+			if ( self::is_any_sync_active() ) {
+				return;
+			}
+
+			if ( ! wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
+				wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
+			}
+
+			if ( function_exists( 'spawn_cron' ) ) {
+				spawn_cron();
+			}
+
+			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
+			if ( ! empty( $ai_settings['provider'] ) ) {
+				WPSC_PS_AIT_Controller::upload_file_to_training( $ai_settings );
+			}
 		}
 
 		/**
@@ -1116,6 +1239,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				wp_send_json_success( array( 'status' => 'idle' ) );
 			}
 
+			// The admin is actively watching this job right now (this poll is the proof) -
+			// drive a real, budgeted tick of work inline instead of only reading state a cron
+			// dispatch may not have advanced yet (see try_drive_sync_tick()'s docblock). A
+			// concurrently-running cron tick (or another poll) simply keeps this a no-op for
+			// this round via the shared sync lock - never double-processed.
+			if ( in_array( $job['status'] ?? '', array( 'queued', 'running' ), true ) ) {
+				self::try_drive_sync_tick( $source_slug );
+				$job = self::get_sync_job( $source_slug );
+			}
+
 			// A tick can die without ever writing its state back (fatal error, request
 			// timeout, cron never firing), leaving the job stuck as queued/running. Resume
 			// it, or give up on it, instead of letting the client poll it forever.
@@ -1166,7 +1299,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				$percent = (int) round( min( 100, ( $page / $total_pages ) * 100 ) );
 				$label = sprintf(
 					/* translators: 1: post type name, 2: post type position in the queue, 3: total post types being synced, 4: current page, 5: total pages */
-					__( '%1$s (%2$d of %3$d post types) – page %4$d of %5$d', 'wpsc-ps' ),
+					__( '%1$s (%2$d of %3$d post types) – page %4$d of %5$d', 'supportcandy' ),
 					$pt_state['name'] ?? '',
 					$type_index,
 					$total_types,
@@ -1180,7 +1313,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 
 			if ( 'completed' === $status ) {
 				$percent = 100;
-				$label = __( 'Completed', 'wpsc-ps' );
+				$label = __( 'Completed', 'supportcandy' );
 
 				// The job itself finished running either way - but silently reporting this
 				// the same as a full success is what hid an entire post type failing (e.g.
@@ -1188,10 +1321,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				// hard job failure already is (see the 'failed' === data.status branch in
 				// ai-training.js), instead of leaving $message empty.
 				if ( ! empty( $failed_post_types ) ) {
-					$label = __( 'Completed with errors', 'wpsc-ps' );
+					$label = __( 'Completed with errors', 'supportcandy' );
 					$message = sprintf(
 						/* translators: %s: comma-separated list of post type names (with error messages) that failed. */
-						__( 'Sync completed, but the following post type(s) failed and were not fully indexed: %s', 'wpsc-ps' ),
+						__( 'Sync completed, but the following post type(s) failed and were not fully indexed: %s', 'supportcandy' ),
 						implode( ', ', $failed_post_types )
 					);
 				}
@@ -1316,7 +1449,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				wp_clear_scheduled_hook( 'wpsc_ait_run_sync', array( $source_slug ) );
 
 				$job['status']     = 'failed';
-				$job['message']    = __( 'Sync stopped unexpectedly and could not be resumed. Please try again.', 'wpsc-ps' );
+				$job['message']    = __( 'Sync stopped unexpectedly and could not be resumed. Please try again.', 'supportcandy' );
 				$job['updated_at'] = current_time( 'mysql' );
 				self::save_sync_job( $source_slug, $job );
 
@@ -1444,13 +1577,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			if ( ! WPSC_PS_AI_Functions::wpsc_is_url_host_public( $endpoint ) ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'This endpoint could not be validated as a public website.', 'wpsc-ps' ),
+					'error'   => __( 'This endpoint could not be validated as a public website.', 'supportcandy' ),
 				);
 			}
 
 			// Normalize input so both site URL and /wp-json URL are supported.
-			$site_endpoint = untrailingslashit( esc_url_raw( $endpoint ) );
-			$site_endpoint = preg_replace( '#(?:/wp-json)+/?$#i', '', $site_endpoint );
+			$site_endpoint = WPSC_PS_AI_Setting_AI_Training::get_site_url_from_api_url( esc_url_raw( $endpoint ) );
 
 			$wp_check = self::is_wordpress_site( $site_endpoint );
 			if ( empty( $wp_check['success'] ) ) {
@@ -1463,7 +1595,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			$posts_endpoint = trailingslashit( $site_endpoint ) . 'wp-json/wp/v2/types';
 			$posts_endpoint = add_query_arg( array(), $posts_endpoint );
 
-			$response = wp_remote_get(
+			$response = WPSC_PS_AI_Functions::rest_remote_get(
 				$posts_endpoint,
 				array(
 					'timeout' => 20,
@@ -1548,7 +1680,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 						trailingslashit( $site_endpoint ) . 'wp-json/wp/v2/' . $rest_base
 					);
 
-					$response = wp_remote_get(
+					$response = WPSC_PS_AI_Functions::rest_remote_get(
 						$probe_url,
 						array(
 							'timeout' => 20,
@@ -1649,9 +1781,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		private static function is_wordpress_site( $site_endpoint ) {
 
 			$rest_endpoint = trailingslashit( $site_endpoint ) . 'wp-json';
-			$not_wordpress_message = __( 'The provided URL does not appear to be a WordPress website.', 'wpsc-ps' );
-			$rest_blocked_message = __( 'Please make sure if this is a WordPress site, its REST API is not blocked or requires authentication.', 'wpsc-ps' );
-			$response = wp_remote_get(
+			$not_wordpress_message = __( 'The provided URL does not appear to be a WordPress website.', 'supportcandy' );
+			$rest_blocked_message = __( 'Please make sure if this is a WordPress site, its REST API is not blocked or requires authentication.', 'supportcandy' );
+			$response = WPSC_PS_AI_Functions::rest_remote_get(
 				$rest_endpoint,
 				array(
 					'timeout'     => 20,
@@ -1665,7 +1797,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			if ( is_wp_error( $response ) ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'Could not connect to the endpoint.', 'wpsc-ps' ),
+					'error'   => __( 'Could not connect to the endpoint.', 'supportcandy' ),
 				);
 			}
 
@@ -1681,7 +1813,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 				if ( 404 === (int) $status_code ) {
 					return array(
 						'success' => false,
-						'error'   => __( 'REST API endpoint was not found at this URL. If this is a WordPress site, make sure permalinks are enabled and /wp-json is accessible.', 'wpsc-ps' ),
+						'error'   => __( 'REST API endpoint was not found at this URL. If this is a WordPress site, make sure permalinks are enabled and /wp-json is accessible.', 'supportcandy' ),
 					);
 				}
 
@@ -1689,7 +1821,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 					'success' => false,
 					'error'   => sprintf(
 					/* translators: %d: HTTP response status code. */
-						__( 'Could not validate WordPress REST API (HTTP %d).', 'wpsc-ps' ),
+						__( 'Could not validate WordPress REST API (HTTP %d).', 'supportcandy' ),
 						$status_code
 					),
 				);
@@ -1699,7 +1831,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $body ) ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'This website may be WordPress, but /wp-json did not return a valid REST response (it may be blocked by a firewall, redirect, or plugin).', 'wpsc-ps' ),
+					'error'   => __( 'This website may be WordPress, but /wp-json did not return a valid REST response (it may be blocked by a firewall, redirect, or plugin).', 'supportcandy' ),
 				);
 			}
 
@@ -1845,6 +1977,21 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		}
 
 		/**
+		 * Resolve the REST per_page to request for a source - filterable so a remote site
+		 * that has customized its REST collection to cap per_page below WordPress core's own
+		 * 100 ceiling can be dialed back per-source without a code change. Shared by
+		 * fetch_training_posts() (what it actually requests) and process_sync_tick_page()
+		 * (what "did this page come back short" is judged against), so the two can never
+		 * disagree about the page size in use.
+		 *
+		 * @param array $source Training source.
+		 * @return int
+		 */
+		private static function get_import_posts_per_page( array $source ) {
+			return max( 1, (int) apply_filters( 'wpsc_ait_import_posts_per_page', self::IMPORT_POSTS_PER_REQUEST, $source ) );
+		}
+
+		/**
 		 * Fetch one page of posts from the WordPress REST API.
 		 *
 		 * Uses the REST API for both local and remote WordPress websites.
@@ -1861,7 +2008,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			if ( empty( $endpoint ) ) {
 				return new WP_Error(
 					'wpsc_invalid_endpoint',
-					__( 'Training source endpoint is invalid.', 'wpsc-ps' )
+					__( 'Training source endpoint is invalid.', 'supportcandy' )
 				);
 			}
 
@@ -1871,20 +2018,20 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			if ( ! WPSC_PS_AI_Functions::wpsc_is_url_host_public( $endpoint ) ) {
 				return new WP_Error(
 					'wpsc_invalid_endpoint',
-					__( 'Training source endpoint could not be validated as a public website.', 'wpsc-ps' )
+					__( 'Training source endpoint could not be validated as a public website.', 'supportcandy' )
 				);
 			}
 
 			$url = add_query_arg(
 				array(
 					'page'     => max( 1, absint( $page ) ),
-					'per_page' => self::IMPORT_POSTS_PER_REQUEST,
+					'per_page' => self::get_import_posts_per_page( $source ),
 					'_fields'  => 'id,modified',
 				),
 				$endpoint
 			);
 
-			$response = wp_remote_get(
+			$response = WPSC_PS_AI_Functions::rest_remote_get(
 				$url,
 				array(
 					'timeout'     => 30,
@@ -1907,7 +2054,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 					'wpsc_http_error',
 					sprintf(
 					/* translators: %d: HTTP status code */
-						__( 'REST API returned HTTP %d.', 'wpsc-ps' ),
+						__( 'REST API returned HTTP %d.', 'supportcandy' ),
 						$status
 					),
 					array( 'status' => $status )
@@ -1921,7 +2068,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			if ( ! is_array( $posts ) ) {
 				return new WP_Error(
 					'wpsc_invalid_json',
-					__( 'Invalid REST API response.', 'wpsc-ps' )
+					__( 'Invalid REST API response.', 'supportcandy' )
 				);
 
 			}
@@ -1944,6 +2091,14 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 		/**
 		 * Process one page of posts returned by the REST API.
 		 *
+		 * Looks up existing records for the whole page in a single query (see
+		 * WPSC_RAG_Training_File::find_existing_by_source_ids()) and inserts everything
+		 * new/changed in a single bulk statement (see WPSC_RAG_Training_File::bulk_insert()),
+		 * instead of 2 queries per post (an existence lookup, then an insert) - the per-post
+		 * skip/insert/refresh decision itself (missing-mode short-circuit, staleness check via
+		 * is_training_record_outdated(), only deleting an old copy once its replacement is
+		 * safely in place) is unchanged, just evaluated once per page instead of once per post.
+		 *
 		 * @param array  $source        Training source.
 		 * @param array  $response_data Response returned by fetch_training_posts().
 		 * @param string $post_type     Post type slug.
@@ -1960,103 +2115,98 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 			$inserted  = 0;
 			$skipped   = 0;
 
+			// Index by post id up front, both to dedupe a malformed response and so the
+			// existence lookup below can be done once for the whole page.
+			$posts_by_id = array();
 			foreach ( $posts as $post ) {
-
 				++$processed;
 				$post_id = absint( $post['id'] ?? 0 );
-
 				if ( ! $post_id ) {
 					++$skipped;
 					continue;
 				}
-
-				$result = self::insert_training_post( $source, $post_type, $post, $mode );
-				if ( $result ) {
-					++$inserted;
-				} else {
-					++$skipped;
-				}
+				$posts_by_id[ $post_id ] = $post;
 			}
 
-			return array(
-				'processed' => $processed,
-				'inserted'  => $inserted,
-				'skipped'   => $skipped,
-			);
-		}
+			if ( empty( $posts_by_id ) ) {
+				return array(
+					'processed' => $processed,
+					'inserted'  => $inserted,
+					'skipped'   => $skipped,
+				);
+			}
 
-		/**
-		 * Insert a post into the AI training queue.
-		 *
-		 * If a record already exists for the same source and source_id, the default
-		 * 'full' mode refreshes it in place when the remote post is newer; 'missing'
-		 * mode leaves any existing record untouched no matter how old it is - it only
-		 * ever adds a record for a post that has none yet (see sync_missing_posts_for_ai_training()).
-		 *
-		 * @param array  $source    Training source.
-		 * @param string $post_type Post type slug.
-		 * @param array  $post      REST API post object.
-		 * @param string $mode      'full' or 'missing'.
-		 *
-		 * @return bool True if inserted, false if skipped.
-		 */
-		private static function insert_training_post( array $source, $post_type, array $post, $mode = 'full' ) {
-
-			$post_type = sanitize_key( $post_type );
-			$post_id = absint( $post['id'] ?? 0 );
+			$post_type  = sanitize_key( $post_type );
 			$doc_source = $source['slug'] ?? '';
 
-			if ( empty( $post_type ) || ! $post_id ) {
-				return false;
-			}
+			$ai_settings       = get_option( 'wpsc-ps-ai-assistant-settings', array() );
+			$current_provider  = sanitize_text_field( $ai_settings['provider'] ?? '' );
 
-			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
-			$current_provider = sanitize_text_field( $ai_settings['provider'] ?? '' );
-
-			// Look up any existing (non-deleted) queue record(s) for this exact document
+			// Look up any existing (non-deleted) queue record(s) for these exact documents
 			// under the currently configured provider - identified by doc_source + source +
 			// source_id + provider together. Each provider keeps its own independent copy
 			// (its own provider_file_id/vector store entry), so a record synced under a
-			// different provider is intentionally left out of this lookup: it must never be
-			// replaced or deleted just because another provider is now active - see
+			// different provider is intentionally left out - it must never be replaced or
+			// deleted just because another provider is now active (see
 			// source_has_other_provider_data(), which is what actually detects and surfaces
-			// "this document has no copy yet for the current provider" to the admin.
-			$existing = self::get_existing_training_records( $doc_source, $post_type, $post_id, $current_provider );
-
-			if ( ! empty( $existing ) ) {
-
-				// 'missing' mode only ever fills in posts with no local record at all - an
-				// existing one (however stale) is intentionally left alone; use the 'full'
-				// mode ("Sync Posts") to also refresh changed content.
-				if ( 'missing' === $mode ) {
-					return false;
-				}
-
-				$post_modified_raw = isset( $post['modified'] ) ? sanitize_text_field( $post['modified'] ) : '';
-
-				// If a local copy under this same provider is already up to date (same or
-				// newer than the incoming post) there is nothing to do - skip to avoid
-				// duplicates.
-				foreach ( $existing as $record ) {
-					if ( ! self::is_training_record_outdated( $record, $post_modified_raw ) ) {
-						return false;
-					}
-				}
-			}
-
-			// Modified date from REST API.
-			$post_modified = current_time( 'mysql' );
-			if ( ! empty( $post['modified'] ) ) {
-				try {
-					$post_modified = ( new DateTime( $post['modified'] ) )->format( 'Y-m-d H:i:s' );
-				} catch ( Exception $e ) {
-					$post_modified = current_time( 'mysql' );
-				}
-			}
+			// "this document has no copy yet for the current provider" to the admin).
+			$existing_by_id = WPSC_RAG_Training_File::find_existing_by_source_ids(
+				$doc_source,
+				$post_type,
+				array_keys( $posts_by_id ),
+				$current_provider
+			);
 
 			$now = current_time( 'mysql' );
-			$result = WPSC_RAG_Training_File::insert(
-				array(
+			$rows_to_insert       = array(); // post_id => row data.
+			$stale_ids_by_post_id = array(); // post_id => old record ids to remove once its replacement is safely in place.
+
+			foreach ( $posts_by_id as $post_id => $post ) {
+
+				$existing = $existing_by_id[ $post_id ] ?? array();
+
+				if ( ! empty( $existing ) ) {
+
+					// 'missing' mode only ever fills in posts with no local record at all - an
+					// existing one (however stale) is intentionally left alone; use the 'full'
+					// mode ("Sync Posts") to also refresh changed content.
+					if ( 'missing' === $mode ) {
+						++$skipped;
+						continue;
+					}
+
+					$post_modified_raw = isset( $post['modified'] ) ? sanitize_text_field( $post['modified'] ) : '';
+
+					// If a local copy under this same provider is already up to date (same or
+					// newer than the incoming post) there is nothing to do - skip to avoid
+					// duplicates.
+					$needs_refresh = false;
+					foreach ( $existing as $record ) {
+						if ( self::is_training_record_outdated( $record['post_updated_on'], $post_modified_raw ) ) {
+							$needs_refresh = true;
+							break;
+						}
+					}
+
+					if ( ! $needs_refresh ) {
+						++$skipped;
+						continue;
+					}
+
+					$stale_ids_by_post_id[ $post_id ] = wp_list_pluck( $existing, 'id' );
+				}
+
+				// Modified date from REST API.
+				$post_modified = $now;
+				if ( ! empty( $post['modified'] ) ) {
+					try {
+						$post_modified = ( new DateTime( $post['modified'] ) )->format( 'Y-m-d H:i:s' );
+					} catch ( Exception $e ) {
+						$post_modified = $now;
+					}
+				}
+
+				$rows_to_insert[ $post_id ] = array(
 					'status'          => 'new',
 					'provider'        => $current_provider,
 					'source'          => $post_type,
@@ -2068,130 +2218,114 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Actions' ) ) :
 					'post_updated_on' => $post_modified,
 					'date_updated'    => $now,
 					'date_created'    => $now,
-				)
-			);
-
-			if ( empty( $result ) ) {
-				// Insert failed - leave the existing (stale) record, if any, untouched
-				// rather than deleting it first and risking losing it for good.
-				return false;
+				);
 			}
 
-			// The post was modified at the source and the refreshed record is now safely
-			// in place, so the old copy/copies can be removed. Doing this only after a
-			// successful insert means a failed insert never leaves the document without
-			// any local record at all.
-			if ( ! empty( $existing ) ) {
+			if ( ! empty( $rows_to_insert ) ) {
 
-				$flag = false;
-				foreach ( $existing as $record ) {
-					if ( WPSC_RAG_Training_File::safe_delete( $record ) ) {
-						$flag = true;
+				$insert_count = WPSC_RAG_Training_File::bulk_insert( array_values( $rows_to_insert ) );
+
+				if ( count( $rows_to_insert ) === $insert_count ) {
+
+					// Whole batch inserted - every post's replacement is now safely in place,
+					// so every stale copy collected above can be removed.
+					$inserted += $insert_count;
+					$stale_ids = ! empty( $stale_ids_by_post_id ) ? array_merge( ...array_values( $stale_ids_by_post_id ) ) : array();
+					self::delete_stale_provider_copies( $stale_ids );
+
+				} else {
+
+					// The bulk statement failed outright (a single malformed row fails the
+					// whole multi-row INSERT) - fall back to one row at a time so a bad post
+					// cannot silently drop its page-mates too. Only the old copy of a post
+					// whose own re-insert just succeeded is removed - same "never delete
+					// before the replacement is safely in place" ordering as before, just
+					// evaluated per row here instead of per page.
+					$stale_ids = array();
+					foreach ( $rows_to_insert as $post_id => $row ) {
+						if ( WPSC_RAG_Training_File::insert( $row ) ) {
+							++$inserted;
+							if ( ! empty( $stale_ids_by_post_id[ $post_id ] ) ) {
+								array_push( $stale_ids, ...$stale_ids_by_post_id[ $post_id ] );
+							}
+						} else {
+							++$skipped;
+						}
 					}
-				}
-
-				// safe_delete() only marks provider-backed records as DELETE; the
-				// provider file itself is removed by this cron.
-				if ( $flag && ! wp_next_scheduled( 'wpsc_delete_ai_training_record' ) ) {
-					wp_schedule_single_event( time() + 5, 'wpsc_delete_ai_training_record' );
+					self::delete_stale_provider_copies( $stale_ids );
 				}
 			}
 
-			return true;
+			return array(
+				'processed' => $processed,
+				'inserted'  => $inserted,
+				'skipped'   => $skipped,
+			);
 		}
 
 		/**
-		 * Fetch all existing (non-deleted) training queue records for a post under a given
-		 * provider, identified by doc_source + source + source_id + provider together - the
-		 * same source_id can exist under the same post type on two different training
-		 * sources without being the same document, and the same document can legitimately
-		 * have one independent record per AI provider it has been synced to.
+		 * Remove old provider-scoped copies of documents that were just successfully
+		 * re-inserted with fresher content - safe_delete()s each (only hard-deleting when it
+		 * never reached the provider; otherwise flagging it for the delete cron to remove
+		 * provider-side too), then ensures that cron is scheduled if anything was flagged.
 		 *
-		 * @param string $doc_source Training source slug the post was fetched from.
-		 * @param string $post_type  Post type slug.
-		 * @param int    $post_id    Source post id.
-		 * @param string $provider   AI provider the record must belong to.
-		 * @return array Array of training record objects (empty when none).
+		 * @param array $ids Training record ids to safe-delete.
+		 * @return void
 		 */
-		private static function get_existing_training_records( $doc_source, $post_type, $post_id, $provider ) {
+		private static function delete_stale_provider_copies( array $ids ) {
 
-			$post_type = sanitize_key( $post_type );
-			$post_id = absint( $post_id );
-			if ( empty( $post_type ) || ! $post_id ) {
-				return array();
+			if ( empty( $ids ) ) {
+				return;
 			}
 
-			return WPSC_RAG_Training_File::find(
-				array(
-					'meta_query' => array(
-						'relation' => 'AND',
-						array(
-							'slug'    => 'status',
-							'compare' => '!=',
-							'val'     => WPSC_PS_AIT_Status::DELETE,
-						),
-						array(
-							'slug'    => 'source',
-							'compare' => '=',
-							'val'     => $post_type,
-						),
-						array(
-							'slug'    => 'source_id',
-							'compare' => '=',
-							'val'     => $post_id,
-						),
-						array(
-							'slug'    => 'doc_source',
-							'compare' => '=',
-							'val'     => $doc_source,
-						),
-						array(
-							'slug'    => 'provider',
-							'compare' => '=',
-							'val'     => $provider,
-						),
-					),
-				)
-			)['results'] ?? array();
+			$flag = false;
+			foreach ( array_unique( array_map( 'absint', $ids ) ) as $id ) {
+
+				$training = new WPSC_RAG_Training_File( $id );
+				if ( ! $training->id ) {
+					continue;
+				}
+
+				if ( WPSC_RAG_Training_File::safe_delete( $training ) ) {
+					$flag = true;
+				}
+			}
+
+			if ( $flag && ! wp_next_scheduled( 'wpsc_delete_ai_training_record' ) ) {
+				wp_schedule_single_event( time() + 5, 'wpsc_delete_ai_training_record' );
+			}
 		}
 
 		/**
 		 * Determine whether a local training record is older than the incoming post.
 		 *
-		 * The caller (insert_training_post(), via get_existing_training_records()) already
-		 * scopes $training to the currently configured provider, so this is purely a
-		 * content-staleness check - it never needs to consider provider here. A record
-		 * belonging to a different provider is a different, independently-valid copy (see
-		 * insert_training_post()) and is simply not part of what gets passed in.
+		 * The caller (process_training_posts(), via WPSC_RAG_Training_File::find_existing_by_source_ids())
+		 * already scopes the candidate records to the currently configured provider, so this
+		 * is purely a content-staleness check - it never needs to consider provider here. A
+		 * record belonging to a different provider is a different, independently-valid copy
+		 * and is simply not part of what gets passed in.
 		 *
-		 * @param object $training          Existing training record.
-		 * @param string $post_modified_raw Incoming post "modified" date string.
+		 * @param string $existing_updated_on Existing record's post_updated_on column value (raw DATETIME string, or empty/null).
+		 * @param string $post_modified_raw   Incoming post "modified" date string.
 		 * @return bool True when the incoming post is newer and the local record
 		 *              needs to be refreshed, false otherwise.
 		 */
-		private static function is_training_record_outdated( $training, $post_modified_raw ) {
+		private static function is_training_record_outdated( $existing_updated_on, $post_modified_raw ) {
 
-			if ( ! $training || '' === $post_modified_raw ) {
+			if ( '' === $post_modified_raw ) {
 				// Without a comparable modification date, treat the local copy as
 				// current so we never create duplicate entries.
 				return false;
 			}
 
-			// Avoid empty() directly on magic properties; it can return true unexpectedly.
-			$existing_updated_on = $training->post_updated_on;
 			if ( null === $existing_updated_on || '' === $existing_updated_on ) {
 				// No known local timestamp - refresh to be safe.
 				return true;
 			}
 
 			try {
-				if ( $existing_updated_on instanceof DateTimeInterface ) {
-					$existing_ts = $existing_updated_on->getTimestamp();
-				} else {
-					$existing_ts = ( new DateTime( (string) $existing_updated_on ) )->getTimestamp();
-				}
-
-				$current_ts = ( new DateTime( $post_modified_raw ) )->getTimestamp();
+				$existing_ts = ( new DateTime( (string) $existing_updated_on ) )->getTimestamp();
+				$current_ts  = ( new DateTime( $post_modified_raw ) )->getTimestamp();
 			} catch ( Exception $e ) {
 				// Unparseable dates - leave the local copy untouched.
 				return false;

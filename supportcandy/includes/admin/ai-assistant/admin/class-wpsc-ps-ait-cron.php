@@ -37,7 +37,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_Cron' ) ) :
 			if ( ! isset( $schedules['wpsc_every_fifteen_minutes'] ) ) {
 				$schedules['wpsc_every_fifteen_minutes'] = array(
 					'interval' => 15 * MINUTE_IN_SECONDS,
-					'display'  => __( 'Every 15 Minutes', 'wpsc-ps' ),
+					'display'  => __( 'Every 15 Minutes', 'supportcandy' ),
 				);
 			}
 

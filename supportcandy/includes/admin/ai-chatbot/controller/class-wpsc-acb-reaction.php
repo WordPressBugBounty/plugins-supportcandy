@@ -27,8 +27,8 @@ if ( ! class_exists( 'WPSC_ACB_Reaction' ) ) :
 
 			if ( self::$labels === null ) {
 				self::$labels = array(
-					self::HAPPY   => esc_attr__( 'Happy', 'wpsc-ps' ),
-					self::UNHAPPY => esc_attr__( 'Unhappy', 'wpsc-ps' ),
+					self::HAPPY   => esc_attr__( 'Happy', 'supportcandy' ),
+					self::UNHAPPY => esc_attr__( 'Unhappy', 'supportcandy' ),
 				);
 			}
 
@@ -47,7 +47,7 @@ if ( ! class_exists( 'WPSC_ACB_Reaction' ) ) :
 
 			$labels = self::get_labels();
 
-			return $labels[ (int) $reaction ] ?? esc_attr__( 'Unknown', 'wpsc-ps' );
+			return $labels[ (int) $reaction ] ?? esc_attr__( 'Unknown', 'supportcandy' );
 		}
 
 		/**

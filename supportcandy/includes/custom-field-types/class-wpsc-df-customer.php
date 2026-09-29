@@ -463,7 +463,14 @@ if ( ! class_exists( 'WPSC_DF_Customer' ) ) :
 		 */
 		public static function set_rest_ticket_data( $data, $request, $custom_fields ) {
 
-			$name = $request->get_param( 'name' );
+			// Skip customer resolution and DB persistence entirely if a prior filter (e.g. the
+			// agent-created authorization guard, which now runs first) already flagged this
+			// request as invalid - no customer row should be inserted for a rejected request.
+			if ( $data['errors']->has_errors() ) {
+				return $data;
+			}
+
+			$name = sanitize_text_field( wp_unslash( $request->get_param( 'name' ) ) );
 			$email = $request->get_param( 'email' );
 
 			// check name and email are present.

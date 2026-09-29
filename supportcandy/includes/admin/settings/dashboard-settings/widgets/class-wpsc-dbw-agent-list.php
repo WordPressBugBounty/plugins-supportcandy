@@ -65,12 +65,20 @@ if ( ! class_exists( 'WPSC_DBW_Agent_List' ) ) :
 				wpsc_dash_get_agent_ticket_list();
 				function wpsc_dash_get_agent_ticket_list(){
 					jQuery('#wpsc-dash-agent-list').html( supportcandy.loader_html );
-					var data = { action: 'wpsc_dash_get_agent_ticket_list' };
-					jQuery.post(
-						supportcandy.ajax_url,
-						data,
+					jQuery.ajax(
+						{
+							url: supportcandy.ajax_url,
+							type: 'POST',
+							data: { action: 'wpsc_dash_get_agent_ticket_list' },
+							timeout: 30000
+						}
+					).done(
 						function (response) {
 							jQuery('#wpsc-dash-agent-list').html(response.html);
+						}
+					).fail(
+						function () {
+							jQuery('#wpsc-dash-agent-list').text( 'Something went wrong!' );
 						}
 					);
 				}
@@ -136,6 +144,38 @@ if ( ! class_exists( 'WPSC_DBW_Agent_List' ) ) :
 				)
 			)['results'];
 
+			// Counts are not scoped to the viewing user (no system query is applied below), so this is
+			// shared by every agent viewing the dashboard rather than computed per viewer.
+			$counts = WPSC_Stats_Cache::remember(
+				'agent-workload',
+				array( $selected_statuses ),
+				function () use ( $agents, $statuses ) {
+					$counts = array();
+					foreach ( $agents as $agent ) {
+						foreach ( $statuses as $status ) {
+							$counts[ $agent->id ][ $status->id ] = WPSC_Ticket::count(
+								array(
+									'meta_query' => array(
+										'relation' => 'AND',
+										array(
+											'slug'    => 'assigned_agent',
+											'compare' => 'IN',
+											'val'     => array( $agent->id ),
+										),
+										array(
+											'slug'    => 'status',
+											'compare' => '=',
+											'val'     => $status->id,
+										),
+									),
+								)
+							);
+						}
+					}
+					return $counts;
+				}
+			);
+
 			ob_start();
 			?>
 			<table class="wpsc-db-agent-list">
@@ -158,28 +198,16 @@ if ( ! class_exists( 'WPSC_DBW_Agent_List' ) ) :
 						foreach ( $agents as $agent ) :
 							?>
 							<tr>
-								<td><?php echo esc_attr( $agent->name ); ?></td>
+								<td>
+									<div class="wpsc-agent-avatar">
+										<?php echo get_avatar( $agent->customer->email, 28 ); ?>
+										<span class="wpsc-agent-name"><?php echo esc_attr( $agent->name ); ?></span>
+									</div>
+								</td>
 								<?php
 								$total_count = 0;
 								foreach ( $statuses as $status ) :
-									$count = WPSC_Ticket::find(
-										array(
-											'items_per_page' => 0,
-											'meta_query' => array(
-												'relation' => 'AND',
-												array(
-													'slug' => 'assigned_agent',
-													'compare' => 'IN',
-													'val'  => array( $agent->id ),
-												),
-												array(
-													'slug' => 'status',
-													'compare' => '=',
-													'val'  => $status->id,
-												),
-											),
-										)
-									)['total_items'];
+									$count = isset( $counts[ $agent->id ][ $status->id ] ) ? $counts[ $agent->id ][ $status->id ] : 0;
 									?>
 									<td>
 										<?php

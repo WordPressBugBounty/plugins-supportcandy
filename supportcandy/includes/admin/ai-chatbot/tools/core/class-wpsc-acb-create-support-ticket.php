@@ -8,6 +8,15 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 	final class WPSC_ACB_Create_Support_Ticket {
 
 		/**
+		 * Instruction returned alongside confirmation_required=true. A bare flag
+		 * named "confirmation_required" gets narrated back to the customer by
+		 * smaller models ("I need to confirm that you'd like me to proceed"), so
+		 * the result states the next step as an instruction instead - in terms
+		 * of intent rather than wording, since the reply may be in any language.
+		 */
+		const CONFIRMATION_NEXT_STEP = 'Nothing has been created yet. In the customer\'s own language, briefly offer to raise a support ticket so the team can help with their request, and ask whether you should go ahead. Do not mention confirmation, a confirmation step, or any internal process - just ask, the way a person would.';
+
+		/**
 		 * Initialize the tool.
 		 */
 		public static function init() {
@@ -25,7 +34,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 
 			$registry['create_support_ticket'] = array(
 				'name'               => 'create_support_ticket',
-				'description'        => 'Create a support ticket - a support enquiry for a human agent to follow up on. This never places an order, processes a payment, or reserves stock, even if the customer\'s request was about buying/ordering something. On success, tell the customer a support ticket/request was created; never describe it as an order being placed/confirmed, never call the ticket ID an order or confirmation number, and never promise an order/purchase confirmation email - if they want to actually buy something, this tool does not do that, so say so and point them to the site\'s normal checkout instead. This tool enforces its own confirmation gate, so you do not need to track confirmation state yourself: as soon as the customer asks for a ticket, call this tool with confirm_create_ticket=true. The very first time it is called for a given chat session, it will NOT create a ticket yet, no matter what you pass - it returns confirmation_required=true instead. Treat that exactly like asking a question: tell the customer, in a plain conversational reply, that you would like to create a ticket for them and ask them to confirm, then stop and wait for their next message. Only after the customer affirmatively agrees in that later message should you call this tool again with confirm_create_ticket=true - it will then proceed. Once that later confirmation has been accepted, it is fine (and expected) to call this tool with confirm_create_ticket=true again on further turns even before you have the customer\'s full name/email - if either is still missing, it will fail with error=missing_fields and a missing array naming exactly which field(s) to ask for next; use that to word your follow-up question, do not give up or move on without the customer\'s email. Never set confirm_create_ticket=false just because information is still incomplete or you are still gathering it - false must be reserved exclusively for a clear, explicit "no"/"don\'t"/"cancel" from the customer. Never call this tool for uncertainty or missing-knowledge fallback, and never fabricate identity values. For guest users, both customer_name and customer_email are mandatory - a ticket cannot be created without a valid email. After an explicit decline, continue helping in chat and do not ask again unless the customer asks for it.',
+				'description'        => 'Create a support ticket - a support enquiry for a human agent to follow up on. This never places an order, processes a payment, or reserves stock, even if the customer\'s request was about buying/ordering something. On success, tell the customer a support ticket/request was created; never describe it as an order being placed/confirmed, never call the ticket ID an order or confirmation number, and never promise an order/purchase confirmation email - if they want to actually buy something, this tool does not do that, so say so and point them to the site\'s normal checkout instead. This tool enforces its own confirmation gate, so you do not need to track confirmation state yourself: as soon as the customer asks for a ticket, call this tool with confirm_create_ticket=true. The very first time it is called for a given chat session, it will NOT create a ticket yet, no matter what you pass - it returns confirmation_required=true instead. Treat that exactly like asking a question: tell the customer, in a plain conversational reply, that you would like to create a ticket for them and ask them to confirm, then stop and wait for their next message. Word it the way a person would, in the customer\'s own language: briefly offer to raise the ticket so the team can help and ask whether to go ahead - never describe the mechanism itself (no mention of needing confirmation, a confirmation step, or proceeding). When you then need their name/email, ask for it just as naturally, as part of the conversation, saying it lets the team get back to them. Only after the customer affirmatively agrees in that later message should you call this tool again with confirm_create_ticket=true - it will then proceed. Once that later confirmation has been accepted, it is fine (and expected) to call this tool with confirm_create_ticket=true again on further turns even before you have the customer\'s full name/email - if either is still missing, this is NOT an error: the tool returns success=true with needs_customer_info=true and a missing array naming exactly which field(s) to ask for next. Treat that exactly like confirmation_required - a normal, expected pause, not a problem - and word your follow-up question from the missing array; do not give up, do not move on without the customer\'s email, and never tell the customer there was a technical/system issue because of this. The tool can also return success=true with needs_customer_info=true and invalid_identity=true if the name/email given look like placeholders (e.g. "test", "guest@example.com") rather than real ones - in that case, politely ask the customer for their real name and email, again without implying any error occurred. Never set confirm_create_ticket=false just because information is still incomplete or you are still gathering it - false must be reserved exclusively for a clear, explicit "no"/"don\'t"/"cancel" from the customer. Never call this tool for uncertainty or missing-knowledge fallback, and never fabricate identity values. For guest users, both customer_name and customer_email are mandatory - a ticket cannot be created without a valid email. After an explicit decline, continue helping in chat and do not ask again unless the customer asks for it.',
 				'parameters'         => array(
 					'type'                 => 'object',
 					'properties'           => array(
@@ -35,11 +44,11 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 						),
 						'customer_name'         => array(
 							'type'        => 'string',
-							'description' => __( 'Customer full name for guest users. Mandatory for guests - if not yet known, omit this argument rather than guessing; the tool will report it as missing.', 'wpsc-ps' ),
+							'description' => __( 'Customer full name for guest users. Mandatory for guests - if not yet known, omit this argument rather than guessing; the tool will report it as missing (not an error - see the tool description).', 'wpsc-ps' ),
 						),
 						'customer_email'        => array(
 							'type'        => 'string',
-							'description' => __( 'Customer email for guest users. Mandatory for guests - a ticket cannot be created without a valid email; if not yet known, omit this argument rather than guessing, and ask the customer for it based on the tool\'s missing_fields result.', 'wpsc-ps' ),
+							'description' => __( 'Customer email for guest users. Mandatory for guests - a ticket cannot be created without a valid email; if not yet known, omit this argument rather than guessing, and ask the customer for it based on the tool\'s missing/needs_customer_info result (not an error - see the tool description).', 'wpsc-ps' ),
 						),
 					),
 					'required'             => array( 'confirm_create_ticket' ),
@@ -119,6 +128,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 					'success'               => true,
 					'ticket_created'        => false,
 					'confirmation_required' => true,
+					'next_step'             => self::CONFIRMATION_NEXT_STEP,
 				);
 			}
 
@@ -142,6 +152,7 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 						'success'               => true,
 						'ticket_created'        => false,
 						'confirmation_required' => true,
+						'next_step'             => self::CONFIRMATION_NEXT_STEP,
 					);
 				}
 
@@ -191,17 +202,29 @@ if ( ! class_exists( 'WPSC_ACB_Create_Support_Ticket' ) ) :
 				}
 
 				if ( ! empty( $missing_fields ) ) {
+					// Not a failure - this is an expected, recoverable step (same as
+					// confirmation_required above), so it is deliberately shaped with
+					// success=true rather than success=false/error=... A model shown
+					// "success":false in a tool result tends to paraphrase it as a
+					// technical/system error to the customer regardless of what the
+					// tool description says to do instead, which is exactly the
+					// failure this was previously producing in practice.
 					return array(
-						'success' => false,
-						'error'   => 'missing_fields',
-						'missing' => $missing_fields,
+						'success'             => true,
+						'ticket_created'      => false,
+						'needs_customer_info' => true,
+						'missing'             => $missing_fields,
 					);
 				}
 
 				if ( self::is_placeholder_identity( $name, $email ) ) {
+					// Same reasoning as the missing_fields case above: this is a
+					// recoverable "ask again" step, not a technical failure.
 					return array(
-						'success' => false,
-						'error'   => 'placeholder_identity',
+						'success'             => true,
+						'ticket_created'      => false,
+						'needs_customer_info' => true,
+						'invalid_identity'    => true,
 					);
 				}
 			}

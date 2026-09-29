@@ -95,15 +95,24 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Tickets' ) ) :
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
-			$filters = array();
-			$tickets = WPSC_Ticket::find(
-				array(
-					'items_per_page' => 10,
-					'orderby'        => 'date_created',
-					'order'          => 'DESC',
-					'system_query'   => $current_user->get_tl_system_query( $filters ),
-				)
-			)['results'];
+			// Differs per viewing agent (system_query depends on the viewer's visibility capabilities),
+			// so this is cached per agent rather than shared across everyone.
+			$tickets = WPSC_Stats_Cache::remember(
+				'recent-tickets',
+				array(),
+				function () use ( $current_user ) {
+					$filters = array();
+					return WPSC_Ticket::find(
+						array(
+							'items_per_page' => 10,
+							'orderby'        => 'date_created',
+							'order'          => 'DESC',
+							'system_query'   => $current_user->get_tl_system_query( $filters ),
+						)
+					)['results'];
+				},
+				true
+			);
 			ob_start();
 			?>
 			<table class="wpsc-recent-ticket-list">

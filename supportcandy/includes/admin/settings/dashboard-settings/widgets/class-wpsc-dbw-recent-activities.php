@@ -102,7 +102,15 @@ if ( ! class_exists( 'WPSC_DBW_Recent_Activities' ) ) :
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
-			$logs = WPSC_RA_Logs::get_activity_logs( 10, 1 );
+			// Same recent-activities feed for every site admin viewing it (no viewer scoping), so this
+			// is shared rather than computed per viewer. $view only changes generated ticket URLs.
+			$logs = WPSC_Stats_Cache::remember(
+				'recent-activities',
+				array( $view ),
+				function () {
+					return WPSC_RA_Logs::get_activity_logs( 10, 1 );
+				}
+			);
 			$now = new DateTime();
 			ob_start();
 			?>

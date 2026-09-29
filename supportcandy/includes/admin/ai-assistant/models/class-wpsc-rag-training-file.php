@@ -308,6 +308,93 @@ if ( ! class_exists( 'WPSC_RAG_Training_File' ) ) :
 		}
 
 		/**
+		 * Look up existing (non-deleted) records for a batch of source ids in one query,
+		 * instead of one find() (2 queries each: a SELECT plus a separate COUNT) per post.
+		 * Used by process_training_posts() to decide skip/insert/refresh for a whole fetched
+		 * REST page at once.
+		 *
+		 * Deliberately not built on top of find(): find() always pages/counts, neither of
+		 * which this needs - just the raw rows for the given ids.
+		 *
+		 * @param string $doc_source Training source slug.
+		 * @param string $post_type  Post type slug (the 'source' column).
+		 * @param array  $source_ids Remote post ids to look up.
+		 * @param string $provider   AI provider the records must belong to.
+		 * @return array Map of source_id => list of { id, post_updated_on }, for ids that have
+		 *               at least one existing (non-deleted) record. Ids with no record at all
+		 *               are simply absent from the map.
+		 */
+		public static function find_existing_by_source_ids( $doc_source, $post_type, array $source_ids, $provider ) {
+
+			global $wpdb;
+
+			$source_ids = array_values( array_unique( array_filter( array_map( 'absint', $source_ids ) ) ) );
+			if ( empty( $source_ids ) ) {
+				return array();
+			}
+
+			$placeholders = implode( ',', array_fill( 0, count( $source_ids ), '%d' ) );
+			$sql = $wpdb->prepare(
+				"SELECT id, source_id, post_updated_on FROM {$wpdb->prefix}psmsc_ai_training
+				WHERE doc_source = %s AND source = %s AND provider = %s AND status != %s
+				AND source_id IN ({$placeholders})",
+				array_merge( array( $doc_source, $post_type, $provider, WPSC_PS_AIT_Status::DELETE ), $source_ids )
+			);
+
+			$by_source_id = array();
+			foreach ( (array) $wpdb->get_results( $sql, ARRAY_A ) as $row ) {
+				$by_source_id[ (int) $row['source_id'] ][] = array(
+					'id'              => (int) $row['id'],
+					'post_updated_on' => $row['post_updated_on'],
+				);
+			}
+
+			return $by_source_id;
+		}
+
+		/**
+		 * Insert multiple new records in a single query, for a batch of posts that
+		 * process_training_posts() has already determined need inserting/refreshing - avoids
+		 * one INSERT per post for a whole REST page's worth of rows at once.
+		 *
+		 * A multi-row INSERT fails as a whole if any single row is malformed - callers should
+		 * fall back to inserting one row at a time (via insert()) when this returns 0 for a
+		 * non-empty batch, so one bad row cannot silently drop its page-mates too.
+		 *
+		 * @param array $rows List of associative arrays, each using the same keys insert() takes.
+		 * @return int Number of rows inserted (0 if the batch was empty or the statement failed).
+		 */
+		public static function bulk_insert( array $rows ) {
+
+			global $wpdb;
+
+			if ( empty( $rows ) ) {
+				return 0;
+			}
+
+			$columns = array_keys( $rows[0] );
+			$row_placeholder = '(' . implode( ',', array_fill( 0, count( $columns ), '%s' ) ) . ')';
+
+			$row_placeholders = array();
+			$values = array();
+			foreach ( $rows as $row ) {
+				$row_placeholders[] = $row_placeholder;
+				foreach ( $columns as $column ) {
+					$values[] = $row[ $column ] ?? '';
+				}
+			}
+
+			$sql = $wpdb->prepare(
+				'INSERT INTO ' . $wpdb->prefix . 'psmsc_ai_training (`' . implode( '`,`', $columns ) . '`) VALUES ' . implode( ',', $row_placeholders ),
+				$values
+			);
+
+			$success = $wpdb->query( $sql );
+
+			return false === $success ? 0 : (int) $success;
+		}
+
+		/**
 		 * Delete record of given ID
 		 *
 		 * @param WPSC_RAG_Training_File $ai_training - AI training object.

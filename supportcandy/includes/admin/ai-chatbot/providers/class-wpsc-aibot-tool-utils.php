@@ -266,6 +266,18 @@ if ( ! class_exists( 'WPSC_AIBOT_Tool_Utils' ) ) :
 					continue;
 				}
 
+				// 'properties' is a map/Struct field in Gemini's schema, not a
+				// repeating one - a parameter-less tool's empty PHP array would
+				// otherwise encode as JSON `[]`, which Gemini rejects outright
+				// ("Cannot bind a list to map for field 'properties'"), failing
+				// every tool call this turn, not just this one tool's, since all
+				// declarations are sent together. Force an object cast so it
+				// always encodes as `{}` instead.
+				if ( 'properties' === $key && is_array( $value ) && empty( $value ) ) {
+					$schema[ $key ] = (object) array();
+					continue;
+				}
+
 				if ( is_array( $value ) ) {
 					$schema[ $key ] = self::sanitize_gemini_schema( $value );
 				}

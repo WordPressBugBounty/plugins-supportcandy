@@ -37,7 +37,7 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 			}
 			?>
 			<div class="wpsc-it-editor-action">
-				<span class="wpsc-link wpsc-ai-assistant" onclick="wpsc_polish_reply_with_ai(this,'<?php echo esc_attr( $ticket->id ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_polish_reply_with_ai' ) ); ?>');"><?php esc_attr_e( 'Polish (AI)', 'wpsc-ps' ); ?></span>
+				<span class="wpsc-link wpsc-ai-assistant" onclick="wpsc_polish_reply_with_ai(this,'<?php echo esc_attr( $ticket->id ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_polish_reply_with_ai' ) ); ?>');"><?php esc_attr_e( 'Polish (AI)', 'supportcandy' ); ?></span>
 			</div>
 			<?php
 		}
@@ -50,31 +50,31 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 		public static function refine_ticket_reply_with_ai() {
 
 			if ( ! check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$ticket_id = isset( $_POST['ticket_id'] ) ? intval( $_POST['ticket_id'] ) : 0;
 			if ( ! $ticket_id ) {
-				wp_send_json_error( __( 'Unauthorized!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized!', 'supportcandy' ), 401 );
 			}
 
 			$ticket = new WPSC_Ticket( $ticket_id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( __( 'Ticket not found.', 'wpsc-ps' ), 404 );
+				wp_send_json_error( __( 'Ticket not found.', 'supportcandy' ), 404 );
 			}
 
 			WPSC_Individual_Ticket::$ticket = $ticket;
 			$current_user = WPSC_Current_User::$current_user;
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'reply' ) && ! empty( $ai_settings['is-active'] ) ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			ob_start();
 			?>
 			<div class="wpsc-ai-assistance-header">
 				<div class="wpsc-ai-assistance-header-title">
-					<span><?php esc_html_e( 'AI Assistant', 'wpsc-ps' ); ?></span>
+					<span><?php esc_html_e( 'AI Assistant', 'supportcandy' ); ?></span>
 				</div>
 				<div class="wpsc-ai-assistance-header-close" onclick="wpsc_close_modal();">
 					<?php WPSC_Icons::get( 'cancel' ); ?>
@@ -87,12 +87,12 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 			?>
 			<div class="wpsc-ai-assistance-chatbox">
 				<div class="wpsc-ai-message wpsc-customer-reply-message">
-					<span><?php esc_html_e( 'Polish my reply', 'wpsc-ps' ); ?></span>
+					<span><?php esc_html_e( 'Polish my reply', 'supportcandy' ); ?></span>
 				</div>
 				<div class="wpsc-ai-message wpsc-ai-reply-message" style="display:none;"></div>
 				<div class="wpsc-ai-action-buttons" style="display:none;">
-					<button class="wpsc-ai-append"><?php esc_html_e( 'Append', 'wpsc-ps' ); ?></button>
-					<button class="wpsc-ai-replace"><?php esc_html_e( 'Replace', 'wpsc-ps' ); ?></button>
+					<button class="wpsc-ai-append"><?php esc_html_e( 'Append', 'supportcandy' ); ?></button>
+					<button class="wpsc-ai-replace"><?php esc_html_e( 'Replace', 'supportcandy' ); ?></button>
 				</div>
 			</div>
 			<?php
@@ -101,7 +101,7 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 			ob_start();
 			?>
 			<div class="wpsc-input-area">
-				<textarea id="wpsc-ai-chat-textarea" class="wpsc-ai-chat-textarea" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wpsc_polish_reply_with_ai' ) ); ?>" data-ticket-id="<?php echo esc_attr( $ticket->id ); ?>" data-callback="wpsc_generate_ai_reply" placeholder="<?php esc_attr_e( 'Type your message to the AI and press Enter', 'wpsc-ps' ); ?>" autofocus></textarea>
+				<textarea id="wpsc-ai-chat-textarea" class="wpsc-ai-chat-textarea" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wpsc_polish_reply_with_ai' ) ); ?>" data-ticket-id="<?php echo esc_attr( $ticket->id ); ?>" data-callback="wpsc_generate_ai_reply" placeholder="<?php esc_attr_e( 'Type your message to the AI and press Enter', 'supportcandy' ); ?>" autofocus></textarea>
 			</div>
 			<?php
 			$footer = ob_get_clean();
@@ -122,24 +122,24 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 		public static function generate_ai_reply() {
 
 			if ( ! check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$ticket_id = isset( $_POST['ticket_id'] ) ? (int) $_POST['ticket_id'] : 0;
 			if ( ! $ticket_id ) {
-				wp_send_json_error( __( 'Unauthorized!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized!', 'supportcandy' ), 401 );
 			}
 
 			$ticket = new WPSC_Ticket( $ticket_id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( __( 'Ticket not found.', 'wpsc-ps' ), 404 );
+				wp_send_json_error( __( 'Ticket not found.', 'supportcandy' ), 404 );
 			}
 
 			WPSC_Individual_Ticket::$ticket = $ticket;
 			$current_user = WPSC_Current_User::$current_user;
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'reply' ) && ! empty( $ai_settings['is-active'] ) ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$is_system_call = isset( $_POST['is_system_call'] ) ? filter_var( wp_unslash( $_POST['is_system_call'] ), FILTER_VALIDATE_BOOLEAN ) : false;
@@ -149,7 +149,7 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 				$description_raw = isset( $_POST['description'] ) ? wp_unslash( $_POST['description'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				$raw_description_reply = json_decode( $description_raw, true );
 				if ( ! is_array( $raw_description_reply ) ) {
-					wp_send_json_error( __( 'Invalid or malformed JSON in description.', 'wpsc-ps' ) );
+					wp_send_json_error( __( 'Invalid or malformed JSON in description.', 'supportcandy' ) );
 				}
 
 				// Sanitize all string values in the decoded array (recursive).
@@ -178,7 +178,7 @@ if ( ! class_exists( 'WPSC_PS_AI_PR_Controller' ) ) :
 			}
 
 			if ( ! $reply ) {
-				wp_send_json_error( __( 'Failed to generate reply.', 'wpsc-ps' ) );
+				wp_send_json_error( __( 'Failed to generate reply.', 'supportcandy' ) );
 			}
 
 			WPSC_PS_AI_Logs::insert(

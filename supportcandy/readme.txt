@@ -5,7 +5,7 @@ Tags: support, helpdesk, ticketing system, customer support, ai chatbot agent
 Requires at least: 5.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.5.3
+Stable tag: 3.5.4
 
 Enhance your WordPress site with our AI Powered customer support ticket system. Manage customer support, tickets, and email tickets efficiently.
 
@@ -219,6 +219,14 @@ SupportCandy Helpdesk allows unlimited file attachments to tickets and replies, 
 18. Report - Rating (Premium)
 
 == Changelog ==
+
+= 3.5.4 (September 29, 2026) =
+* New: Added onboarding wizard for new installs
+* New: Added chatbot overlay message
+* Fix: Improved dashboard performance
+* Fix: Fixed email attachment link access
+* Fix: Improved AI training data processing
+* Fix: Addressed security issues
 
 = 3.5.3 (September 01, 2026) =
 * New: Added custom chatbot prompt instructions

@@ -167,8 +167,9 @@ if ( ! class_exists( 'WPSC_DF_Agent_Created' ) ) :
 			// create ticket data from ticket form.
 			add_filter( 'wpsc_create_ticket_data', array( __CLASS__, 'set_create_ticket_data' ), 5, 3 );
 
-			// create ticket data for rest api.
-			add_filter( 'wpsc_rest_create_ticket', array( __CLASS__, 'set_rest_ticket_data' ), 2, 3 );
+			// create ticket data for rest api. Runs before WPSC_DF_Customer's priority 1 hook so
+			// this authorization guard is enforced before any customer row can be inserted.
+			add_filter( 'wpsc_rest_create_ticket', array( __CLASS__, 'set_rest_ticket_data' ), 0, 3 );
 
 			// agent autocomplete filter access only.
 			add_action( 'wp_ajax_wpsc_agent_autocomplete_agent_created', array( __CLASS__, 'agent_autocomplete_agent_created' ) );
@@ -491,8 +492,12 @@ if ( ! class_exists( 'WPSC_DF_Agent_Created' ) ) :
 		 */
 		public static function set_rest_ticket_data( $data, $request, $custom_fields ) {
 
+			// Compare against the submitted email rather than a resolved customer id - this
+			// filter runs before WPSC_DF_Customer's, so no customer row has been looked up or
+			// created yet. This keeps the authorization guard enforceable before any DB write.
+			$email = $request->get_param( 'email' );
 			$current_user = WPSC_Current_User::$current_user;
-			$is_create_as = $current_user->customer->id != $data['customer'] ? true : false;
+			$is_create_as = $current_user->customer->email != $email ? true : false;
 
 			if (
 				$is_create_as && (

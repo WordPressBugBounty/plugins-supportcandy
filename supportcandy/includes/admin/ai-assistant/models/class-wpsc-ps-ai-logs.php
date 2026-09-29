@@ -426,6 +426,50 @@ if ( ! class_exists( 'WPSC_PS_AI_Logs' ) ) :
 		}
 
 		/**
+		 * Get token/request usage grouped by customer, for a given set of customer ids, in a single
+		 * query - use this instead of calling get_token_count_by_id()/get_usage_count_by_date_and_id()
+		 * once per agent in a loop.
+		 *
+		 * @param array       $customer_ids Customer ids to include.
+		 * @param string|null $from_date Optional from date (inclusive), in a format accepted by MySQL.
+		 * @param string|null $to_date Optional to date (inclusive), in a format accepted by MySQL.
+		 * @return array Map of customer id => array( total_tokens, requests_count ).
+		 */
+		public static function get_usage_by_customers( $customer_ids, $from_date = null, $to_date = null ) {
+
+			global $wpdb;
+
+			if ( empty( $customer_ids ) ) {
+				return array();
+			}
+
+			$placeholders = implode( ', ', array_fill( 0, count( $customer_ids ), '%d' ) );
+			$where = "l.customer IN ( {$placeholders} )";
+			$params = $customer_ids;
+
+			if ( $from_date && $to_date ) {
+				$where   .= ' AND l.date_created BETWEEN %s AND %s';
+				$params[] = $from_date;
+				$params[] = $to_date;
+			}
+
+			$sql = $wpdb->prepare(
+				"SELECT l.customer, SUM(l.tokens) AS total_tokens, COUNT(*) AS requests_count FROM {$wpdb->prefix}psmsc_ai_logs l WHERE {$where} GROUP BY l.customer", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$params
+			);
+			$rows = $wpdb->get_results( $sql, ARRAY_A );
+
+			$result = array();
+			foreach ( $rows as $row ) {
+				$result[ $row['customer'] ] = array(
+					'total_tokens'   => intval( $row['total_tokens'] ),
+					'requests_count' => intval( $row['requests_count'] ),
+				);
+			}
+			return $result;
+		}
+
+		/**
 		 * Get the sum of tokens for a specific customer within a given date range.
 		 *
 		 * @param string $from_date From date (inclusive), in a format accepted by MySQL.

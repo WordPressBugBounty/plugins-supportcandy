@@ -84,21 +84,30 @@ if ( ! class_exists( 'WPSC_DBC_New_Tickets' ) ) :
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
-			$cf  = WPSC_Custom_Field::get_cf_by_slug( 'status' );
-			$filters = array();
-			$count = WPSC_Ticket::count(
-				array(
-					'items_per_page' => 0,
-					'system_query'   => $current_user->get_tl_system_query( $filters ),
-					'meta_query'     => array(
-						'relation' => 'AND',
+			$cf = WPSC_Custom_Field::get_cf_by_slug( 'status' );
+
+			// Differs per viewing agent (system_query depends on the viewer's visibility capabilities),
+			// so this is cached per agent rather than shared across everyone.
+			$count = WPSC_Stats_Cache::remember(
+				'card-new-tickets',
+				array( $cf->default_value[0] ),
+				function () use ( $current_user, $cf ) {
+					$filters = array();
+					return WPSC_Ticket::count(
 						array(
-							'slug'    => 'status',
-							'compare' => '=',
-							'val'     => $cf->default_value[0],
-						),
-					),
-				)
+							'system_query' => $current_user->get_tl_system_query( $filters ),
+							'meta_query'   => array(
+								'relation' => 'AND',
+								array(
+									'slug'    => 'status',
+									'compare' => '=',
+									'val'     => $cf->default_value[0],
+								),
+							),
+						)
+					);
+				},
+				true
 			);
 
 			wp_send_json( array( 'count' => $count ) );

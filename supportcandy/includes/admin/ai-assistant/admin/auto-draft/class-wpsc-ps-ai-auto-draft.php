@@ -47,7 +47,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 			) {
 				?>
 				<div class="wpsc-it-editor-action">
-					<span class="wpsc-link wpsc-ai-assistant" onclick="wpsc_handle_ai_auto_draft(this,'<?php echo esc_attr( $ticket->id ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_handle_ai_auto_draft' ) ); ?>');"><?php esc_attr_e( 'Auto Draft', 'wpsc-ps' ); ?></span>
+					<span class="wpsc-link wpsc-ai-assistant" onclick="wpsc_handle_ai_auto_draft(this,'<?php echo esc_attr( $ticket->id ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_handle_ai_auto_draft' ) ); ?>');"><?php esc_attr_e( 'Auto Draft', 'supportcandy' ); ?></span>
 				</div>
 				<?php
 			}
@@ -61,24 +61,24 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		public static function improve_auto_draft_reply() {
 
 			if ( ! check_ajax_referer( 'wpsc_polish_reply_with_ai', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$ticket_id = isset( $_POST['ticket_id'] ) ? (int) $_POST['ticket_id'] : 0;
 			if ( ! $ticket_id ) {
-				wp_send_json_error( __( 'Unauthorized!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized!', 'supportcandy' ), 401 );
 			}
 
 			$ticket = new WPSC_Ticket( $ticket_id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( __( 'Ticket not found.', 'wpsc-ps' ), 404 );
+				wp_send_json_error( __( 'Ticket not found.', 'supportcandy' ), 404 );
 			}
 
 			WPSC_Individual_Ticket::$ticket = $ticket;
 			$current_user = WPSC_Current_User::$current_user;
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'reply' ) && ! empty( $ai_settings['is-active'] ) ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$is_system_call = isset( $_POST['is_system_call'] ) ? filter_var( wp_unslash( $_POST['is_system_call'] ), FILTER_VALIDATE_BOOLEAN ) : false;
@@ -87,7 +87,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 			$description_raw = isset( $_POST['description'] ) ? wp_unslash( $_POST['description'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$raw_description_reply = json_decode( $description_raw, true );
 			if ( ! is_array( $raw_description_reply ) ) {
-				wp_send_json_error( __( 'Invalid or malformed JSON in description.', 'wpsc-ps' ) );
+				wp_send_json_error( __( 'Invalid or malformed JSON in description.', 'supportcandy' ) );
 			}
 
 			// Sanitize all string values in the decoded array (recursive).
@@ -107,7 +107,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 			$reply = self::wpsc_improve_auto_draft_reply_using_user_prompt( $ai_settings, $context, $ticket_id );
 
 			if ( ! $reply ) {
-				wp_send_json_error( __( 'Failed to generate reply.', 'wpsc-ps' ) );
+				wp_send_json_error( __( 'Failed to generate reply.', 'supportcandy' ) );
 			}
 
 			WPSC_PS_AI_Logs::insert(
@@ -158,30 +158,30 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		public static function handle_ai_auto_draft_popup() {
 
 			if ( ! check_ajax_referer( 'wpsc_handle_ai_auto_draft', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$ticket_id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 			if ( ! $ticket_id ) {
-				wp_send_json_error( __( 'Bad request!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}
 
 			$ticket = new WPSC_Ticket( $ticket_id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( __( 'Something went wrong!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Something went wrong!', 'supportcandy' ), 400 );
 			}
 
 			WPSC_Individual_Ticket::$ticket = $ticket;
 			$current_user = WPSC_Current_User::$current_user;
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'reply' ) && ! empty( $ai_settings['is-active'] ) ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 			ob_start();
 			?>
 			<div class="wpsc-ai-assistance-header">
 				<div class="wpsc-ai-assistance-header-title">
-					<span><?php esc_html_e( 'AI Draft', 'wpsc-ps' ); ?></span>
+					<span><?php esc_html_e( 'AI Draft', 'supportcandy' ); ?></span>
 				</div>
 				<div class="wpsc-ai-assistance-header-close" onclick="wpsc_close_modal();">
 					<?php WPSC_Icons::get( 'cancel' ); ?>
@@ -194,11 +194,11 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 			?>
 			<div class="wpsc-ai-assistance-chatbox">
 				<div class="wpsc-ai-message wpsc-customer-reply-message">
-					<span><?php esc_html_e( 'Auto drafting the response', 'wpsc-ps' ); ?></span>
+					<span><?php esc_html_e( 'Auto drafting the response', 'supportcandy' ); ?></span>
 				</div>
 				<div class="wpsc-ai-action-buttons" style="display:none;">
-					<button class="wpsc-ai-append"><?php esc_html_e( 'Append', 'wpsc-ps' ); ?></button>
-					<button class="wpsc-ai-replace"><?php esc_html_e( 'Replace', 'wpsc-ps' ); ?></button>
+					<button class="wpsc-ai-append"><?php esc_html_e( 'Append', 'supportcandy' ); ?></button>
+					<button class="wpsc-ai-replace"><?php esc_html_e( 'Replace', 'supportcandy' ); ?></button>
 				</div>
 			</div>
 			<?php
@@ -207,7 +207,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 			ob_start();
 			?>
 			<div class="wpsc-input-area">
-				<textarea id="wpsc-improve-auto-draft-reply" class="wpsc-improve-auto-draft-reply" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wpsc_polish_reply_with_ai' ) ); ?>" data-ticket-id="<?php echo esc_attr( $ticket->id ); ?>" data-callback="wpsc_improve_auto_draft_reply" placeholder="<?php esc_attr_e( 'Type your message to the AI and press Enter', 'wpsc-ps' ); ?>" autofocus></textarea>
+				<textarea id="wpsc-improve-auto-draft-reply" class="wpsc-improve-auto-draft-reply" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wpsc_polish_reply_with_ai' ) ); ?>" data-ticket-id="<?php echo esc_attr( $ticket->id ); ?>" data-callback="wpsc_improve_auto_draft_reply" placeholder="<?php esc_attr_e( 'Type your message to the AI and press Enter', 'supportcandy' ); ?>" autofocus></textarea>
 			</div>
 			<?php
 			$footer = ob_get_clean();
@@ -228,35 +228,35 @@ if ( ! class_exists( 'WPSC_PS_AI_Auto_Draft' ) ) :
 		public static function handle_ai_auto_draft() {
 
 			if ( ! check_ajax_referer( 'wpsc_handle_ai_auto_draft', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$ticket_id = isset( $_POST['id'] ) ? intval( $_POST['id'] ) : 0;
 			if ( ! $ticket_id ) {
-				wp_send_json_error( __( 'Bad request!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}
 
 			$ticket = new WPSC_Ticket( $ticket_id );
 			if ( ! $ticket->id ) {
-				wp_send_json_error( __( 'Something went wrong!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Something went wrong!', 'supportcandy' ), 400 );
 			}
 
 			WPSC_Individual_Ticket::$ticket = $ticket;
 			$current_user = WPSC_Current_User::$current_user;
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( ! ( $current_user->is_agent && WPSC_Individual_Ticket::has_ticket_cap( 'reply' ) && ! empty( $ai_settings['is-active'] ) ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			try {
 				$provider = WPSC_PS_AIT_Provider_Factory::get_current_provider( $ai_settings['provider'] );
 			} catch ( \Throwable $e ) {
-				wp_send_json_error( __( 'There is an error with the AI response.', 'wpsc-ps' ) );
+				wp_send_json_error( __( 'There is an error with the AI response.', 'supportcandy' ) );
 			}
 			$response = $provider->wpsc_auto_draft_ticket_reply( $ai_settings, $ticket );
 
 			if ( $response['status'] == 'error' ) {
-				$safe_reply = esc_html__( 'There is an error with the AI response.', 'wpsc-ps' );
+				$safe_reply = esc_html__( 'There is an error with the AI response.', 'supportcandy' );
 			} else {
 
 				// Sanitize AI-generated HTML before returning to client.

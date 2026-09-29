@@ -480,8 +480,8 @@ if ( ! class_exists( 'WPSC_REST_Individual_Ticket' ) ) :
 			foreach ( $attachments as $id ) {
 
 				$attachment = new WPSC_Attachment( $id );
-				if ( ! $attachment->id ||
-					( $attachment->ticket_id && $attachment->is_active ) ) {
+				// Only the uploader may bind their own, not-yet-bound attachment.
+				if ( ! WPSC_Attachment::can_claim( $attachment ) ) {
 					continue;
 				}
 

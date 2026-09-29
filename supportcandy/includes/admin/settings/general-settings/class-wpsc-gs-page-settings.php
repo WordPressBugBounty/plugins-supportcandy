@@ -398,6 +398,60 @@ if ( ! class_exists( 'WPSC_GS_Page_Settings' ) ) :
 			}
 			return $where;
 		}
+
+		/**
+		 * Create (or reuse) the default WP page for the given page-settings key and point
+		 * that setting at it. Used by the onboarding wizard's one-click "Create page" actions.
+		 * Does not create a duplicate page if the setting already points to a valid,
+		 * non-trashed page - mirrors the support page auto-created on first install.
+		 *
+		 * @param string $type - 'support-page' or 'open-ticket-page'.
+		 * @return integer - resulting WP page ID, or 0 on failure.
+		 */
+		public static function create_default_page( $type ) {
+
+			if ( ! in_array( $type, array( 'support-page', 'open-ticket-page' ), true ) ) {
+				return 0;
+			}
+
+			$settings = get_option( 'wpsc-gs-page-settings', array() );
+			$existing = isset( $settings[ $type ] ) ? intval( $settings[ $type ] ) : 0;
+
+			// Already points to a live page - do not create a duplicate.
+			if ( $existing && get_post_status( $existing ) && get_post_status( $existing ) !== 'trash' ) {
+				return $existing;
+			}
+
+			$titles = array(
+				'support-page'     => esc_html__( 'Support', 'supportcandy' ),
+				'open-ticket-page' => esc_html__( 'Open Ticket', 'supportcandy' ),
+			);
+
+			// [supportcandy] powers the full customer interface; [wpsc_open_ticket] is the
+			// dedicated shortcode for a standalone "open a new ticket" page.
+			$content = array(
+				'support-page'     => '[supportcandy]',
+				'open-ticket-page' => '[wpsc_open_ticket]',
+			);
+
+			$page_id = wp_insert_post(
+				array(
+					'post_title'   => $titles[ $type ],
+					'post_content' => $content[ $type ],
+					'post_status'  => 'publish',
+					'post_type'    => 'page',
+				)
+			);
+
+			if ( is_wp_error( $page_id ) || ! $page_id ) {
+				return 0;
+			}
+
+			$settings[ $type ] = $page_id;
+			update_option( 'wpsc-gs-page-settings', $settings );
+
+			return $page_id;
+		}
 	}
 endif;
 

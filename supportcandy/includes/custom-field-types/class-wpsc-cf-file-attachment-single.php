@@ -328,7 +328,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 						if ( $value ) {
 							$attachment = new WPSC_Attachment( $value );
 							// Check if attachment is already active and linked to a ticket.
-							if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+							if ( WPSC_Attachment::can_claim( $attachment ) ) {
 								$attachment->is_active = 1;
 								$attachment->save();
 								$data[ $cf->slug ] = $value;
@@ -351,7 +351,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 							$new_attach_id = '';
 							if ( $value ) {
 								$attachment = new WPSC_Attachment( $value );
-								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+								if ( WPSC_Attachment::can_claim( $attachment ) ) {
 
 									$attachment->is_active   = 1;
 									$attachment->source      = 'cf';
@@ -419,7 +419,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 						if ( $cf->field == 'ticket' && $attachment ) {
 							$attachment = new WPSC_Attachment( $attachment );
 							// Check if attachment is already active and linked to a ticket.
-							if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+							if ( WPSC_Attachment::can_claim( $attachment ) ) {
 								$attachment->is_active = 1;
 								$attachment->save();
 								$data[ $cf->slug ] = $attachment->id;
@@ -435,7 +435,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 
 							$attachment = new WPSC_Attachment( $attachment );
 
-							if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+							if ( WPSC_Attachment::can_claim( $attachment ) ) {
 
 								$attachment->is_active   = 1;
 								$attachment->source      = 'cf';
@@ -584,7 +584,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 
 			$new = new WPSC_Attachment( $new );
 			// Check if attachment is already active and linked to a ticket.
-			if ( ! ( $new->is_active && $new->ticket_id ) ) {
+			if ( WPSC_Attachment::can_claim( $new ) ) {
 				$new->is_active = 1;
 				$new->ticket_id = $ticket->id;
 				$new->source    = 'cf';
@@ -619,7 +619,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Single' ) ) :
 			if ( is_object( $ticket->{$cf->slug} ) && $ticket->{$cf->slug}->id != $attachment->id ) {
 
 				// Check if attachment is already active and linked to a ticket.
-				if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+				if ( WPSC_Attachment::can_claim( $attachment ) ) {
 					$ticket->{$cf->slug} = $attachment->id;
 
 					$attachment->is_active   = 1;

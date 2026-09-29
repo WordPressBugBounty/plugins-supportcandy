@@ -31,11 +31,11 @@ if ( ! class_exists( 'WPSC_ACB_Get_Ticket_Status' ) ) :
 					'properties'           => array(
 						'ticket_id' => array(
 							'type'        => 'string',
-							'description' => __( 'Ticket identifier shared by customer (for example: 123 or Ticket #123).', 'wpsc-ps' ),
+							'description' => __( 'Ticket identifier shared by customer (for example: 123 or Ticket #123).', 'supportcandy' ),
 						),
 						'email'     => array(
 							'type'        => 'string',
-							'description' => __( 'Customer email. Required for guest verification.', 'wpsc-ps' ),
+							'description' => __( 'Customer email. Required for guest verification.', 'supportcandy' ),
 						),
 					),
 					'additionalProperties' => false,

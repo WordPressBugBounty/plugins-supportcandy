@@ -43,6 +43,16 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		private static $tl_search_items;
 
 		/**
+		 * Customer id of the visitor this request actually belongs to, captured
+		 * on 'init' before anything can reassign WPSC_Current_User::$current_user
+		 * (change_current_user() is called from a number of places, one of them
+		 * driven by request input). Used to record and check attachment ownership.
+		 *
+		 * @var int
+		 */
+		private static $session_customer_id = 0;
+
+		/**
 		 * Initialize this class
 		 *
 		 * @return void
@@ -51,6 +61,9 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 			// Apply schema for this model.
 			add_action( 'init', array( __CLASS__, 'apply_schema' ), 2 );
+
+			// Capture whose session this request is, before anything reassigns it.
+			add_action( 'init', array( __CLASS__, 'snapshot_session_customer' ), 11 );
 
 			// Get object of this class.
 			add_filter( 'wpsc_load_ref_classes', array( __CLASS__, 'load_ref_class' ) );
@@ -182,6 +195,11 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 					'has_multiple_val' => false,
 				),
 				'customer_id'  => array(
+					'has_ref'          => false,
+					'ref_class'        => '',
+					'has_multiple_val' => false,
+				),
+				'uploaded_by'  => array(
 					'has_ref'          => false,
 					'ref_class'        => '',
 					'has_multiple_val' => false,
@@ -627,7 +645,16 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 					wp_send_json_error( 'Something went wrong!', 500 );
 				}
 
-				wp_send_json( array( 'id' => $attachment->id ) );
+				// Record who uploaded it, and hand them a per-attachment token,
+				// so that only they can later bind it to a ticket.
+				self::set_uploader( $attachment );
+
+				wp_send_json(
+					array(
+						'id'    => $attachment->id,
+						'token' => wp_create_nonce( self::get_img_editor_tmp_nonce_action( $attachment->id ) ),
+					)
+				);
 
 			} else {
 
@@ -1056,7 +1083,6 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 					return;
 				}
 				$auth_code = isset($_REQUEST['auth_code']) ? sanitize_text_field( $_REQUEST['auth_code'] ) : ''; // phpcs:ignore
-				$advanced = get_option( 'wpsc-ms-advanced-settings' );
 				switch ( $attachment->source ) {
 
 					case 'cf':
@@ -1093,7 +1119,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 								$has_access = (
 									( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
 									$ticket_class::is_customer() ||
-									( ! $advanced['ticket-url-auth'] && $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
+									( $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
 								);
 
 								if ( ! $has_access ) {
@@ -1148,7 +1174,7 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 							$has_access = (
 								( $current_user->is_agent && $ticket_class::has_ticket_cap( 'view' ) ) ||
 								$ticket_class::is_customer() ||
-								( ! $advanced['ticket-url-auth'] && $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
+								( $ticket->auth_code && hash_equals( (string) $ticket->auth_code, $auth_code ) )
 							);
 
 							if ( ! $has_access ) {
@@ -1224,10 +1250,15 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 						break;
 					case 'img_editor_tmp':
 						// Not yet attached to any ticket/thread, so there is no auth-code
-						// to check it against. Gate on the per-attachment nonce that was
-						// handed only to whoever uploaded it.
+						// to check it against. Serve it only to whoever uploaded it,
+						// proven either by the recorded uploader identity or by the
+						// per-attachment nonce handed out in the upload response.
+						// The identity check also keeps the image loading in the editor
+						// when a guest logs in or registers mid-compose, which changes
+						// the user the nonce is bound to.
 						$view_nonce = isset( $_REQUEST['wpsc_nonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['wpsc_nonce'] ) ) : ''; // phpcs:ignore
-						if ( ! $view_nonce || ! wp_verify_nonce( $view_nonce, self::get_img_editor_tmp_nonce_action( $attachment->id ) ) ) {
+						if ( ! self::is_uploaded_by_current_user( $attachment ) &&
+							( ! $view_nonce || ! wp_verify_nonce( $view_nonce, self::get_img_editor_tmp_nonce_action( $attachment->id ) ) ) ) {
 							wp_send_json_error( 'Unauthorized!', 401 );
 						}
 						self::file_download( $attachment );
@@ -1343,7 +1374,9 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 
 				// Temporary in-editor images have no ticket yet to check an auth-code
 				// against, so gate access with a per-attachment nonce instead, known
-				// only to whoever just uploaded it via this response.
+				// only to whoever just uploaded it via this response. The uploader
+				// is also recorded so the later claim can be checked server side.
+				self::set_uploader( $attachment );
 				$view_nonce = wp_create_nonce( self::get_img_editor_tmp_nonce_action( $attachment->id ) );
 
 				wp_send_json( array( 'imgURL' => home_url( '/' ) . '?wpsc_attachment=' . $attachment->id . '&wpsc_nonce=' . $view_nonce ) );
@@ -1356,13 +1389,198 @@ if ( ! class_exists( 'WPSC_Attachment' ) ) :
 		}
 
 		/**
-		 * Nonce action used to gate access to a not-yet-attached (img_editor_tmp)
-		 * in-editor image, since it isn't yet tied to any ticket/auth-code.
+		 * Capture the customer this request's session genuinely belongs to.
+		 * Runs on 'init' right after the current user is resolved, so that a
+		 * later change_current_user() (used when acting on behalf of someone
+		 * else, and in one case driven by request input) cannot influence
+		 * attachment ownership checks.
+		 *
+		 * @return void
+		 */
+		public static function snapshot_session_customer() {
+
+			$current_user = WPSC_Current_User::$current_user;
+			self::$session_customer_id = ( $current_user && $current_user->is_customer && $current_user->customer && $current_user->customer->id )
+				? intval( $current_user->customer->id )
+				: 0;
+		}
+
+		/**
+		 * All identities that can legitimately be claimed by whoever is making
+		 * the current request. A visitor can hold more than one at a time, and
+		 * can move between them mid-compose (a guest who attaches a file and
+		 * then logs in or registers before submitting the ticket), so a claim
+		 * is accepted when the recorded uploader matches any one of them.
+		 *
+		 * Identities:
+		 *  c:<customer id>  anyone SupportCandy knows as a customer, which
+		 *                   covers both registered WordPress users (a customer
+		 *                   record is created for them on first sight) and
+		 *                   guest-login (OTP) customers;
+		 *  g:<token>        a random token in a cookie, issued on first upload,
+		 *                   for a plain guest who has no customer record yet -
+		 *                   a first time visitor only gets one when the ticket
+		 *                   is finally submitted.
+		 *
+		 * @param boolean $create - whether to issue a guest token if none exists.
+		 * @return array
+		 */
+		public static function get_current_uploader_ids( $create = false ) {
+
+			$ids = array();
+
+			// Resolve the logged-in user's customer here rather than relying on
+			// the 'init' snapshot alone: on REST requests an application
+			// password is not authenticated until after 'init', so the snapshot
+			// is still empty at that point. get_current_user_id() reflects
+			// WordPress's own auth state and is unaffected by SupportCandy's
+			// change_current_user(), so it stays safe to trust.
+			$user_id = get_current_user_id();
+			if ( $user_id ) {
+
+				$customer = WPSC_Customer::get_by_user_id( $user_id );
+				if ( ! $customer || ! $customer->id ) {
+					$user = get_userdata( $user_id );
+					$customer = $user ? WPSC_Customer::get_by_email( $user->user_email ) : false;
+				}
+
+				if ( $customer && $customer->id ) {
+					$ids[] = 'c:' . $customer->id;
+				}
+			}
+
+			// Guest login (OTP) keeps a customer record without a WordPress
+			// user, and is captured on 'init' before it can be reassigned.
+			if ( self::$session_customer_id && ! in_array( 'c:' . self::$session_customer_id, $ids, true ) ) {
+				$ids[] = 'c:' . self::$session_customer_id;
+			}
+
+			$token = isset( $_COOKIE['wpsc_uploader'] ) ? sanitize_text_field( wp_unslash( $_COOKIE['wpsc_uploader'] ) ) : '';
+			$token = preg_match( '/^[a-f0-9]{32}$/', $token ) ? $token : '';
+
+			if ( ! $token && $create ) {
+
+				$token = md5( wp_generate_password( 32, false ) . microtime() );
+				setcookie( 'wpsc_uploader', $token, time() + DAY_IN_SECONDS, COOKIEPATH ? COOKIEPATH : '/', COOKIE_DOMAIN, is_ssl(), true );
+				$_COOKIE['wpsc_uploader'] = $token;
+			}
+
+			if ( $token ) {
+				$ids[] = 'g:' . $token;
+			}
+
+			return $ids;
+		}
+
+		/**
+		 * Record the current requester as the uploader of the given attachment.
+		 *
+		 * @param WPSC_Attachment $attachment - attachment object.
+		 * @return void
+		 */
+		public static function set_uploader( $attachment ) {
+
+			if ( ! $attachment || ! $attachment->id ) {
+				return;
+			}
+
+			// Always issue the cookie too, so a visitor who changes identity
+			// mid-compose (guest who then logs in or registers) still holds the
+			// identity that was recorded here.
+			$uploader_ids = self::get_current_uploader_ids( true );
+			if ( ! $uploader_ids ) {
+				return;
+			}
+
+			$attachment->uploaded_by = $uploader_ids[0];
+			$attachment->save();
+		}
+
+		/**
+		 * Whether the current requester is the one who uploaded this attachment.
+		 *
+		 * @param WPSC_Attachment $attachment - attachment object.
+		 * @return boolean
+		 */
+		public static function is_uploaded_by_current_user( $attachment ) {
+
+			if ( ! $attachment || ! $attachment->id || ! $attachment->uploaded_by ) {
+				return false;
+			}
+
+			foreach ( self::get_current_uploader_ids() as $uploader ) {
+				if ( hash_equals( (string) $attachment->uploaded_by, $uploader ) ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Single gate for binding (claiming) an attachment to a ticket.
+		 *
+		 * An attachment may only be bound when all of the following hold:
+		 *  - it exists;
+		 *  - it does not already carry a ticket id. Note this is deliberately
+		 *    independent of is_active: deleting a thread clears is_active but
+		 *    leaves ticket_id in place, and such an attachment must still be
+		 *    refused rather than becoming claimable again;
+		 *  - the requester is the one who uploaded it, proven either by the
+		 *    recorded uploader identity or by the per-attachment nonce handed
+		 *    out in the upload response.
+		 *
+		 * Every path that binds an attachment to a ticket must go through this.
+		 *
+		 * @param WPSC_Attachment $attachment - attachment object.
+		 * @param string          $nonce - optional per-attachment upload nonce.
+		 * @return boolean
+		 */
+		public static function can_claim( $attachment, $nonce = '' ) {
+
+			if ( ! $attachment || ! $attachment->id || $attachment->ticket_id ) {
+				return false;
+			}
+
+			if ( self::is_uploaded_by_current_user( $attachment ) ) {
+				return true;
+			}
+
+			// Fall back to the upload nonce, which is only ever handed to the
+			// uploader in the response to their own upload request.
+			$nonce = $nonce ? $nonce : self::get_submitted_upload_nonce( $attachment->id );
+			return $nonce && wp_verify_nonce( $nonce, self::get_img_editor_tmp_nonce_action( $attachment->id ) ) ? true : false;
+		}
+
+		/**
+		 * Read the upload nonce submitted alongside an attachment id, if any.
+		 * Sent by the upload widgets as wpsc_attachment_token[<id>].
 		 *
 		 * @param int $attachment_id - attachment id.
 		 * @return string
 		 */
-		private static function get_img_editor_tmp_nonce_action( $attachment_id ) {
+		public static function get_submitted_upload_nonce( $attachment_id ) {
+
+			if ( ! isset( $_REQUEST['wpsc_attachment_token'] ) || ! is_array( $_REQUEST['wpsc_attachment_token'] ) ) { // phpcs:ignore
+				return '';
+			}
+
+			$tokens = wp_unslash( $_REQUEST['wpsc_attachment_token'] ); // phpcs:ignore
+			return isset( $tokens[ $attachment_id ] ) ? sanitize_text_field( $tokens[ $attachment_id ] ) : '';
+		}
+
+		/**
+		 * Nonce action used to gate access to a not-yet-attached (img_editor_tmp)
+		 * in-editor image, since it isn't yet tied to any ticket/auth-code.
+		 * Also used, once the attachment is referenced from a reply/ticket body,
+		 * as proof that the requester is the one who uploaded it before it is
+		 * bound (claimed) to that ticket. Public: shared by reply/new-ticket
+		 * handlers in other classes that perform that claim.
+		 *
+		 * @param int $attachment_id - attachment id.
+		 * @return string
+		 */
+		public static function get_img_editor_tmp_nonce_action( $attachment_id ) {
 			return 'wpsc_view_img_editor_tmp_' . $attachment_id;
 		}
 	}

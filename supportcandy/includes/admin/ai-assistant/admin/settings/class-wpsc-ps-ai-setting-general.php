@@ -35,7 +35,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( empty( $ai_settings ) ) {
-				wp_send_json_error( __( 'Something went wrong.', 'wpsc-ps' ), 404 );
+				wp_send_json_error( __( 'Something went wrong.', 'supportcandy' ), 404 );
 			}
 
 			?>
@@ -51,35 +51,35 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				</div>
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for="wpsc-ai-service-provider"><?php esc_attr_e( 'AI Service Provider', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-ai-service-provider"><?php esc_attr_e( 'AI Service Provider', 'supportcandy' ); ?></label>
 					</div>
 					<select id="wpsc-ai-service-provider" name="wpsc-ai-service-provider">
-						<option value="openai" <?php selected( $ai_settings['provider'], 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wpsc-ps' ); ?></option>
-						<option value="google-gemini" <?php selected( $ai_settings['provider'], 'google-gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wpsc-ps' ); ?></option>
+						<option value="openai" <?php selected( $ai_settings['provider'], 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'supportcandy' ); ?></option>
+						<option value="google-gemini" <?php selected( $ai_settings['provider'], 'google-gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'supportcandy' ); ?></option>
 					</select>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Select your preferred AI service provider.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Select your preferred AI service provider.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for="wpsc-ai-api-key"><?php esc_attr_e( 'API Key', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-ai-api-key"><?php esc_attr_e( 'API Key', 'supportcandy' ); ?></label>
 						<span class="required-indicator">*</span>
 					</div>
-					<input type="text" id="wpsc-ai-api-key" name="wpsc-ai-api-key" value="<?php echo esc_attr( self::mask_api_key( $ai_settings['api_key'] ?? '' ) ); ?>" placeholder="<?php esc_attr_e( 'Enter your API Key', 'wpsc-ps' ); ?> "/>
+					<input type="text" id="wpsc-ai-api-key" name="wpsc-ai-api-key" value="<?php echo esc_attr( self::mask_api_key( $ai_settings['api_key'] ?? '' ) ); ?>" placeholder="<?php esc_attr_e( 'Enter your API Key', 'supportcandy' ); ?> "/>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Enter your API key for the selected provider.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Enter your API key for the selected provider.', 'supportcandy' ); ?>
 					</span>
 				</div>
 				
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for="wpsc-ai-max-tokens"><?php esc_attr_e( 'Max Tokens', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-ai-max-tokens"><?php esc_attr_e( 'Max Tokens', 'supportcandy' ); ?></label>
 					</div>
-					<input type="number" id="wpsc-ai-max-tokens" value="<?php echo esc_attr( $ai_settings['max-tokens'] ); ?>" name="wpsc-ai-max-tokens" placeholder="<?php esc_attr_e( 'Enter the maximum number of tokens', 'wpsc-ps' ); ?> "/>
+					<input type="number" id="wpsc-ai-max-tokens" value="<?php echo esc_attr( $ai_settings['max-tokens'] ); ?>" name="wpsc-ai-max-tokens" placeholder="<?php esc_attr_e( 'Enter the maximum number of tokens', 'supportcandy' ); ?> "/>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Sets the maximum length of AI responses. Higher values allow longer outputs if needed and may increase cost depending on usage.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Sets the maximum length of AI responses. Higher values allow longer outputs if needed and may increase cost depending on usage.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
@@ -90,23 +90,23 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 					<button 
 						class="wpsc-button normal primary margin-right"
 						onclick="wpsc_set_ai_settings(this);">
-						<?php esc_attr_e( 'Submit', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Submit', 'supportcandy' ); ?>
 					</button>
 					<button 
 						class="wpsc-button normal secondary margin-right"
 						onclick="wpsc_reset_ai_settings(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_reset_ai_settings' ) ); ?>');">
-						<?php esc_attr_e( 'Reset', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Reset', 'supportcandy' ); ?>
 					</button>
 				</div>
 			</form>
 			<?php
 			if ( isset( $ai_settings['is-active'] ) && $ai_settings['is-active'] ) {
 				?>
-				<div style="margin-top: 15px; color: #009432;"><?php esc_html_e( 'Connected!', 'wpsc-ps' ); ?></div>
+				<div style="margin-top: 15px; color: #009432;"><?php esc_html_e( 'Connected!', 'supportcandy' ); ?></div>
 				<?php
 			} else {
 				?>
-				<div style="margin-top: 15px; color: #ff0000;"><?php esc_html_e( 'Not Connected!', 'wpsc-ps' ); ?></div>
+				<div style="margin-top: 15px; color: #ff0000;"><?php esc_html_e( 'Not Connected!', 'supportcandy' ); ?></div>
 				<div style="margin-top: 15px; color: #ff0000;"><?php echo esc_html( $ai_settings['last-error'] ); ?></div>
 				<?php
 			}
@@ -129,16 +129,16 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			if ( 'google-gemini' === $provider ) {
 				return array(
-					'gemini-2.5-flash-lite' => __( 'Gemini 2.5 Flash-Lite (fastest, lowest cost)', 'wpsc-ps' ),
-					'gemini-2.5-flash'      => __( 'Gemini 2.5 Flash (balanced)', 'wpsc-ps' ),
-					'gemini-2.5-pro'        => __( 'Gemini 2.5 Pro (most capable)', 'wpsc-ps' ),
+					'gemini-2.5-flash-lite' => __( 'Gemini 2.5 Flash-Lite (fastest, lowest cost)', 'supportcandy' ),
+					'gemini-2.5-flash'      => __( 'Gemini 2.5 Flash (balanced)', 'supportcandy' ),
+					'gemini-2.5-pro'        => __( 'Gemini 2.5 Pro (most capable)', 'supportcandy' ),
 				);
 			}
 
 			return array(
-				'gpt-4o-mini'  => __( 'GPT-4o Mini (fastest, lowest cost)', 'wpsc-ps' ),
-				'gpt-4.1-mini' => __( 'GPT-4.1 Mini (balanced)', 'wpsc-ps' ),
-				'gpt-4.1'      => __( 'GPT-4.1 (most capable)', 'wpsc-ps' ),
+				'gpt-4o-mini'  => __( 'GPT-4o Mini (fastest, lowest cost)', 'supportcandy' ),
+				'gpt-4.1-mini' => __( 'GPT-4.1 Mini (balanced)', 'supportcandy' ),
+				'gpt-4.1'      => __( 'GPT-4.1 (most capable)', 'supportcandy' ),
 			);
 		}
 
@@ -173,7 +173,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			$service_provider = isset( $_POST['wpsc-ai-service-provider'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc-ai-service-provider'] ) ) : '';
 			if ( empty( $service_provider ) || ! in_array( $service_provider, array( 'openai', 'google-gemini' ), true ) ) {
-				wp_send_json_error( __( 'Invalid or missing service provider!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing service provider!', 'supportcandy' ), 400 );
 			}
 
 			$submitted_api_key = isset( $_POST['wpsc-ai-api-key'] ) ? sanitize_text_field( wp_unslash( $_POST['wpsc-ai-api-key'] ) ) : '';
@@ -189,12 +189,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			}
 
 			if ( empty( $api_key ) || strlen( $api_key ) < 10 ) {
-				wp_send_json_error( __( 'Invalid or missing API key!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing API key!', 'supportcandy' ), 400 );
 			}
 
 			$max_tokens = isset( $_POST['wpsc-ai-max-tokens'] ) ? intval( $_POST['wpsc-ai-max-tokens'] ) : 0;
 			if ( $max_tokens < 500 || $max_tokens > 16384 ) {
-				wp_send_json_error( __( 'Max tokens must be between 500 and 16384.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Max tokens must be between 500 and 16384.', 'supportcandy' ), 400 );
 			}
 
 			// No UI control for this - always use the provider's default model.
@@ -254,7 +254,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			wp_send_json_success(
 				array(
-					'message' => __( 'Settings saved successfully.', 'wpsc-ps' ),
+					'message' => __( 'Settings saved successfully.', 'supportcandy' ),
 				)
 			);
 			wp_die();
@@ -301,7 +301,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			wp_send_json_success(
 				array(
-					'message' => __( 'Settings reset successfully.', 'wpsc-ps' ),
+					'message' => __( 'Settings reset successfully.', 'supportcandy' ),
 				)
 			);
 			wp_die();
@@ -360,7 +360,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			if ( empty( $api_key ) ) {
 				return array(
 					'success' => false,
-					'message' => __( 'API key is missing.', 'wpsc-ps' ),
+					'message' => __( 'API key is missing.', 'supportcandy' ),
 				);
 			}
 
@@ -393,7 +393,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			if ( $code === 200 ) {
 				return array(
 					'success' => true,
-					'message' => __( 'Connection to OpenAI is successful!', 'wpsc-ps' ),
+					'message' => __( 'Connection to OpenAI is successful!', 'supportcandy' ),
 				);
 			}
 
@@ -415,7 +415,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			return array(
 				'success' => false,
-				'message' => __( 'Connection to OpenAI failed: ', 'wpsc-ps' ) . $error_message,
+				'message' => __( 'Connection to OpenAI failed: ', 'supportcandy' ) . $error_message,
 			);
 		}
 
@@ -449,7 +449,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			if ( $code === 200 ) {
 				return array(
 					'success' => true,
-					'message' => __( 'Connection to Google AI is successful!', 'wpsc-ps' ),
+					'message' => __( 'Connection to Google AI is successful!', 'supportcandy' ),
 				);
 			} else {
 				$error_message = '';
@@ -462,7 +462,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 				}
 				return array(
 					'success' => false,
-					'message' => __( 'Connection to Google AI failed: ', 'wpsc-ps' ) . $error_message,
+					'message' => __( 'Connection to Google AI failed: ', 'supportcandy' ) . $error_message,
 				);
 			}
 		}
@@ -501,7 +501,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			if ( $code === 200 ) {
 				return array(
 					'success' => true,
-					'message' => __( 'Connection to OpenAI is successful!', 'wpsc-ps' ),
+					'message' => __( 'Connection to OpenAI is successful!', 'supportcandy' ),
 				);
 			}
 
@@ -516,7 +516,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 
 			return array(
 				'success' => false,
-				'message' => __( 'API key is valid, but it does not have permission to use Vector Stores, which is required for RAG file uploads. Check your API key\'s scope/restrictions in your OpenAI account.', 'wpsc-ps' ) . $error_message,
+				'message' => __( 'API key is valid, but it does not have permission to use Vector Stores, which is required for RAG file uploads. Check your API key\'s scope/restrictions in your OpenAI account.', 'supportcandy' ) . $error_message,
 			);
 		}
 
@@ -551,7 +551,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			if ( $code === 200 ) {
 				return array(
 					'success' => true,
-					'message' => __( 'Connection to Google AI is successful!', 'wpsc-ps' ),
+					'message' => __( 'Connection to Google AI is successful!', 'supportcandy' ),
 				);
 			}
 
@@ -565,7 +565,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_General' ) ) :
 			}
 			return array(
 				'success' => false,
-				'message' => __( 'API key is valid, but it does not have permission to use File Search Stores, which is required for RAG file uploads. Check your API key\'s API restrictions in Google Cloud console.', 'wpsc-ps' ) . $error_message,
+				'message' => __( 'API key is valid, but it does not have permission to use File Search Stores, which is required for RAG file uploads. Check your API key\'s API restrictions in Google Cloud console.', 'supportcandy' ) . $error_message,
 			);
 		}
 	}

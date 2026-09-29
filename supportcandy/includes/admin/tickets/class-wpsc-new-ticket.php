@@ -548,9 +548,16 @@ if ( ! class_exists( 'WPSC_New_Ticket' ) ) :
 			do_action( 'wpsc_create_new_ticket', $ticket );
 
 			// tinymce img attachments.
-			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(&auth_code=[^&\s]*)?/', $description, $matches ) ) {
-				foreach ( $matches[1] as $id ) {
-					$attachment            = new WPSC_Attachment( $id );
+			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(?:&auth_code=[^&\s"\']*)?(?:&(?:amp;)?wpsc_nonce=([a-f0-9]*))?/', $description, $matches ) ) {
+				foreach ( $matches[1] as $key => $id ) {
+					$attachment = new WPSC_Attachment( $id );
+					// Only the uploader may bind their own, not-yet-bound
+					// attachment, proven by the recorded uploader identity or
+					// by the per-attachment nonce carried in the image url.
+					$nonce = isset( $matches[2][ $key ] ) ? $matches[2][ $key ] : '';
+					if ( ! WPSC_Attachment::can_claim( $attachment, $nonce ) ) {
+						continue;
+					}
 					$attachment->is_active = 1;
 					$attachment->source_id = $thread->id;
 					$attachment->ticket_id = $ticket->id;

@@ -87,8 +87,8 @@ if ( ! class_exists( 'WPSC_Ticket_Widgets' ) ) :
 							<span class="wpsc-sort-handle action-btn"><?php WPSC_Icons::get( 'sort' ); ?></span>
 							<span class="title">
 								<?php
-								$ticket_widget_title = $ticket_widget['title'] ? WPSC_Translations::get( 'wpsc-twt-' . $key, stripslashes( htmlspecialchars( $ticket_widget['title'] ) ) ) : stripslashes( htmlspecialchars( $ticket_widget['title'] ) );
-								echo esc_attr( $ticket_widget_title );
+								$ticket_widget_title = $ticket_widget['title'] ? WPSC_Translations::get( 'wpsc-twt-' . $key, stripslashes( $ticket_widget['title'] ) ) : stripslashes( $ticket_widget['title'] );
+								echo esc_html( $ticket_widget_title );
 								?>
 							</span>
 							<div class="actions">

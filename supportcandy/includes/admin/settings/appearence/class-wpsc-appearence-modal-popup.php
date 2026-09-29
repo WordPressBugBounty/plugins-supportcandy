@@ -21,6 +21,25 @@ if ( ! class_exists( 'WPSC_Appearence_Modal_Popup' ) ) :
 		}
 
 		/**
+		 * Sanitize a posted color value, falling back to the given default when it isn't a valid hex color.
+		 *
+		 * @param string $key - $_POST key.
+		 * @param string $default_color - fallback hex color.
+		 * @return string
+		 */
+		private static function sanitize_color( $key, $default_color ) {
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already verified in save_settings() before this is called.
+			if ( ! isset( $_POST[ $key ] ) ) {
+				return $default_color;
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already verified in save_settings() before this is called.
+			$color = sanitize_hex_color( wp_unslash( $_POST[ $key ] ) );
+			return $color ? $color : $default_color;
+		}
+
+		/**
 		 * Reset settings
 		 *
 		 * @return void
@@ -146,12 +165,12 @@ if ( ! class_exists( 'WPSC_Appearence_Modal_Popup' ) ) :
 			update_option(
 				'wpsc-ap-modal',
 				array(
-					'header-bg-color'   => isset( $_POST['header-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['header-bg-color'] ) ) : '#fff8e5',
-					'header-text-color' => isset( $_POST['header-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['header-text-color'] ) ) : '#ff8f2b',
-					'body-bg-color'     => isset( $_POST['body-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['body-bg-color'] ) ) : '#fff',
-					'body-label-color'  => isset( $_POST['body-label-color'] ) ? sanitize_text_field( wp_unslash( $_POST['body-label-color'] ) ) : '#777',
-					'body-text-color'   => isset( $_POST['body-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['body-text-color'] ) ) : '#2c3e50',
-					'footer-bg-color'   => isset( $_POST['footer-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['footer-bg-color'] ) ) : '#fff',
+					'header-bg-color'   => self::sanitize_color( 'header-bg-color', '#fff8e5' ),
+					'header-text-color' => self::sanitize_color( 'header-text-color', '#ff8f2b' ),
+					'body-bg-color'     => self::sanitize_color( 'body-bg-color', '#fff' ),
+					'body-label-color'  => self::sanitize_color( 'body-label-color', '#777' ),
+					'body-text-color'   => self::sanitize_color( 'body-text-color', '#2c3e50' ),
+					'footer-bg-color'   => self::sanitize_color( 'footer-bg-color', '#fff' ),
 					'z-index'           => isset( $_POST['z-index'] ) ? intval( $_POST['z-index'] ) : 900000000,
 				)
 			);

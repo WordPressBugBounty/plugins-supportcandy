@@ -233,6 +233,7 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					source_id BIGINT NOT NULL DEFAULT 0,
 					ticket_id BIGINT NOT NULL DEFAULT 0,
 					customer_id BIGINT NOT NULL DEFAULT 0,
+					uploaded_by VARCHAR(64) NOT NULL DEFAULT '',
 					PRIMARY KEY (id)
 				) $collate;
 				CREATE TABLE {$wpdb->prefix}psmsc_agents (
@@ -333,7 +334,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
                     tokens INT NOT NULL,
                     prompt LONGTEXT NOT NULL,
                     date_created DATETIME NOT NULL,
-                    PRIMARY KEY (id)
+                    PRIMARY KEY (id),
+                    KEY customer (customer),
+                    KEY date_created (date_created)
                 ) $collate;
                 CREATE TABLE {$wpdb->prefix}psmsc_ai_training (
                     id BIGINT NOT NULL AUTO_INCREMENT,
@@ -369,7 +372,8 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 					PRIMARY KEY (id),
 					UNIQUE KEY session_id (session_id),
 					KEY visitor_id (visitor_id),
-					KEY status (status)
+					KEY status (status),
+					KEY date_created (date_created)
 				) $collate;
 				CREATE TABLE {$wpdb->prefix}psmsc_acb_messages (
 					id BIGINT NOT NULL AUTO_INCREMENT,
@@ -404,6 +408,12 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM {$wpdb->prefix}psmsc_archived_tickets LIKE 'ticket_summary'" );
 			if ( empty( $column_exists ) ) {
 				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_tickets ADD ticket_summary TEXT NULL" );
+			}
+
+			// Attachment ownership: add 'uploaded_by' column to attachments table.
+			$column_exists = $wpdb->get_results( "SHOW COLUMNS FROM {$wpdb->prefix}psmsc_attachments LIKE 'uploaded_by'" );
+			if ( empty( $column_exists ) ) {
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_attachments ADD uploaded_by VARCHAR(64) NOT NULL DEFAULT ''" );
 			}
 		}
 
@@ -1473,21 +1483,10 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				)
 			);
 
-			// Create a support page with the [supportcandy] shortcode.
-			$support_page_id = wp_insert_post(
-				array(
-					'post_title'   => esc_html__( 'Support', 'supportcandy' ),
-					'post_content' => '[supportcandy]',
-					'post_status'  => 'publish',
-					'post_type'    => 'page',
-				)
-			);
-			$support_page_id = is_wp_error( $support_page_id ) ? 0 : $support_page_id;
-
 			update_option(
 				'wpsc-gs-page-settings',
 				array(
-					'support-page'            => $support_page_id,
+					'support-page'            => 0,
 					'open-ticket-page'        => 0,
 					'ticket-url-page'         => 'support-page',
 					'new-ticket-page'         => 'default',
@@ -1821,13 +1820,6 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				)
 			);
 			update_option(
-				'wpsc-ap-agent-collision',
-				array(
-					'header-bg-color'   => '#e6e6e6',
-					'header-text-color' => '#2c3e50',
-				)
-			);
-			update_option(
 				'wpsc-ap-ticket-list',
 				array(
 					'list-header-background-color'     => '#2c3e50',
@@ -1854,10 +1846,10 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			update_option(
 				'wpsc-ap-dashboard',
 				array(
-					'card-body-bg-color'     => '#f9f9f9',
+					'card-body-bg-color'     => '#ffffff',
 					'card-body-svg-color'    => '#777',
 					'card-body-text-color'   => '#2c3e50',
-					'widget-body-bg-color'   => '#f9f9f9',
+					'widget-body-bg-color'   => '#ffffff',
 					'widget-body-svg-color'  => '#777',
 					'widget-body-text-color' => '#2c3e50',
 				)
@@ -2103,8 +2095,24 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				array(
 					'background-color' => '#2271b1',
 					'icon-color'       => '#ffffff',
+					'header-text'      => __( 'AI Chatbot', 'supportcandy' ),
+					'greeting-text'    => __( 'Hey, I\'m your assistant. How can I help you today?', 'supportcandy' ),
+					'warning-text'     => __( 'AI can make mistakes. Check important info.', 'supportcandy' ),
 				)
 			);
+
+			// Onboarding wizard: seed pending state for this fresh install and flag a
+			// one-time redirect so WPSC_Onboarding shows the wizard on the next admin
+			// page load. Existing sites being upgraded never reach this method, so the
+			// wizard never auto-appears for them.
+			update_option(
+				'wpsc-onboarding-wizard',
+				array(
+					'status' => 'pending',
+					'steps'  => array(),
+				)
+			);
+			set_transient( 'wpsc_onboarding_redirect', 1, 5 * MINUTE_IN_SECONDS );
 		}
 
 		/**
@@ -2571,10 +2579,10 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				update_option(
 					'wpsc-ap-dashboard',
 					array(
-						'card-body-bg-color'     => '#f9f9f9',
+						'card-body-bg-color'     => '#ffffff',
 						'card-body-svg-color'    => '#777',
 						'card-body-text-color'   => '#2c3e50',
-						'widget-body-bg-color'   => '#f9f9f9',
+						'widget-body-bg-color'   => '#ffffff',
 						'widget-body-svg-color'  => '#777',
 						'widget-body-text-color' => '#2c3e50',
 					)
@@ -2918,6 +2926,9 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 						array(
 							'background-color' => '#2271b1',
 							'icon-color'       => '#ffffff',
+							'header-text'      => __( 'AI Chatbot', 'supportcandy' ),
+							'greeting-text'    => __( 'Hey, I\'m your assistant. How can I help you today?', 'supportcandy' ),
+							'warning-text'     => __( 'AI can make mistakes. Check important info.', 'supportcandy' ),
 						)
 					);
 				}
@@ -3021,6 +3032,33 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 				$chatbot = get_option( 'wpsc-ps-acb-chatbot-settings' );
 				$chatbot['custom-prompt'] = '';
 				update_option( 'wpsc-ps-acb-chatbot-settings', $chatbot );
+			}
+
+			if ( version_compare( self::$current_version, '3.5.4', '<' ) ) {
+
+				$appearance = get_option( 'wpsc-acb-appearance-general' );
+				if ( is_array( $appearance ) ) {
+					if ( ! isset( $appearance['header-text'] ) ) {
+						$appearance['header-text'] = __( 'AI Chatbot', 'supportcandy' );
+					}
+					if ( ! isset( $appearance['greeting-text'] ) ) {
+						$appearance['greeting-text'] = __( 'Hey, I\'m your assistant. How can I help you today?', 'supportcandy' );
+					}
+					if ( ! isset( $appearance['warning-text'] ) ) {
+						$appearance['warning-text'] = __( 'AI can make mistakes. Check important info.', 'supportcandy' );
+					}
+					update_option( 'wpsc-acb-appearance-general', $appearance );
+				}
+
+				self::create_indexing();
+
+				update_option(
+					'wpsc-onboarding-wizard',
+					array(
+						'status' => 'completed',
+						'steps'  => array(),
+					)
+				);
 			}
 
 			update_option( 'wpsc-string-translation', $string_translations );
@@ -3129,6 +3167,18 @@ if ( ! class_exists( 'WPSC_Installation' ) ) :
 			);
 			if ( ! $index_exists ) {
 				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_archived_threads ADD INDEX {$index_name} (ticket)" );
+			}
+
+			// Create index on AI training table.
+			$index_name = 'idx_doc_source_source_provider_source_id';
+			$index_exists = $wpdb->get_var(
+				$wpdb->prepare(
+					"SHOW INDEX FROM {$wpdb->prefix}psmsc_ai_training WHERE Key_name = %s",
+					$index_name
+				)
+			);
+			if ( ! $index_exists ) {
+				$wpdb->query( "ALTER TABLE {$wpdb->prefix}psmsc_ai_training ADD INDEX {$index_name} (doc_source, source, provider, source_id)" );
 			}
 		}
 	}

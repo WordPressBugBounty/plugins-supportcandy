@@ -137,37 +137,41 @@ if ( ! class_exists( 'WPSC_DBW_Week_Trend_Tickets' ) ) :
 				$random_color[] = "'" . WPSC_Functions::generate_random_color() . "'";
 
 			}
-			$args = array(
-				'items_per_page' => 0,
-				'system_query'   => $current_user->get_tl_system_query( $filters ),
-				'meta_query'     => array(
-					'relation' => 'AND',
-					array(
-						'slug'    => 'date_created',
-						'compare' => 'BETWEEN',
-						'val'     => array(
-							'operand_val_1' => $date_range[0],
-							'operand_val_2' => $date_range[1],
+			// This differs per viewing agent (system_query above depends on the viewer's visibility
+			// capabilities), so it's cached per agent rather than shared across everyone.
+			$day_counts = WPSC_Stats_Cache::remember(
+				'week-trend-tickets',
+				array( $range ),
+				function () use ( $current_user, $filters, $date_range ) {
+					$args = array(
+						'system_query' => $current_user->get_tl_system_query( $filters ),
+						'meta_query'   => array(
+							'relation' => 'AND',
+							array(
+								'slug'    => 'date_created',
+								'compare' => 'BETWEEN',
+								'val'     => array(
+									'operand_val_1' => $date_range[0],
+									'operand_val_2' => $date_range[1],
+								),
+							),
 						),
-					),
-				),
+					);
+
+					// Single grouped query instead of fetching every matching ticket row (which could
+					// be a lot of rows, including large text columns, for a wide range like "this year")
+					// just to bucket it by weekday in PHP.
+					$grouped = WPSC_Ticket::count_grouped_by( $args, 'WEEKDAY(t.date_created)' );
+
+					$weekday_names = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
+					$day_counts = array_fill_keys( $weekday_names, 0 );
+					foreach ( $grouped as $weekday_index => $count ) {
+						$day_counts[ $weekday_names[ (int) $weekday_index ] ] = $count;
+					}
+					return $day_counts;
+				},
+				true
 			);
-			$total_tickets = WPSC_Ticket::find( $args )['results'];
-			$day_counts = array(
-				'Monday'    => 0,
-				'Tuesday'   => 0,
-				'Wednesday' => 0,
-				'Thursday'  => 0,
-				'Friday'    => 0,
-				'Saturday'  => 0,
-				'Sunday'    => 0,
-			);
-			$temp = array();
-			foreach ( $total_tickets as $ticket ) {
-				$date_created = $ticket->date_created;
-				$weeks = $date_created->format( 'l' );
-				$temp = $day_counts[ $weeks ]++;
-			}
 			ob_start();
 			?>
 			<div class="graph-container">

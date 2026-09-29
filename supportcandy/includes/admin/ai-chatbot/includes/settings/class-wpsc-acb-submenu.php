@@ -40,8 +40,8 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 
 			$submenus[] = array(
 				'parent_slug' => 'wpsc-tickets',
-				'page_title'  => esc_attr__( 'Chat Sessions', 'wpsc-ps' ),
-				'menu_title'  => esc_attr__( 'Chat Sessions', 'wpsc-ps' ),
+				'page_title'  => esc_attr__( 'Chat Sessions', 'supportcandy' ),
+				'menu_title'  => esc_attr__( 'Chat Sessions', 'supportcandy' ),
 				'capability'  => 'manage_options',
 				'menu_slug'   => 'wpsc-ai-chatbot',
 				'callback'    => array( __CLASS__, 'layout' ),
@@ -64,7 +64,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 				<hr class="wp-header-end">
 				<div id="wpsc-container">
 					<div class="wpsc-setting-header">
-						<h2><?php esc_attr_e( 'AI Chatbot Sessions', 'wpsc-ps' ); ?></h2>
+						<h2><?php esc_attr_e( 'AI Chatbot Sessions', 'supportcandy' ); ?></h2>
 					</div>
 					<div class="wpsc-setting-section-body"></div>
 					<script>
@@ -238,7 +238,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 				<?php
 				$subject = ob_get_clean();
 
-				$visitors_name = esc_attr__( 'Guest', 'wpsc-ps' );
+				$visitors_name = esc_attr__( 'Guest', 'supportcandy' );
 				$raw_visitor_id = is_scalar( $session->visitor_id ) ? trim( (string) $session->visitor_id ) : '';
 				$visitor_id = ctype_digit( $raw_visitor_id ) ? absint( $raw_visitor_id ) : 0;
 				if ( $visitor_id > 0 ) {
@@ -335,7 +335,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 
 			$created_at = wp_date( 'M d, Y h:i A', ( $session->date_created )->setTimezone( wp_timezone() )->getTimestamp() );
 			$visitor_email = '';
-			$visitors_name = esc_attr__( 'Guest', 'wpsc-ps' );
+			$visitors_name = esc_attr__( 'Guest', 'supportcandy' );
 			$raw_visitor_id = is_scalar( $session->visitor_id ) ? trim( (string) $session->visitor_id ) : '';
 			$visitor_id = ctype_digit( $raw_visitor_id ) ? absint( $raw_visitor_id ) : 0;
 			if ( $visitor_id > 0 ) {
@@ -350,43 +350,43 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 				<div id="wpsc-container">
 					<div class="wpsc-acb-session">
 						<div class="wpsc-acb-back">
-							<a href="#" class="button button-secondary"><?php esc_attr_e( '← Back to Sessions', 'wpsc-ps' ); ?></a>
+							<a href="#" class="button button-secondary"><?php esc_attr_e( '← Back to Sessions', 'supportcandy' ); ?></a>
 						</div>
 						<div class="wpsc-acb-session-info">
-							<h3><span class="wpsc-acb-info-icon" aria-hidden="true">💬</span><?php esc_attr_e( 'Session Information', 'wpsc-ps' ); ?></h3>
+							<h3><span class="wpsc-acb-info-icon" aria-hidden="true">💬</span><?php esc_attr_e( 'Session Information', 'supportcandy' ); ?></h3>
 							<div class="wpsc-acb-subject">
-								<label><?php esc_attr_e( 'Subject', 'wpsc-ps' ); ?></label>
+								<label><?php esc_attr_e( 'Subject', 'supportcandy' ); ?></label>
 								<span><?php echo esc_html( $subject ); ?></span>
 							</div>
 							<div class="wpsc-acb-info-grid">
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Name', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Name', 'supportcandy' ); ?></label>
 									<span><?php echo esc_html( $visitors_name ); ?></span>
 								</div>
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Status', 'supportcandy' ); ?></label>
 									<span>
 										<?php echo wp_kses_post( WPSC_ACB_Status::get_badge( $session->status ) ); ?>
 									</span>
 								</div>
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Reaction', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Reaction', 'supportcandy' ); ?></label>
 									<span><?php echo $session->reaction ? wp_kses_post( WPSC_ACB_Reaction::get_badge( $session->reaction ) ) : '—'; ?></span>
 								</div>
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Messages', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Messages', 'supportcandy' ); ?></label>
 									<span><?php echo esc_html( $messages_count ); ?></span>
 								</div>
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Total Tokens', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Total Tokens', 'supportcandy' ); ?></label>
 									<span><?php echo esc_html( $total_tokens ); ?></span>
 								</div>
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Ticket', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Ticket', 'supportcandy' ); ?></label>
 									<span class="wpsc-acb-ticket-link"><?php echo wp_kses_post( $ticket_url ); ?></span>
 								</div>
 								<div class="wpsc-acb-info-item">
-									<label><?php esc_attr_e( 'Created At', 'wpsc-ps' ); ?></label>
+									<label><?php esc_attr_e( 'Created At', 'supportcandy' ); ?></label>
 									<span><?php echo esc_html( $created_at ); ?></span>
 								</div>
 							</div>
@@ -463,7 +463,7 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 			<div class="wpsc-acb-toolbar">
 
 				<div class="wpsc-acb-toolbar-item">
-					<label><?php esc_attr_e( 'Duration', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Duration', 'supportcandy' ); ?></label>
 					<select id="wpsc-message-duration-filter">
 						<option value="today"><?php esc_attr_e( 'Today', 'wpsc-reports' ); ?></option>
 						<option value="yesterday"><?php esc_attr_e( 'Yesterday', 'wpsc-reports' ); ?></option>
@@ -477,9 +477,9 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 				</div>
 
 				<div class="wpsc-acb-toolbar-item">
-					<label><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Status', 'supportcandy' ); ?></label>
 					<select id="wpsc-message-status-filter">
-						<option value="all"><?php esc_attr_e( 'All statuses', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All statuses', 'supportcandy' ); ?></option>
 						<option value="<?php echo esc_attr( WPSC_ACB_Status::ACTIVE ); ?>"><?php echo esc_attr( WPSC_ACB_Status::get_label( WPSC_ACB_Status::ACTIVE ) ); ?></option>
 						<option value="<?php echo esc_attr( WPSC_ACB_Status::INACTIVE ); ?>"><?php echo esc_attr( WPSC_ACB_Status::get_label( WPSC_ACB_Status::INACTIVE ) ); ?></option>
 						<option value="<?php echo esc_attr( WPSC_ACB_Status::ABANDONED ); ?>"><?php echo esc_attr( WPSC_ACB_Status::get_label( WPSC_ACB_Status::ABANDONED ) ); ?></option>
@@ -490,39 +490,39 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 				</div>
 
 				<div class="wpsc-acb-toolbar-item">
-					<label><?php esc_attr_e( 'Reactions', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Reactions', 'supportcandy' ); ?></label>
 					<select id="wpsc-message-reaction-filter">
-						<option value="all"><?php esc_attr_e( 'All reactions', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All reactions', 'supportcandy' ); ?></option>
 						<option value="<?php echo esc_attr( WPSC_ACB_Reaction::HAPPY ); ?>"><?php echo esc_attr( WPSC_ACB_Reaction::get_label( WPSC_ACB_Reaction::HAPPY ) ); ?></option>
 						<option value="<?php echo esc_attr( WPSC_ACB_Reaction::UNHAPPY ); ?>"><?php echo esc_attr( WPSC_ACB_Reaction::get_label( WPSC_ACB_Reaction::UNHAPPY ) ); ?></option>
 					</select>
 				</div>
 
 				<div class="wpsc-acb-toolbar-item wpsc-acb-from-date-filter" style="display:none;">
-					<label><?php esc_attr_e( 'From', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'From', 'supportcandy' ); ?></label>
 					<input type="text" id="wpsc-message-from-date" placeholder="YYYY-MM-DD" autocomplete="off" />
 				</div>
 
 				<div class="wpsc-acb-toolbar-item wpsc-acb-to-date-filter" style="display:none;">
-					<label><?php esc_attr_e( 'To', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'To', 'supportcandy' ); ?></label>
 					<input type="text" id="wpsc-message-to-date" placeholder="YYYY-MM-DD" autocomplete="off" />
 				</div>
 
 				<div class="wpsc-acb-toolbar-item wpsc-acb-apply-filter">
 					<button type="button" class="wpsc-button normal primary" id="wpsc-acb-apply-date-filter">
-						<?php esc_attr_e( 'Apply Filter', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Apply Filter', 'supportcandy' ); ?>
 					</button>
 				</div>
 
 				<div class="wpsc-acb-toolbar-item wpsc-acb-reset-filter">
 					<button type="button" class="wpsc-button normal secondary" id="wpsc-acb-reset-filter">
-						<?php esc_attr_e( 'Reset', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Reset', 'supportcandy' ); ?>
 					</button>
 				</div>
 
 				<div class="wpsc-acb-toolbar-item wpsc-acb-refresh-ai-session-logs">
 					<button type="button" class="wpsc-button normal secondary" id="wpsc-acb-refresh-ai-session-logs">
-						<?php esc_attr_e( 'Refresh', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Refresh', 'supportcandy' ); ?>
 					</button>
 				</div>
 
@@ -531,14 +531,14 @@ if ( ! class_exists( 'WPSC_ACB_Submenu' ) ) :
 				<table class="wpsc_session_info_list wp-list-table widefat">
 					<thead>
 						<tr>
-							<th><?php esc_attr_e( 'ID', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Subject', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Name', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Reaction', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Tokens', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Ticket ID', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Last activity', 'wpsc-ps' ); ?></th>
+							<th><?php esc_attr_e( 'ID', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Subject', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Name', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Status', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Reaction', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Tokens', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Ticket ID', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Last activity', 'supportcandy' ); ?></th>
 						</tr>
 					</thead>
 				</table>

@@ -131,26 +131,31 @@ if ( ! class_exists( 'WPSC_Appearence_General' ) ) :
 			}
 
 			$primary_color = isset( $_POST['primary-color'] ) ? sanitize_text_field( wp_unslash( $_POST['primary-color'] ) ) : '';
+			$primary_color = ( 'transparent' === $primary_color ) ? $primary_color : sanitize_hex_color( $primary_color );
 			if ( ! $primary_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$menu_link_color = isset( $_POST['menu-link-color'] ) ? sanitize_text_field( wp_unslash( $_POST['menu-link-color'] ) ) : '';
-			if ( ! $primary_color ) {
+			$menu_link_color = ( 'transparent' === $menu_link_color ) ? $menu_link_color : sanitize_hex_color( $menu_link_color );
+			if ( ! $menu_link_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$main_background_color = isset( $_POST['main-background-color'] ) ? sanitize_text_field( wp_unslash( $_POST['main-background-color'] ) ) : '';
+			$main_background_color = ( 'transparent' === $main_background_color ) ? $main_background_color : sanitize_hex_color( $main_background_color );
 			if ( ! $main_background_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$main_text_color = isset( $_POST['main-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['main-text-color'] ) ) : '';
+			$main_text_color = ( 'transparent' === $main_text_color ) ? $main_text_color : sanitize_hex_color( $main_text_color );
 			if ( ! $main_text_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}
 
 			$link_color = isset( $_POST['link-color'] ) ? sanitize_text_field( wp_unslash( $_POST['link-color'] ) ) : '';
+			$link_color = ( 'transparent' === $link_color ) ? $link_color : sanitize_hex_color( $link_color );
 			if ( ! $link_color ) {
 				wp_send_json_error( 'Bad request', 400 );
 			}

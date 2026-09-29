@@ -1015,6 +1015,138 @@ if ( ! class_exists( 'WPSC_Ticket' ) ) :
 
 			return (int) $wpdb->get_var( $sql );
 		}
+
+		/**
+		 * Count tickets grouped by a raw SQL expression, e.g. day of week or month. Reuses the same
+		 * joins/where building as find()/count(), so all the usual filters (including system_query)
+		 * still apply - this is a single aggregate query instead of fetching every matching row just
+		 * to bucket it in PHP.
+		 *
+		 * $group_by_sql must be a trusted, hard-coded SQL expression (e.g. 'WEEKDAY(t.date_created)') -
+		 * never build it from user input, it is not escaped.
+		 *
+		 * @param array  $filter - array containing array items like search, where, etc.
+		 * @param string $group_by_sql - raw SQL expression to group by.
+		 * @return array Map of the raw group value (as returned by MySQL) to ticket count.
+		 */
+		public static function count_grouped_by( $filter, $group_by_sql ) {
+
+			global $wpdb;
+
+			$filter['is_active'] = isset( $filter['is_active'] ) ? $filter['is_active'] : 1;
+			$filter['orderby_slug'] = isset( $filter['orderby'] ) ? $filter['orderby'] : '';
+
+			$joins = self::get_joins( $filter );
+			$where = self::get_where( $filter );
+
+			$sql = 'SELECT ' . $group_by_sql . ' AS wpsc_grp, COUNT(DISTINCT t.id) AS wpsc_cnt FROM ' . $wpdb->prefix . 'psmsc_tickets t ';
+			$sql = $sql . $joins . $where . 'GROUP BY wpsc_grp';
+
+			$rows = $wpdb->get_results( $sql, ARRAY_A );
+
+			$counts = array();
+			foreach ( $rows as $row ) {
+				// A NULL group (e.g. an unset custom field) can't be used as an array key directly.
+				$key = $row['wpsc_grp'] === null ? '' : $row['wpsc_grp'];
+				$counts[ $key ] = (int) $row['wpsc_cnt'];
+			}
+
+			return $counts;
+		}
+
+		/**
+		 * Compute SQL aggregates (SUM/AVG/MAX/MIN/COUNT, etc.) over tickets matching a filter, in a
+		 * single query. Reuses the same joins/where building as find()/count(), so all the usual
+		 * filters (including system_query) still apply - this replaces the "fetch every matching row
+		 * just to sum/average a column in PHP" pattern.
+		 *
+		 * Every value in $aggregates must be a trusted, hard-coded SQL expression (e.g. 'SUM(t.cd)') -
+		 * never build it from user input, it is not escaped.
+		 *
+		 * @param array $filter - array containing array items like search, where, etc.
+		 * @param array $aggregates - map of result key => raw SQL aggregate expression.
+		 * @return array Map of the same keys to their computed values (numeric, or null if there were
+		 *               no matching rows at all).
+		 */
+		public static function aggregate( $filter, $aggregates ) {
+
+			global $wpdb;
+
+			$filter['is_active'] = isset( $filter['is_active'] ) ? $filter['is_active'] : 1;
+			$filter['orderby_slug'] = isset( $filter['orderby'] ) ? $filter['orderby'] : '';
+
+			$joins = self::get_joins( $filter );
+			$where = self::get_where( $filter );
+
+			$select = array();
+			foreach ( $aggregates as $key => $expr ) {
+				$select[] = $expr . ' AS ' . $key;
+			}
+
+			$sql = 'SELECT ' . implode( ', ', $select ) . ' FROM ' . $wpdb->prefix . 'psmsc_tickets t ';
+			$sql = $sql . $joins . $where;
+
+			$row = $wpdb->get_row( $sql, ARRAY_A );
+
+			$result = array();
+			foreach ( $aggregates as $key => $expr ) {
+				$result[ $key ] = isset( $row[ $key ] ) ? $row[ $key ] : null;
+			}
+
+			return $result;
+		}
+
+		/**
+		 * Aggregate a per-ticket COUNT of related thread rows (e.g. average number of reply/report
+		 * threads per matching ticket), in a single query - avoids running one thread-count query per
+		 * ticket in PHP. Reuses the same joins/where building as find()/count() for the ticket side of
+		 * the query, so all the usual filters (including system_query) still apply.
+		 *
+		 * Every value in $aggregates must be a trusted, hard-coded SQL expression evaluated over the
+		 * per-ticket thread_count (e.g. 'AVG(thread_count)') - never build it from user input.
+		 *
+		 * @param array $filter - array containing array items like search, where, etc. (applies to
+		 *                        which tickets are included).
+		 * @param array $thread_types - thread 'type' values to count, e.g. array( 'report', 'reply' ).
+		 * @param array $aggregates - map of result key => raw SQL aggregate expression.
+		 * @return array Map of the same keys to their computed values (numeric, or null if there were
+		 *               no matching tickets at all).
+		 */
+		public static function aggregate_thread_counts( $filter, $thread_types, $aggregates ) {
+
+			global $wpdb;
+
+			$filter['is_active'] = isset( $filter['is_active'] ) ? $filter['is_active'] : 1;
+			$filter['orderby_slug'] = isset( $filter['orderby'] ) ? $filter['orderby'] : '';
+
+			$joins = self::get_joins( $filter );
+			$where = self::get_where( $filter );
+
+			$type_placeholders = implode( ', ', array_fill( 0, count( $thread_types ), '%s' ) );
+			$thread_join = $wpdb->prepare(
+				"LEFT JOIN {$wpdb->prefix}psmsc_threads th ON th.ticket = t.id AND th.is_active = 1 AND th.type IN ( {$type_placeholders} )", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$thread_types
+			);
+
+			$select = array();
+			foreach ( $aggregates as $key => $expr ) {
+				$select[] = $expr . ' AS ' . $key;
+			}
+
+			$sql  = 'SELECT ' . implode( ', ', $select ) . ' FROM (';
+			$sql .= 'SELECT t.id, COUNT(th.id) AS thread_count FROM ' . $wpdb->prefix . 'psmsc_tickets t ';
+			$sql .= $thread_join . ' ' . $joins . $where . 'GROUP BY t.id';
+			$sql .= ') AS wpsc_per_ticket_thread_counts';
+
+			$row = $wpdb->get_row( $sql, ARRAY_A );
+
+			$result = array();
+			foreach ( $aggregates as $key => $expr ) {
+				$result[ $key ] = isset( $row[ $key ] ) ? $row[ $key ] : null;
+			}
+
+			return $result;
+		}
 	}
 endif;
 

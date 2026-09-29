@@ -31,6 +31,25 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		}
 
 		/**
+		 * Get the site URL from a REST API URL.
+		 *
+		 * Drops the query string/fragment, the /wp-json prefix with any route after it,
+		 * and a trailing script file (e.g. index.php), so any REST URL form such as
+		 * http://example.com/wp-json/wp/v2/posts or http://example.com/index.php?rest_route=/
+		 * becomes http://example.com. A subdirectory install path is kept.
+		 *
+		 * @param string $api_url REST API URL.
+		 * @return string
+		 */
+		public static function get_site_url_from_api_url( $api_url ) {
+
+			$site_url = preg_replace( '/[?#].*$/s', '', trim( (string) $api_url ) );
+			$site_url = preg_replace( '#/wp-json(?:/.*)?$#i', '', $site_url );
+			$site_url = preg_replace( '#/[^/]+\.php$#i', '', untrailingslashit( $site_url ) );
+			return untrailingslashit( $site_url );
+		}
+
+		/**
 		 * Get AI training website setting (training sources list).
 		 *
 		 * @return void
@@ -59,11 +78,11 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			<table class="wpsc-ai-trainings wpsc-setting-tbl">
 				<thead>
 					<tr>
-						<th><?php echo esc_attr( wpsc__( 'Name', 'wpsc-ps' ) ); ?></th>
-						<th><?php echo esc_attr( wpsc__( 'Source', 'wpsc-ps' ) ); ?></th>
-						<th><?php echo esc_attr( wpsc__( 'Post Types', 'wpsc-ps' ) ); ?></th>
-						<th><?php echo esc_attr( wpsc__( 'Upload Status', 'wpsc-ps' ) ); ?></th>
-						<th><?php echo esc_attr( wpsc__( 'Actions', 'wpsc-ps' ) ); ?></th>
+						<th><?php echo esc_attr( wpsc__( 'Name', 'supportcandy' ) ); ?></th>
+						<th><?php echo esc_attr( wpsc__( 'Source', 'supportcandy' ) ); ?></th>
+						<th><?php echo esc_attr( wpsc__( 'Post Types', 'supportcandy' ) ); ?></th>
+						<th><?php echo esc_attr( wpsc__( 'Upload Status', 'supportcandy' ) ); ?></th>
+						<th><?php echo esc_attr( wpsc__( 'Actions', 'supportcandy' ) ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -71,8 +90,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 					if ( ! empty( $sources ) ) {
 						foreach ( $sources as $key => $source ) {
 							// remove trailing content from api url.
-							$api_url = $source['api-url'] ?? '';
-							$api_url = preg_replace( '/\/wp-json\/?$/', '', $api_url );
+							$api_url = self::get_site_url_from_api_url( $source['api-url'] ?? '' );
 							$source_slug = sanitize_text_field( $source['slug'] ?? '' );
 							$record_counts = self::get_source_record_counts( $source_slug, $current_provider );
 							$skipped_count = WPSC_PS_AIT_Controller::get_skipped_insufficient_content_count( $source_slug );
@@ -137,7 +155,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							topStart: {
 								buttons: [
 									{
-										text: '<?php echo esc_attr( wpsc__( 'Add new', 'wpsc-ps' ) ); ?>',
+										text: '<?php echo esc_attr( wpsc__( 'Add new', 'supportcandy' ) ); ?>',
 										className: 'wpsc-button small primary',
 										action: function ( e, dt, node, config ) {
 											wpsc_add_ai_training_source( '<?php echo esc_attr( wp_create_nonce( 'wpsc_add_ai_training_source' ) ); ?>' );
@@ -157,7 +175,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		/**
 		 * Get the per-status training record counts for a source, scoped to the
 		 * currently configured AI provider - each provider keeps its own independent
-		 * copy of a document (see insert_training_post()), so counts must only reflect
+		 * copy of a document (see process_training_posts()), so counts must only reflect
 		 * the provider actually in use, not every provider a source has ever been synced
 		 * under. Soft-deleted (DELETE) records are intentionally excluded from every
 		 * bucket, including 'total'.
@@ -254,14 +272,14 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			if ( ( $counts['processing'] ?? 0 ) > 0 ) {
 				return array(
 					'key'   => 'uploading',
-					'label' => __( 'Uploading', 'wpsc-ps' ),
+					'label' => __( 'Uploading', 'supportcandy' ),
 				);
 			}
 
 			if ( ( $counts['new'] ?? 0 ) > 0 ) {
 				return array(
 					'key'   => 'queued',
-					'label' => __( 'Queue', 'wpsc-ps' ),
+					'label' => __( 'Queue', 'supportcandy' ),
 				);
 			}
 
@@ -270,20 +288,20 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			if ( $failed_other > 0 ) {
 				return array(
 					'key'   => 'failed',
-					'label' => __( 'Failed', 'wpsc-ps' ),
+					'label' => __( 'Failed', 'supportcandy' ),
 				);
 			}
 
 			if ( ( $counts['indexed'] ?? 0 ) > 0 || $skipped_count > 0 ) {
 				return array(
 					'key'   => 'completed',
-					'label' => __( 'Completed', 'wpsc-ps' ),
+					'label' => __( 'Completed', 'supportcandy' ),
 				);
 			}
 
 			return array(
 				'key'   => 'not-synced',
-				'label' => __( 'Not Synced', 'wpsc-ps' ),
+				'label' => __( 'Not Synced', 'supportcandy' ),
 			);
 		}
 
@@ -313,9 +331,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			<div class="wpsc-aia-toolbar">
 
 				<div class="wpsc-aia-toolbar-item">
-					<label><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Status', 'supportcandy' ); ?></label>
 					<select id="wpsc-file-upload-status-filter">
-						<option value="all"><?php esc_attr_e( 'All statuses', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All statuses', 'supportcandy' ); ?></option>
 						<?php
 						foreach ( WPSC_PS_AIT_Status::get_labels() as $status_value => $status_label ) {
 							if ( $status_value == WPSC_PS_AIT_Status::DELETE ) {
@@ -330,9 +348,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				</div>
 
 				<div class="wpsc-aia-toolbar-item">
-					<label><?php esc_attr_e( 'Source', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Source', 'supportcandy' ); ?></label>
 					<select id="wpsc-file-upload-source-filter">
-						<option value="all"><?php esc_attr_e( 'All sources', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All sources', 'supportcandy' ); ?></option>
 						<?php foreach ( array( WPSC_PS_AIT_Source::FILE, WPSC_PS_AIT_Source::URL ) as $source_value ) : ?>
 							<option value="<?php echo esc_attr( $source_value ); ?>"><?php echo esc_html( WPSC_PS_AIT_Source::get_label( $source_value ) ); ?></option>
 						<?php endforeach; ?>
@@ -365,12 +383,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 					<div id="wpsc-file-upload-bulk-actions" class="gpopover wpsc-popover-menu wpsc-ticket-bulk-actions" style="width: 200px !important;">
 						<div class="wpsc-popover-menu-item" onclick="wpsc_bulk_delete_training( '<?php echo esc_attr( wp_create_nonce( 'wpsc_bulk_delete_training' ) ); ?>' );">
 							<?php WPSC_Icons::get( 'trash-alt' ); ?>
-							<span><?php esc_html_e( 'Delete', 'wpsc-ps' ); ?></span>
+							<span><?php esc_html_e( 'Delete', 'supportcandy' ); ?></span>
 						</div>
 					</div>
 				</div>
 				<button class="wpsc-button small primary" onclick="wpsc_add_ai_training_item(this);">
-					<?php echo esc_attr( wpsc__( 'Add new', 'wpsc-ps' ) ); ?>
+					<?php echo esc_attr( wpsc__( 'Add new', 'supportcandy' ) ); ?>
 				</button>
 			</div>
 
@@ -384,12 +402,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 									<label for="<?php echo esc_attr( $unique_id ); ?>"></label>
 								</div>
 							</th>
-							<th><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Provider', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Source', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'File', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Reason', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Action', 'wpsc-ps' ); ?></th>
+							<th><?php esc_attr_e( 'Status', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Provider', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Source', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'File', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Reason', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Action', 'supportcandy' ); ?></th>
 						</tr>
 					</thead>
 				</table>
@@ -473,7 +491,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		public static function get_aia_file_upload_training_list() {
 
 			if ( ! check_ajax_referer( 'wpsc_get_aia_file_upload_training_list', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
@@ -595,7 +613,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						'<a class="wpsc-link" onclick="wpsc_get_delete_ai_training_item(this, %d, \'%s\')">%s</a>',
 						$training_id,
 						esc_attr( wp_create_nonce( 'wpsc_get_delete_ai_training_item' ) ),
-						esc_html__( 'Delete', 'wpsc-ps' )
+						esc_html__( 'Delete', 'supportcandy' )
 					);
 				}
 
@@ -676,7 +694,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 			?>
 			<form action="#" onsubmit="return false;" class="wpsc-frm-add-ai-training-source">
@@ -684,7 +702,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<div class="wpsc-input-group">
 					<div class="label-container">
 						<label for="wpsc-ait-name">
-							<?php esc_attr_e( 'Name', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'Name', 'supportcandy' ); ?>
 						</label>
 						<span class="required-char">*</span>
 					</div>
@@ -694,14 +712,14 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<div class="wpsc-input-group wpsc-ait-wordpress-website">
 					<div class="label-container">
 						<label for="wpsc-ait-wp-endpoint">
-							<?php esc_attr_e( 'WordPress REST API endpoint', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'WordPress REST API endpoint', 'supportcandy' ); ?>
 						</label>
 						<span class="required-char">*</span>
 					</div>
 					<div class="divide-bar">
 						<input id="wpsc-ait-wp-endpoint" name="ait-wp-endpoint" type="text" style="max-width: 500px;" autocomplete="off">
 					</div>
-					<span class="extra-info"> <?php esc_html_e( 'Usually this is your site URL (example: https://example.com).', 'wpsc-ps' ); ?> </span>
+					<span class="extra-info"> <?php esc_html_e( 'Usually this is your site URL (example: https://example.com).', 'supportcandy' ); ?> </span>
 				</div>
 
 				<input type="hidden" name="action" value="wpsc_set_add_ai_training_source">
@@ -712,13 +730,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 						type="button"
 						class="wpsc-button normal primary margin-right"
 						onclick="wpsc_set_add_ai_training_source(this);">
-						<?php esc_html_e( 'Save', 'wpsc-ps' ); ?>
+						<?php esc_html_e( 'Save', 'supportcandy' ); ?>
 					</button>
 					<button
 						type="button"
 						class="wpsc-button normal secondary margin-right"
 						onclick="wpsc_get_aia_website_setting();">
-						<?php esc_html_e( 'Cancel', 'wpsc-ps' ); ?>
+						<?php esc_html_e( 'Cancel', 'supportcandy' ); ?>
 					</button>
 				</div>
 			</form>
@@ -738,7 +756,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( __( 'Unauthorized access!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized access!', 'supportcandy' ), 401 );
 			}
 
 			$training_slug     = sanitize_text_field( wp_unslash( $_POST['slug'] ?? '' ) );
@@ -764,9 +782,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 			$ait_source = sanitize_text_field( $selected_source['type'] ?? '' );
 			// remove trailing content from api url.
 			$ait_endpoint = esc_url_raw( $selected_source['api-url'] ?? '' );
-			$site_url = preg_replace( '/\/wp-json\/?$/', '', $ait_endpoint );
+			$site_url = self::get_site_url_from_api_url( $ait_endpoint );
 
-			// Records for this source are tagged with doc_source = the source's own slug (see insert_training_post()),
+			// Records for this source are tagged with doc_source = the source's own slug (see process_training_posts()),
 			// and with the AI provider they were uploaded to at the time - the currently configured provider is what
 			// "Total records" etc. should reflect, not every provider a source has ever been synced under.
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
@@ -833,7 +851,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<div class="wpsc-input-group">
 					<div class="label-container">
 						<label for="wpsc-ait-name">
-							<?php esc_attr_e( 'Name', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'Name', 'supportcandy' ); ?>
 						</label>
 						<span class="required-char">*</span>
 					</div>
@@ -843,22 +861,22 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<div class="wpsc-input-group wpsc-ait-wordpress-website">
 					<div class="label-container">
 						<label for="wpsc-ait-wp-endpoint">
-							<?php esc_attr_e( 'WordPress REST API endpoint', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'WordPress REST API endpoint', 'supportcandy' ); ?>
 						</label>
 						<span class="required-char">*</span>
 					</div>
 					<div class="divide-bar">
 						<input id="wpsc-ait-wp-endpoint" name="ait-wp-endpoint" type="text" value="<?php echo esc_attr( $site_url ); ?>" style="max-width: 500px;" autocomplete="off" readonly>
-						<button type="button" class="wpsc-button small secondary" style="max-width:200px;" onclick="wpsc_fetch_wordpress_endpoints_posts(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_fetch_wordpress_endpoints_posts' ) ); ?>' );"> <?php esc_attr_e( 'Get Post Types', 'wpsc-ps' ); ?> </button>
+						<button type="button" class="wpsc-button small secondary" style="max-width:200px;" onclick="wpsc_fetch_wordpress_endpoints_posts(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_fetch_wordpress_endpoints_posts' ) ); ?>' );"> <?php esc_attr_e( 'Get Post Types', 'supportcandy' ); ?> </button>
 					</div>
-					<span class="extra-info"> <?php esc_html_e( 'Usually this is your site URL (example: https://example.com).', 'wpsc-ps' ); ?> </span>
+					<span class="extra-info"> <?php esc_html_e( 'Usually this is your site URL (example: https://example.com).', 'supportcandy' ); ?> </span>
 				</div>
 
 				<div class="wpsc-input-group">
 					<div class="wpsc-ait-wordpress-sync-response" style="<?php echo empty( $saved_post_types ) ? 'display:none;' : 'display:block;'; ?>">
 						<?php if ( ! empty( $saved_post_types ) ) : ?>
 							<div class="label-container">
-								<label><?php esc_html_e( 'Select Post Types', 'wpsc-ps' ); ?></label>
+								<label><?php esc_html_e( 'Select Post Types', 'supportcandy' ); ?></label>
 							</div>
 							<div class="wpsc-container">
 								<?php
@@ -872,13 +890,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 									$input_id = 'wpsc-post-type-' . sanitize_html_class( $pt_slug );
 									$pt_skipped_count = ( '' !== $ait_slug ) ? WPSC_PS_AIT_Controller::get_skipped_insufficient_content_count( $ait_slug, $pt_slug ) : 0;
 									/* translators: %d: number of records skipped for this post type due to insufficient content. */
-									$pt_skipped_label = sprintf( _n( '(%d skipped)', '(%d skipped)', $pt_skipped_count, 'wpsc-ps' ), $pt_skipped_count );
+									$pt_skipped_label = sprintf( _n( '(%d skipped)', '(%d skipped)', $pt_skipped_count, 'supportcandy' ), $pt_skipped_count );
 									?>
 									<div class="checkbox-container" style="margin-bottom: 5px; gap: 5px;">
 										<input id="<?php echo esc_attr( $input_id ); ?>" type="checkbox" name="ait-post-types[]" value="<?php echo esc_attr( $pt_slug ); ?>" <?php checked( $checked ); ?>>
 										<label for="<?php echo esc_attr( $input_id ); ?>"><?php echo esc_html( $pt_name ); ?></label>
 										<?php if ( $pt_skipped_count > 0 ) : ?>
-											<span title="<?php esc_attr_e( 'Records skipped for this post type because their extracted content was empty or too short to be useful for search.', 'wpsc-ps' ); ?>"><?php echo esc_html( $pt_skipped_label ); ?></span>
+											<span title="<?php esc_attr_e( 'Records skipped for this post type because their extracted content was empty or too short to be useful for search.', 'supportcandy' ); ?>"><?php echo esc_html( $pt_skipped_label ); ?></span>
 										<?php endif; ?>
 									</div>
 								<?php endforeach; ?>
@@ -903,27 +921,27 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							class="wpsc-button normal primary margin-right"
 							onclick="wpsc_update_edit_ai_training_source(this);"
 							<?php disabled( $sync_running ); ?>>
-							<?php esc_html_e( 'Update', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Update', 'supportcandy' ); ?>
 						</button>
 					</div>
 				</div>
 
 				<div class="wpsc-ait-record-counts">
-					<span title="<?php esc_attr_e( 'Indexed + In Queue + Failed.', 'wpsc-ps' ); ?>"><?php esc_html_e( 'Total records:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $total_records ); ?></strong></span>
-					<span><?php esc_html_e( 'Indexed:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $indexed_count ); ?></strong></span>
-					<span><?php esc_html_e( 'In Queue:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $queue_count ); ?></strong></span>
+					<span title="<?php esc_attr_e( 'Indexed + In Queue + Failed.', 'supportcandy' ); ?>"><?php esc_html_e( 'Total records:', 'supportcandy' ); ?> <strong><?php echo esc_html( $total_records ); ?></strong></span>
+					<span><?php esc_html_e( 'Indexed:', 'supportcandy' ); ?> <strong><?php echo esc_html( $indexed_count ); ?></strong></span>
+					<span><?php esc_html_e( 'In Queue:', 'supportcandy' ); ?> <strong><?php echo esc_html( $queue_count ); ?></strong></span>
 					<?php if ( $failed_count > 0 ) : ?>
-						<span title="<?php esc_attr_e( 'Records that failed to upload/index - see the training data list for each record\'s reason.', 'wpsc-ps' ); ?>">
-							<?php esc_html_e( 'Failed:', 'wpsc-ps' ); ?> <strong><?php echo esc_html( $failed_count ); ?></strong>
+						<span title="<?php esc_attr_e( 'Records that failed to upload/index - see the training data list for each record\'s reason.', 'supportcandy' ); ?>">
+							<?php esc_html_e( 'Failed:', 'supportcandy' ); ?> <strong><?php echo esc_html( $failed_count ); ?></strong>
 						</span>
 					<?php endif; ?>
 					<span>
 					<?php if ( $show_schedule_upload_link ) : ?>
 						<span
 							class="wpsc-link wpsc-ait-retry-upload-link"
-							title="<?php esc_attr_e( 'The upload isn\'t scheduled yet - click to schedule it now.', 'wpsc-ps' ); ?>"
+							title="<?php esc_attr_e( 'The upload isn\'t scheduled yet - click to schedule it now.', 'supportcandy' ); ?>"
 							onclick="wpsc_schedule_ai_training_upload(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_schedule_ai_training_upload' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_edit_ai_training_source' ) ); ?>');">
-							<?php esc_html_e( 'Retry Upload', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Retry Upload', 'supportcandy' ); ?>
 						</span>
 					<?php endif; ?>
 					</span>
@@ -933,20 +951,20 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				<div class="wpsc-tt-data-sync-setting wpsc-ait-data-sync-container" style="<?php echo $has_enabled_post_types ? '' : 'display:none;'; ?>">
 					<?php if ( $needs_provider_resync ) : ?>
 						<div class="wpsc-ait-provider-notice">
-							<?php esc_html_e( 'Your AI Assistant provider has been changed. Some or all of your existing training data was uploaded using a different AI provider. Please sync the affected data again to continue using the AI Assistant.', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Your AI Assistant provider has been changed. Some or all of your existing training data was uploaded using a different AI provider. Please sync the affected data again to continue using the AI Assistant.', 'supportcandy' ); ?>
 						</div>
 					<?php endif; ?>
 					<div class="wpsc-input-group">
 						<div class="label-container">
 							<label for="wpsc-ait-wp-endpoint">
-								<?php esc_attr_e( 'Data Synchronization & Actions', 'wpsc-ps' ); ?>
+								<?php esc_attr_e( 'Data Synchronization & Actions', 'supportcandy' ); ?>
 							</label>
 						</div>
 					</div>
 
 					<div class="wpsc-input-group wpsc-ait-no-sync-hint" style="<?php echo $has_enabled_post_types ? 'display:none;' : ''; ?>">
 						<span class="extra-info">
-							<?php esc_html_e( 'Enable at least one post type above and click "Update" to start syncing.', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Enable at least one post type above and click "Update" to start syncing.', 'supportcandy' ); ?>
 						</span>
 					</div>
 
@@ -957,15 +975,15 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							class="wpsc-button normal secondary margin-right"
 							onclick="wpsc_sync_posts_for_ai_training(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_sync_posts_for_ai_training' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>' );"
 							<?php disabled( $sync_running ); ?>>
-							<?php esc_html_e( 'Sync Posts', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Sync Posts', 'supportcandy' ); ?>
 						</button>
 						<span class="extra-info">
-							<?php esc_attr_e( 'By clicking "Sync Posts" button, posts will be synchronized (If previously synced posts is changed or updated then resynced) for AI training.', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'By clicking "Sync Posts" button, posts will be synchronized (If previously synced posts is changed or updated then resynced) for AI training.', 'supportcandy' ); ?>
 						</span>
 
 						<div class="wpsc-ait-sync-progress" style="<?php echo $sync_running ? 'display:block;' : 'display:none;'; ?>">
 							<div class="wpsc-ait-sync-notice">
-								<?php esc_html_e( 'Sync in progress - please do not refresh this page or navigate away until it completes.', 'wpsc-ps' ); ?>
+								<?php esc_html_e( 'Sync in progress - please do not refresh this page or navigate away until it completes.', 'supportcandy' ); ?>
 							</div>
 							<div class="wpsc-ait-sync-progress-bar">
 								<div class="wpsc-ait-sync-progress-fill"></div>
@@ -982,10 +1000,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							class="wpsc-button normal secondary margin-right"
 							onclick="wpsc_sync_missing_posts_for_ai_training(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_sync_missing_posts_for_ai_training' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>' );"
 							<?php disabled( $sync_running ); ?>>
-							<?php esc_html_e( 'Sync Missing Posts', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Sync Missing Posts', 'supportcandy' ); ?>
 						</button>
 						<span class="extra-info">
-							<?php esc_attr_e( 'By clicking "Sync Missing Posts" button, only posts not yet synced will be added for AI training - existing records are left untouched even if the post has since changed.', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'By clicking "Sync Missing Posts" button, only posts not yet synced will be added for AI training - existing records are left untouched even if the post has since changed.', 'supportcandy' ); ?>
 						</span>
 					</div>
 
@@ -996,10 +1014,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 							class="wpsc-button normal secondary margin-right"
 							onclick="wpsc_delete_all_ait_posts(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_delete_all_ait_posts' ) ); ?>', '<?php echo esc_attr( $ait_slug ); ?>' );"
 							<?php disabled( $sync_running ); ?>>
-							<?php esc_html_e( 'Delete All Posts', 'wpsc-ps' ); ?>
+							<?php esc_html_e( 'Delete All Posts', 'supportcandy' ); ?>
 						</button>
 						<span class="extra-info">
-							<?php esc_attr_e( 'By clicking "Delete all Posts" button, all posts will be deleted for AI training.', 'wpsc-ps' ); ?>
+							<?php esc_attr_e( 'By clicking "Delete all Posts" button, all posts will be deleted for AI training.', 'supportcandy' ); ?>
 						</span>
 					</div>
 				</div>
@@ -1034,25 +1052,25 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 		public static function schedule_ai_training_upload() {
 
 			if ( ! check_ajax_referer( 'wpsc_schedule_ai_training_upload', '_ajax_nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Unauthorized request!', 'wpsc-ps' ) ), 401 );
+				wp_send_json_error( array( 'message' => __( 'Unauthorized request!', 'supportcandy' ) ), 401 );
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
-				wp_send_json_error( array( 'message' => __( 'Unauthorized access!', 'wpsc-ps' ) ), 401 );
+				wp_send_json_error( array( 'message' => __( 'Unauthorized access!', 'supportcandy' ) ), 401 );
 			}
 
 			if ( WPSC_PS_AI_Setting_AI_Training_Actions::is_any_sync_active() ) {
-				wp_send_json_error( array( 'message' => __( 'A database sync is currently in progress. The upload will be scheduled automatically once it finishes.', 'wpsc-ps' ) ), 409 );
+				wp_send_json_error( array( 'message' => __( 'A database sync is currently in progress. The upload will be scheduled automatically once it finishes.', 'supportcandy' ) ), 409 );
 			}
 
 			if ( wp_next_scheduled( 'wpsc_ai_training_upload' ) ) {
-				wp_send_json_success( array( 'message' => __( 'Upload is already scheduled.', 'wpsc-ps' ) ) );
+				wp_send_json_success( array( 'message' => __( 'Upload is already scheduled.', 'supportcandy' ) ) );
 			}
 
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			$current_provider = sanitize_text_field( $ai_settings['provider'] ?? '' );
 			if ( WPSC_PS_AIT_Controller::is_upload_running( $current_provider ) ) {
-				wp_send_json_success( array( 'message' => __( 'An upload is already in progress.', 'wpsc-ps' ) ) );
+				wp_send_json_success( array( 'message' => __( 'An upload is already in progress.', 'supportcandy' ) ) );
 			}
 
 			wp_schedule_single_event( time(), 'wpsc_ai_training_upload' );
@@ -1060,7 +1078,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training' ) ) :
 				spawn_cron();
 			}
 
-			wp_send_json_success( array( 'message' => __( 'Upload scheduled.', 'wpsc-ps' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Upload scheduled.', 'supportcandy' ) ) );
 		}
 	}
 endif;

@@ -21,6 +21,25 @@ if ( ! class_exists( 'WPSC_Appearence_Dashboard' ) ) :
 		}
 
 		/**
+		 * Sanitize a posted color value, falling back to the given default when it isn't a valid hex color.
+		 *
+		 * @param string $key - $_POST key.
+		 * @param string $default_color - fallback hex color.
+		 * @return string
+		 */
+		private static function sanitize_color( $key, $default_color ) {
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already verified in save_settings() before this is called.
+			if ( ! isset( $_POST[ $key ] ) ) {
+				return $default_color;
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already verified in save_settings() before this is called.
+			$color = sanitize_hex_color( wp_unslash( $_POST[ $key ] ) );
+			return $color ? $color : $default_color;
+		}
+
+		/**
 		 * Reset settings
 		 *
 		 * @return void
@@ -30,10 +49,10 @@ if ( ! class_exists( 'WPSC_Appearence_Dashboard' ) ) :
 			update_option(
 				'wpsc-ap-dashboard',
 				array(
-					'card-body-bg-color'     => '#f9f9f9',
+					'card-body-bg-color'     => '#ffffff',
 					'card-body-svg-color'    => '#777',
 					'card-body-text-color'   => '#2c3e50',
-					'widget-body-bg-color'   => '#f9f9f9',
+					'widget-body-bg-color'   => '#ffffff',
 					'widget-body-svg-color'  => '#777',
 					'widget-body-text-color' => '#2c3e50',
 
@@ -130,12 +149,12 @@ if ( ! class_exists( 'WPSC_Appearence_Dashboard' ) ) :
 			update_option(
 				'wpsc-ap-dashboard',
 				array(
-					'widget-body-bg-color'   => isset( $_POST['widget-body-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-body-bg-color'] ) ) : '#f9f9f9',
-					'widget-body-svg-color'  => isset( $_POST['widget-body-svg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-body-svg-color'] ) ) : '#777',
-					'widget-body-text-color' => isset( $_POST['widget-body-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['widget-body-text-color'] ) ) : '#2c3e50',
-					'card-body-bg-color'     => isset( $_POST['card-body-bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['card-body-bg-color'] ) ) : '#f9f9f9',
-					'card-body-svg-color'    => isset( $_POST['card-body-svg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['card-body-svg-color'] ) ) : '#777',
-					'card-body-text-color'   => isset( $_POST['card-body-text-color'] ) ? sanitize_text_field( wp_unslash( $_POST['card-body-text-color'] ) ) : '#2c3e50',
+					'widget-body-bg-color'   => self::sanitize_color( 'widget-body-bg-color', '#ffffff' ),
+					'widget-body-svg-color'  => self::sanitize_color( 'widget-body-svg-color', '#777' ),
+					'widget-body-text-color' => self::sanitize_color( 'widget-body-text-color', '#2c3e50' ),
+					'card-body-bg-color'     => self::sanitize_color( 'card-body-bg-color', '#ffffff' ),
+					'card-body-svg-color'    => self::sanitize_color( 'card-body-svg-color', '#777' ),
+					'card-body-text-color'   => self::sanitize_color( 'card-body-text-color', '#2c3e50' ),
 				)
 			);
 			wp_die();

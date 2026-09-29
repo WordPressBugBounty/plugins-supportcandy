@@ -29,11 +29,11 @@ if ( ! class_exists( 'WPSC_PS_AIT_Status' ) ) :
 
 			if ( self::$labels === null ) {
 				self::$labels = array(
-					self::NEW        => esc_attr__( 'New', 'wpsc-ps' ),
-					self::PROCESSING => esc_attr__( 'Processing', 'wpsc-ps' ),
-					self::INDEXED    => esc_attr__( 'Indexed', 'wpsc-ps' ),
-					self::DELETE     => esc_attr__( 'Deleted', 'wpsc-ps' ),
-					self::FAILED     => esc_attr__( 'Failed', 'wpsc-ps' ),
+					self::NEW        => esc_attr__( 'New', 'supportcandy' ),
+					self::PROCESSING => esc_attr__( 'Processing', 'supportcandy' ),
+					self::INDEXED    => esc_attr__( 'Indexed', 'supportcandy' ),
+					self::DELETE     => esc_attr__( 'Deleted', 'supportcandy' ),
+					self::FAILED     => esc_attr__( 'Failed', 'supportcandy' ),
 				);
 			}
 

@@ -75,7 +75,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting' ) ) :
 			$sections['ai-assistant'] = array(
 				'slug'     => 'ai_assistant',
 				'icon'     => 'ai-assistant',
-				'label'    => esc_attr__( 'AI Assistant', 'wpsc-ps' ),
+				'label'    => esc_attr__( 'AI Assistant', 'supportcandy' ),
 				'callback' => 'wpsc_ai_assistant_setting',
 			);
 			return $sections;
@@ -93,12 +93,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting' ) ) :
 				array(
 					'general'   => array(
 						'slug'     => 'general',
-						'label'    => esc_attr__( 'Connection', 'wpsc-ps' ),
+						'label'    => esc_attr__( 'Connection', 'supportcandy' ),
 						'callback' => 'wpsc_get_aia_general_setting',
 					),
 					'assistant' => array(
 						'slug'     => 'assistant',
-						'label'    => esc_attr__( 'AI Assistant', 'wpsc-ps' ),
+						'label'    => esc_attr__( 'AI Assistant', 'supportcandy' ),
 						'callback' => 'wpsc_get_aia_assistant_setting',
 					),
 				)
@@ -109,22 +109,22 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting' ) ) :
 					array(
 						'website'          => array(
 							'slug'     => 'website',
-							'label'    => esc_attr__( 'Websites', 'wpsc-ps' ),
+							'label'    => esc_attr__( 'Websites', 'supportcandy' ),
 							'callback' => 'wpsc_get_aia_website_setting',
 						),
 						'file-upload'      => array(
 							'slug'     => 'file_upload',
-							'label'    => esc_attr__( 'File Uploads', 'wpsc-ps' ),
+							'label'    => esc_attr__( 'File Uploads', 'supportcandy' ),
 							'callback' => 'wpsc_get_aia_file_upload_setting',
 						),
 						'ai-training-data' => array(
 							'slug'     => 'ai_training_data',
-							'label'    => esc_attr__( 'AI Training Data', 'wpsc-ps' ),
+							'label'    => esc_attr__( 'AI Training Data', 'supportcandy' ),
 							'callback' => 'wpsc_get_aia_training_data_setting',
 						),
 						'ai-logs'          => array(
 							'slug'     => 'ai_logs',
-							'label'    => esc_attr__( 'AI Logs', 'wpsc-ps' ),
+							'label'    => esc_attr__( 'AI Logs', 'supportcandy' ),
 							'callback' => 'wpsc_get_aia_logs_setting',
 						),
 					),

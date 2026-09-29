@@ -1,5 +1,13 @@
 == Changelog ==
 
+= 3.5.4 (September 28, 2026) =
+* New: Added onboarding wizard for new installs
+* New: Added chatbot overlay message
+* Fix: Improved dashboard performance
+* Fix: Fixed email attachment link access
+* Fix: Improved AI training data processing
+* Fix: Addressed security issues
+
 = 3.5.3 (September 01, 2026) =
 * New: Added custom chatbot prompt instructions
 * New: Added “Last Reply” ticket condition

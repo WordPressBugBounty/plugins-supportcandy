@@ -530,8 +530,8 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 			$description_attachments = isset( $_POST['description_attachments'] ) ? array_filter( array_map( 'intval', $_POST['description_attachments'] ) ) : array(); // phpcs:ignore
 			foreach ( $description_attachments as $key => $id ) {
 				$attachment = new WPSC_Attachment( $id );
-				// Check if attachment is already active and linked to a ticket.
-				if ( $attachment->is_active && $attachment->ticket_id ) {
+				// Only the uploader may bind their own, not-yet-bound attachment.
+				if ( ! WPSC_Attachment::can_claim( $attachment ) ) {
 					unset( $description_attachments[ $key ] );
 					continue;
 				}
@@ -575,7 +575,9 @@ if ( ! class_exists( 'WPSC_DF_Description' ) ) :
 						array_map(
 							function ( $id ) {
 								$attachment = new WPSC_Attachment( intval( $id ) );
-								if ( ! $attachment->id || ( $attachment->ticket_id && $attachment->is_active ) ) {
+								// Only the uploader may bind their own,
+								// not-yet-bound attachment.
+								if ( ! WPSC_Attachment::can_claim( $attachment ) ) {
 									return false;
 								}
 								$attachment->is_active = 1;

@@ -95,7 +95,7 @@ if ( ! class_exists( 'WPSC_ACB_Setting' ) ) :
 			$sections['ai-chatbot-setting'] = array(
 				'slug'     => 'ai_chatbot_setting',
 				'icon'     => 'headphone',
-				'label'    => esc_attr__( 'AI ChatBot', 'wpsc-ps' ),
+				'label'    => esc_attr__( 'AI ChatBot', 'supportcandy' ),
 				'callback' => 'wpsc_ai_chatbot_settings',
 			);
 			return $sections;
@@ -131,12 +131,12 @@ if ( ! class_exists( 'WPSC_ACB_Setting' ) ) :
 				array(
 					'general'        => array(
 						'slug'     => 'general',
-						'label'    => esc_attr__( 'General', 'wpsc-ps' ),
+						'label'    => esc_attr__( 'General', 'supportcandy' ),
 						'callback' => 'wpsc_get_acb_general_setting',
 					),
 					'acb-appearance' => array(
 						'slug'     => 'acb_appearance',
-						'label'    => esc_attr__( 'Appearance', 'wpsc-ps' ),
+						'label'    => esc_attr__( 'Appearance', 'supportcandy' ),
 						'callback' => 'wpsc_get_acb_appearance_setting',
 					),
 				)

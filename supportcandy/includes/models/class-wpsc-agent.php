@@ -572,10 +572,19 @@ if ( ! class_exists( 'WPSC_Agent' ) ) :
 		 */
 		public static function agent_autocomplete( $filters ) {
 
+			// Whitelisted map of accepted sort_by values to actual DB columns - only
+			// the two options offered in the sort-by dropdown are valid here.
+			$sortable_columns = array(
+				'name'     => 'name',
+				'workload' => 'workload',
+			);
+			$orderby = isset( $sortable_columns[ $filters['sort_by'] ] ) ?
+				$sortable_columns[ $filters['sort_by'] ] : 'name';
+
 			$args = array(
 				'search'         => $filters['term'],
 				'items_per_page' => 25,
-				'orderby'        => $filters['sort_by'],
+				'orderby'        => $orderby,
 				'order'          => 'ASC',
 				'meta_query'     => array(
 					'relation' => 'AND',

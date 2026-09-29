@@ -118,39 +118,51 @@ if ( ! class_exists( 'WPSC_DBW_Category_Reports' ) ) :
 
 			$category_names = array();
 			$random_color = array();
-			$total_tickets = array();
-			$filters = array();
 			foreach ( $categories['results'] as $category ) {
-
 				$category_names[] = '"' . $category->name . '"';
 				$random_color[] = "'" . WPSC_Functions::generate_random_color() . "'";
-
-				$args = array(
-					'items_per_page' => 0,
-					'system_query'   => $current_user->get_tl_system_query( $filters ),
-					'meta_query'     => array(
-						'relation' => 'AND',
-						array(
-							'slug'    => 'category',
-							'compare' => '=',
-							'val'     => $category->id,
-						),
-					),
-				);
-
-				// remove meta query if filter is selected as 'all'.
-				if ( $range != 'all' ) {
-					$args['meta_query'][] = array(
-						'slug'    => 'date_created',
-						'compare' => 'BETWEEN',
-						'val'     => array(
-							'operand_val_1' => $date_range[0],
-							'operand_val_2' => $date_range[1],
-						),
-					);
-				}
-				$total_tickets[] = WPSC_Ticket::count( $args );
 			}
+
+			// Counts differ per viewing agent (system_query below depends on the viewer's visibility
+			// capabilities), so this is cached per agent rather than shared across everyone.
+			$total_tickets = WPSC_Stats_Cache::remember(
+				'category-reports',
+				array( $range, wp_list_pluck( $categories['results'], 'id' ) ),
+				function () use ( $categories, $current_user, $range, $date_range ) {
+					$filters = array();
+					$counts = array();
+					foreach ( $categories['results'] as $category ) {
+
+						$args = array(
+							'items_per_page' => 0,
+							'system_query'   => $current_user->get_tl_system_query( $filters ),
+							'meta_query'     => array(
+								'relation' => 'AND',
+								array(
+									'slug'    => 'category',
+									'compare' => '=',
+									'val'     => $category->id,
+								),
+							),
+						);
+
+						// remove meta query if filter is selected as 'all'.
+						if ( $range != 'all' ) {
+							$args['meta_query'][] = array(
+								'slug'    => 'date_created',
+								'compare' => 'BETWEEN',
+								'val'     => array(
+									'operand_val_1' => $date_range[0],
+									'operand_val_2' => $date_range[1],
+								),
+							);
+						}
+						$counts[] = WPSC_Ticket::count( $args );
+					}
+					return $counts;
+				},
+				true
+			);
 			ob_start();
 			?>
 			<div class="graph-container">

@@ -85,20 +85,28 @@ if ( ! class_exists( 'WPSC_DBC_Unassigned_Tickets' ) ) :
 				wp_send_json_error( 'Unauthorized request!', 401 );
 			}
 
-			$filters = array();
-			$count = WPSC_Ticket::count(
-				array(
-					'items_per_page' => 0,
-					'system_query'   => $current_user->get_tl_system_query( $filters ),
-					'meta_query'     => array(
-						'relation' => 'AND',
+			// Differs per viewing agent (system_query depends on the viewer's visibility capabilities),
+			// so this is cached per agent rather than shared across everyone.
+			$count = WPSC_Stats_Cache::remember(
+				'card-unassigned-tickets',
+				array(),
+				function () use ( $current_user ) {
+					$filters = array();
+					return WPSC_Ticket::count(
 						array(
-							'slug'    => 'assigned_agent',
-							'compare' => '=',
-							'val'     => '',
-						),
-					),
-				)
+							'system_query' => $current_user->get_tl_system_query( $filters ),
+							'meta_query'   => array(
+								'relation' => 'AND',
+								array(
+									'slug'    => 'assigned_agent',
+									'compare' => '=',
+									'val'     => '',
+								),
+							),
+						)
+					);
+				},
+				true
 			);
 			wp_send_json( array( 'count' => $count ) );
 		}

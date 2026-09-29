@@ -58,9 +58,9 @@ if ( ! class_exists( 'WPSC_Ai_Admin' ) ) :
 		public static function localizations( $localizations ) {
 
 			$localizations['ai_loader_html'] = self::ai_loader_html();
-			$localizations['translations']['empty_desc_warning'] = esc_attr__( 'Write something to get AI assistance.', 'wpsc-ps' );
-			$localizations['translations']['valid_url'] = esc_attr__( 'Please enter valid URL(s)', 'wpsc-ps' );
-			$localizations['translations']['delete_all_posts'] = esc_attr__( 'Deleting all posts will permanently remove any existing training data. Do you want to proceed?', 'wpsc-ps' );
+			$localizations['translations']['empty_desc_warning'] = esc_attr__( 'Write something to get AI assistance.', 'supportcandy' );
+			$localizations['translations']['valid_url'] = esc_attr__( 'Please enter valid URL(s)', 'supportcandy' );
+			$localizations['translations']['delete_all_posts'] = esc_attr__( 'Deleting all posts will permanently remove any existing training data. Do you want to proceed?', 'supportcandy' );
 			return $localizations;
 		}
 

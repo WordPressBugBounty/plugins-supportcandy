@@ -133,7 +133,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 				if ( '' === $file_id ) {
 					return new WP_Error(
 						'invalid_response',
-						__( 'Missing file ID in API response.', 'wpsc-ps' ),
+						__( 'Missing file ID in API response.', 'supportcandy' ),
 						array( 'response' => $vector_store_file )
 					);
 				}
@@ -152,7 +152,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 
 			return new WP_Error(
 				'attach_pending',
-				__( 'File attach is still processing.', 'wpsc-ps' ),
+				__( 'File attach is still processing.', 'supportcandy' ),
 				array( 'response' => $vector_store_file )
 			);
 		}
@@ -246,7 +246,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 			}
 
 			if ( empty( $data['id'] ) ) {
-				return new WP_Error( 'invalid_response', __( 'Missing file ID in API response.', 'wpsc-ps' ), array( 'response' => $data ) );
+				return new WP_Error( 'invalid_response', __( 'Missing file ID in API response.', 'supportcandy' ), array( 'response' => $data ) );
 			}
 
 			return $data;
@@ -414,6 +414,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 			}
 
 			$reply = WPSC_PS_AI_Functions::wpsc_strip_ai_markdown_fences( $reply );
+			$reply = WPSC_PS_AI_Functions::wpsc_normalize_ai_markdown_to_html( $reply );
 
 			return array(
 				'reply'  => $reply,
@@ -512,7 +513,7 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 
 				$error_message = isset( $data['error']['message'] ) && is_string( $data['error']['message'] )
 					? $data['error']['message']
-					: __( 'Unknown API error.', 'wpsc-ps' );
+					: __( 'Unknown API error.', 'supportcandy' );
 
 				return new WP_Error( 'api_error', $error_message, array( 'status_code' => $code ) );
 			}
@@ -792,6 +793,14 @@ if ( ! class_exists( 'WPSC_PS_AIT_OpenAI' ) ) :
 			if ( ! empty( $response_body['usage']['total_tokens'] ) ) {
 				$tokens = (int) $response_body['usage']['total_tokens'];
 			}
+
+			// Unlike the polished-reply path, this path was never stripping a
+			// markdown code fence or normalizing plain markdown (bullets/paragraphs)
+			// into HTML before sanitizing - so a model response that reverted to
+			// markdown despite the system prompt's instructions went straight into
+			// wp_kses() as plain text and rendered as one inline blob in TinyMCE.
+			$reply = WPSC_PS_AI_Functions::wpsc_strip_ai_markdown_fences( $reply );
+			$reply = WPSC_PS_AI_Functions::wpsc_normalize_ai_markdown_to_html( $reply );
 
 			// Sanitize output.
 			$allowed_tags = array(

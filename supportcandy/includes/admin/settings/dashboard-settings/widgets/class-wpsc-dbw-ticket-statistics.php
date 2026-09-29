@@ -309,39 +309,63 @@ if ( ! class_exists( 'WPSC_DBW_Ticket_Statistics' ) ) :
 					break;
 			}
 
-			// created.
-			$created_meta_query  = array(
-				array(
-					'slug'    => 'date_created',
-					'compare' => 'BETWEEN',
-					'val'     => array(
-						'operand_val_1' => ( new DateTime( $from_date ) )->format( 'Y-m-d H:i:s' ),
-						'operand_val_2' => ( new DateTime( $to_date ) )->format( 'Y-m-d H:i:s' ),
-					),
-				),
-			);
-			$args['system_query'] = $current_user->get_tl_system_query( $filters );
-			$args['meta_query']  = array_merge( $meta_query, $created_meta_query );
-			$response['created'] = WPSC_Ticket::count( $args );
+			// Counts differ per viewing agent (system_query below depends on the viewer's visibility
+			// capabilities) and per selected filter, so this is cached per agent, keyed by the date
+			// window, duration type and filter selection - not shared across everyone.
+			$counts = WPSC_Stats_Cache::remember(
+				'ticket-statistics',
+				// $meta_query already reflects whatever filter/saved-filter was resolved above, so
+				// keying on it directly (rather than the raw $filter/$filters request fields) can't
+				// drift out of sync with what the query actually does.
+				array( $from_date, $to_date, $meta_query ),
+				function () use ( $current_user, $args, $meta_query, $from_date, $to_date, $closed_statuses ) {
 
-			// closed.
-			$closed_meta_query  = array(
-				array(
-					'slug'    => 'date_closed',
-					'compare' => 'BETWEEN',
-					'val'     => array(
-						'operand_val_1' => ( new DateTime( $from_date ) )->format( 'Y-m-d H:i:s' ),
-						'operand_val_2' => ( new DateTime( $to_date ) )->format( 'Y-m-d H:i:s' ),
-					),
-				),
-				array(
-					'slug'    => 'status',
-					'compare' => 'IN',
-					'val'     => $closed_statuses,
-				),
+					$sq_filters = array();
+					$system_query = $current_user->get_tl_system_query( $sq_filters );
+
+					// created.
+					$created_meta_query = array(
+						array(
+							'slug'    => 'date_created',
+							'compare' => 'BETWEEN',
+							'val'     => array(
+								'operand_val_1' => ( new DateTime( $from_date ) )->format( 'Y-m-d H:i:s' ),
+								'operand_val_2' => ( new DateTime( $to_date ) )->format( 'Y-m-d H:i:s' ),
+							),
+						),
+					);
+					$args['system_query'] = $system_query;
+					$args['meta_query']   = array_merge( $meta_query, $created_meta_query );
+					$created = WPSC_Ticket::count( $args );
+
+					// closed.
+					$closed_meta_query = array(
+						array(
+							'slug'    => 'date_closed',
+							'compare' => 'BETWEEN',
+							'val'     => array(
+								'operand_val_1' => ( new DateTime( $from_date ) )->format( 'Y-m-d H:i:s' ),
+								'operand_val_2' => ( new DateTime( $to_date ) )->format( 'Y-m-d H:i:s' ),
+							),
+						),
+						array(
+							'slug'    => 'status',
+							'compare' => 'IN',
+							'val'     => $closed_statuses,
+						),
+					);
+					$args['meta_query'] = array_merge( $meta_query, $closed_meta_query );
+					$closed = WPSC_Ticket::count( $args );
+
+					return array(
+						'created' => $created,
+						'closed'  => $closed,
+					);
+				},
+				true
 			);
-			$args['meta_query'] = array_merge( $meta_query, $closed_meta_query );
-			$response['closed'] = WPSC_Ticket::count( $args );
+			$response['created'] = $counts['created'];
+			$response['closed']  = $counts['closed'];
 
 			wp_send_json( $response, 200 );
 		}

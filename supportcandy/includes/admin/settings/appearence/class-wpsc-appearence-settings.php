@@ -66,11 +66,6 @@ if ( ! class_exists( 'WPSC_Appearence_Settings' ) ) :
 						'label'    => esc_attr__( 'Modal Popup', 'supportcandy' ),
 						'callback' => 'wpsc_get_ap_modal_popup',
 					),
-					'agent-collision'   => array(
-						'slug'     => 'agent_collision',
-						'label'    => esc_attr__( 'Agent Collision', 'supportcandy' ),
-						'callback' => 'wpsc_get_ap_agent_collision',
-					),
 					'dashboard'         => array(
 						'slug'     => 'dashboard',
 						'label'    => esc_attr__( 'Dashboard', 'supportcandy' ),

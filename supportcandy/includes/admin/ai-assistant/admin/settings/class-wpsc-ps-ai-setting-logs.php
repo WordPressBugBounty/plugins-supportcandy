@@ -72,12 +72,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_Logs' ) ) :
 			<table class="wpsc-ai-logs wpsc-setting-tbl">
 				<thead>
 					<tr>
-						<th><?php esc_attr_e( 'ID', 'wpsc-ps' ); ?></th>
-						<th><?php esc_attr_e( 'Agent', 'wpsc-ps' ); ?></th>
-						<th><?php esc_attr_e( 'Ticket', 'wpsc-ps' ); ?></th>
-						<th><?php esc_attr_e( 'Model', 'wpsc-ps' ); ?></th>
-						<th><?php esc_attr_e( 'Tokens', 'wpsc-ps' ); ?></th>
-						<th><?php esc_attr_e( 'Prompt', 'wpsc-ps' ); ?></th>
+						<th><?php esc_attr_e( 'ID', 'supportcandy' ); ?></th>
+						<th><?php esc_attr_e( 'Agent', 'supportcandy' ); ?></th>
+						<th><?php esc_attr_e( 'Ticket', 'supportcandy' ); ?></th>
+						<th><?php esc_attr_e( 'Model', 'supportcandy' ); ?></th>
+						<th><?php esc_attr_e( 'Tokens', 'supportcandy' ); ?></th>
+						<th><?php esc_attr_e( 'Prompt', 'supportcandy' ); ?></th>
 					</tr>
 				</thead>
 				<tbody></tbody>
@@ -198,7 +198,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_Logs' ) ) :
 						esc_html( '#' . $ticket->id . ' ' . $subject )
 					);
 				} else {
-					$ticket_cell = esc_html__( '(deleted)', 'wpsc-ps' );
+					$ticket_cell = esc_html__( '(deleted)', 'supportcandy' );
 				}
 
 				$data[] = array(

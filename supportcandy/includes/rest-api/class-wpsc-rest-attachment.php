@@ -179,6 +179,10 @@ if ( ! class_exists( 'WPSC_REST_Attachment' ) ) :
 					wp_send_json_error( 'Something went wrong!', 500 );
 				}
 
+				// Record who uploaded it so that only they can later bind it
+				// to a ticket.
+				WPSC_Attachment::set_uploader( $attachment );
+
 				return new WP_REST_Response(
 					array(
 						'id'   => intval( $attachment->id ),

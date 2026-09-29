@@ -19,6 +19,24 @@ if ( ! class_exists( 'WPSC_Chatbot_Welcome' ) ) :
 		}
 
 		/**
+		 * Get chatbot greeting/welcome message text.
+		 *
+		 * Single source for the assistant's greeting - reused by the welcome
+		 * message bubble inside an open chat, the initial page-load markup, and
+		 * the auto-popup greeting tooltip anchored to the launcher, so they never
+		 * drift out of sync. The admin-configured value (Appearance settings)
+		 * is run through WPML String Translation, falling back to the plugin's
+		 * default text (and plain WP translation) when nothing's been saved yet.
+		 *
+		 * @return string
+		 */
+		public static function get_greeting_text() {
+
+			$appearance_settings = WPSC_ACB_Appearance_Setting::get_appearance_settings();
+			return WPSC_ACB_Appearance_Setting::translate( 'Chatbot greeting message', $appearance_settings['greeting-text'] );
+		}
+
+		/**
 		 * Get chatbot welcome template
 		 *
 		 * @return string
@@ -28,9 +46,9 @@ if ( ! class_exists( 'WPSC_Chatbot_Welcome' ) ) :
 			ob_start();
 			?>
 			<div class="wpsc-chatbot__system__message">
-				<?php esc_html_e( 'Hey, I\'m your assistant. How can I help you today?', 'wpsc-ps' ); ?>
+				<?php echo esc_html( self::get_greeting_text() ); ?>
 				<div class="wpsc-chatbot__message-meta">
-					<span><?php esc_html_e( 'Assistant', 'wpsc-ps' ); ?></span>
+					<span><?php esc_html_e( 'Assistant', 'supportcandy' ); ?></span>
 					<span class="wpsc-chatbot__welcome-time"></span>
 				</div>
 			</div>

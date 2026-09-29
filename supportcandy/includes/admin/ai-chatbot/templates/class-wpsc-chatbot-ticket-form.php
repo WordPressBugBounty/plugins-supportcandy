@@ -31,16 +31,16 @@ if ( ! class_exists( 'WPSC_Chatbot_Ticket_Form' ) ) :
 			?>
 			<div class="wpsc-chatbot__ticket-form">
 				<div class="wpsc-chatbot__ticket-message">
-					<p><?php esc_html_e( 'Please fill out the form below.', 'wpsc-ps' ); ?></p>
+					<p><?php esc_html_e( 'Please fill out the form below.', 'supportcandy' ); ?></p>
 				</div>
 				<div class="wpsc-chatbot__field">
-					<input type="text" id="wpsc-chatbot-ticket-form-name" class="wpsc-chatbot__ticket-form-name" placeholder="<?php esc_attr_e( 'Enter your name', 'wpsc-ps' ); ?>" autocomplete="off" >
+					<input type="text" id="wpsc-chatbot-ticket-form-name" class="wpsc-chatbot__ticket-form-name" placeholder="<?php esc_attr_e( 'Enter your name', 'supportcandy' ); ?>" autocomplete="off" >
 				</div>
 				<div class="wpsc-chatbot__field">
-					<input type="email" id="wpsc-chatbot-ticket-form-email" class="wpsc-chatbot__ticket-form-email" placeholder="<?php esc_attr_e( 'Enter your email', 'wpsc-ps' ); ?>" autocomplete="off" >
+					<input type="email" id="wpsc-chatbot-ticket-form-email" class="wpsc-chatbot__ticket-form-email" placeholder="<?php esc_attr_e( 'Enter your email', 'supportcandy' ); ?>" autocomplete="off" >
 				</div>
-				<button type="button" class="wpsc-chatbot__ticket-submit" data-source="ticket-form" > <?php esc_html_e( 'Create Ticket', 'wpsc-ps' ); ?> </button>
-				<button type="button" class="wpsc-chatbot__ticket-form-cancel" data-source="ticket-form" data-sessionid="<?php echo esc_attr( $session_id ); ?>" > <?php esc_html_e( 'Cancel', 'wpsc-ps' ); ?> </button>
+				<button type="button" class="wpsc-chatbot__ticket-submit" data-source="ticket-form" > <?php esc_html_e( 'Create Ticket', 'supportcandy' ); ?> </button>
+				<button type="button" class="wpsc-chatbot__ticket-form-cancel" data-source="ticket-form" data-sessionid="<?php echo esc_attr( $session_id ); ?>" > <?php esc_html_e( 'Cancel', 'supportcandy' ); ?> </button>
 			</div>
 			<?php
 			return ob_get_clean();

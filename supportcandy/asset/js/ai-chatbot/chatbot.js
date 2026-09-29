@@ -39,11 +39,16 @@ window.WPSC_AI_Chatbot.init =
 		this.isLimitReached = false;
 		this.isCreatingTicket = false;
 
-		// One-time cleanup of the pre-cross-tab auto-popup key (per-tab shown COUNT).
-		// It's superseded by wpsc_acb_popup_shown_in_tab (a per-tab boolean flag) and
-		// wpsc_acb_popup_state in localStorage (the cross-tab count) - see scheduleAutoPopup().
+		// One-time cleanup of older auto-popup sessionStorage keys that are no longer
+		// used: a pre-cross-tab per-tab shown COUNT, and a later per-tab shown BOOLEAN
+		// flag that capped the tooltip to once per tab regardless of Popup Display
+		// Limit - both superseded by wpsc_acb_popup_state in localStorage, the single
+		// cross-tab counter that now solely enforces Popup Display Limit (see
+		// scheduleAutoPopup()), so the same tab can show the tooltip again on a later
+		// reload as long as slots remain in the current 24h period.
 		try {
 			window.sessionStorage.removeItem( 'wpsc_acb_popup_shown_count' );
+			window.sessionStorage.removeItem( 'wpsc_acb_popup_shown_in_tab' );
 		} catch ( error ) {
 			// Ignore storage failures (e.g. private browsing with storage disabled).
 		}
@@ -160,6 +165,8 @@ window.WPSC_AI_Chatbot.bindEvents =
 		const modalCancelBtn = this.shadowRoot.querySelector( '.wpsc-chatbot__modal-cancel' );
 		const modalReactionBtns = this.shadowRoot.querySelectorAll( '.wpsc-chatbot__modal-reaction' );
 		const modalFooterAskMeLater = this.shadowRoot.querySelector( '.wpsc-chatbot__modal-footer-ask-me-later' );
+		const tooltipMessageBtn = this.shadowRoot.querySelector( '.wpsc-chatbot-tooltip__message' );
+		const tooltipCloseBtn = this.shadowRoot.querySelector( '.wpsc-chatbot-tooltip__close' );
 
 		if (!launcher || !chatbot) {
 			return;
@@ -183,22 +190,33 @@ window.WPSC_AI_Chatbot.bindEvents =
 		launcher?.addEventListener(
 			'click',
 			function () {
-				if ( self.autoPopupTimer ) {
-					clearTimeout( self.autoPopupTimer );
-				}
-				footer.querySelector( '.wpsc-chatbot__input-conversation-end' )?.remove();
-				chatbot?.classList.add( 'wpsc-chatbot--active' );
-				launcher?.classList.add( 'wpsc-chatbot-launcher--hidden' );
-				inputGroup?.classList.remove( 'wpsc-chatbot__input-group--hidden' );
-				self.enableChatInput();
-				/* self.getPreviousMessages(); */
-				const activeSessionId = launcher?.getAttribute( 'data-sessionid' ) || '';
-				if ( ! activeSessionId ) {
-					body.innerHTML = self.getWelcomeMessageTemplate();
-					self.setWelcomeTime( body );
-				}
+				self.openChat();
 			}
 		);
+
+		// Greeting tooltip: clicking the message opens the chat exactly like the launcher.
+		if ( tooltipMessageBtn ) {
+
+			tooltipMessageBtn.addEventListener(
+				'click',
+				function () {
+					self.openChat();
+				}
+			);
+		}
+
+		// Greeting tooltip: close button only hides the tooltip - it must not open the chat,
+		// so event propagation to any ancestor click handling is stopped.
+		if ( tooltipCloseBtn ) {
+
+			tooltipCloseBtn.addEventListener(
+				'click',
+				function ( event ) {
+					event.stopPropagation();
+					self.hideGreetingTooltip();
+				}
+			);
+		}
 
 		// Close chatbot
 		if (closeBtn) {
@@ -401,19 +419,75 @@ window.WPSC_AI_Chatbot.bindEvents =
 		);
 	};
 
+// Open the chat window - the single place that flips the widget into its
+// active/open state. Used by the launcher click, the greeting tooltip's
+// message click, and anywhere else that needs to open chat exactly the way
+// the launcher does, so there is only ever one "open chat" implementation.
+window.WPSC_AI_Chatbot.openChat =
+
+	function() {
+		const self = this;
+		self.cacheElements();
+
+		const launcher = this.shadowRoot.querySelector( '.wpsc-chatbot-launcher' );
+		const chatbot = this.shadowRoot.querySelector( '.wpsc-chatbot' );
+		const footer = this.shadowRoot.querySelector( '.wpsc-chatbot__footer' );
+		const inputGroup = this.shadowRoot.querySelector( '.wpsc-chatbot__input-group' );
+		const body = self.elements?.body;
+
+		if ( self.autoPopupTimer ) {
+			clearTimeout( self.autoPopupTimer );
+		}
+		self.hideGreetingTooltip();
+
+		footer?.querySelector( '.wpsc-chatbot__input-conversation-end' )?.remove();
+		chatbot?.classList.add( 'wpsc-chatbot--active' );
+		launcher?.classList.add( 'wpsc-chatbot-launcher--hidden' );
+		inputGroup?.classList.remove( 'wpsc-chatbot__input-group--hidden' );
+		self.enableChatInput();
+
+		const activeSessionId = launcher?.getAttribute( 'data-sessionid' ) || '';
+		if ( ! activeSessionId && body ) {
+			body.innerHTML = self.getWelcomeMessageTemplate();
+			self.setWelcomeTime( body );
+		}
+	};
+
+// Show the small greeting tooltip anchored to the launcher. This never opens
+// the chat window - it only draws attention to the launcher so the visitor
+// can decide whether to open chat.
+window.WPSC_AI_Chatbot.showGreetingTooltip =
+
+	function() {
+		const tooltip = this.shadowRoot?.querySelector( '.wpsc-chatbot-tooltip' );
+		if ( ! tooltip ) {
+			return;
+		}
+		tooltip.classList.add( 'wpsc-chatbot-tooltip--active' );
+		tooltip.setAttribute( 'aria-hidden', 'false' );
+	};
+
+// Hide the greeting tooltip (close button, tooltip click, or launcher click).
+window.WPSC_AI_Chatbot.hideGreetingTooltip =
+
+	function() {
+		const tooltip = this.shadowRoot?.querySelector( '.wpsc-chatbot-tooltip' );
+		if ( ! tooltip ) {
+			return;
+		}
+		tooltip.classList.remove( 'wpsc-chatbot-tooltip--active' );
+		tooltip.setAttribute( 'aria-hidden', 'true' );
+	};
+
 // --- Auto-popup storage helpers -------------------------------------------
 //
-// Two independent pieces of state decide whether the auto-popup can show:
-//
-// 1. A per-TAB flag (sessionStorage, key below) - "has THIS tab already auto-
-//    shown the popup?". sessionStorage is naturally scoped to one tab and
-//    survives reloads within it, but a brand new tab/window always starts
-//    fresh - exactly the "once per tab" semantics we want.
-//
-// 2. A cross-TAB counter with a 24h rolling window (localStorage, key below)
-//    - "how many times has ANY tab shown the popup in the current 24h
-//    period?". localStorage is shared by every same-origin tab, so this is
-//    the single source of truth for the display limit.
+// A single piece of state decides whether the auto-popup can show: a
+// cross-TAB counter with a 24h rolling window (localStorage, key below) -
+// "how many times has ANY tab shown the popup in the current 24h period?".
+// localStorage is shared by every same-origin tab, so this is the single
+// source of truth for Popup Display Limit - the same tab can see the
+// tooltip again on a later reload (not just a brand new tab) as long as
+// slots remain in the current period.
 //
 // Concurrency note: localStorage has no built-in atomic read-modify-write,
 // so two tabs could both read count=2 (limit 3) before either writes back
@@ -432,35 +506,9 @@ window.WPSC_AI_Chatbot.bindEvents =
 
 // Namespaced (not top-level const) so re-including this script never risks a
 // "duplicate declaration" error - assigning object properties is idempotent.
-window.WPSC_AI_Chatbot.POPUP_TAB_KEY = 'wpsc_acb_popup_shown_in_tab';
 window.WPSC_AI_Chatbot.POPUP_STATE_KEY = 'wpsc_acb_popup_state';
 window.WPSC_AI_Chatbot.POPUP_LOCK_NAME = 'wpsc_acb_popup_lock';
 window.WPSC_AI_Chatbot.POPUP_PERIOD_MS = 24 * 60 * 60 * 1000;
-
-// Has this tab already auto-shown the popup once?
-window.WPSC_AI_Chatbot.hasTabShownPopup =
-
-	function() {
-		try {
-			return window.sessionStorage.getItem( this.POPUP_TAB_KEY ) === '1';
-		} catch ( error ) {
-			// Storage unavailable (e.g. private browsing) - fail open so at least
-			// this tab can still show the popup once.
-			return false;
-		}
-	};
-
-// Mark this tab as having auto-shown the popup, so it never shows again for
-// the lifetime of this tab.
-window.WPSC_AI_Chatbot.markTabShownPopup =
-
-	function() {
-		try {
-			window.sessionStorage.setItem( this.POPUP_TAB_KEY, '1' );
-		} catch ( error ) {
-			// Ignore - worst case this tab could show the popup again later.
-		}
-	};
 
 // Read the cross-tab popup state from localStorage, resetting it (and
 // persisting the reset) if the 24h period has elapsed. Never throws - falls
@@ -535,10 +583,13 @@ window.WPSC_AI_Chatbot.consumeGlobalPopupSlot =
 		return Promise.resolve( tryConsume() );
 	};
 
-// Automatically open the chatbot after the configured delay (if Popup Delay
-// Status is enabled - otherwise immediately), capped to a display limit
-// shared across browser tabs within a rolling 24h period, with each tab
-// showing the popup at most once. See the storage helpers above for the
+// Automatically show the greeting tooltip near the launcher after the
+// configured delay (if Popup Delay Status is enabled), capped to a display
+// limit shared across browser tabs within a rolling 24h period - the same
+// tab can see it again on a later reload as long as slots remain in the
+// current period. This never opens the chat window automatically - opening
+// chat only ever happens via openChat(), triggered by an explicit click on
+// the launcher or the tooltip itself. See the storage helpers above for the
 // exact mechanics and their concurrency guarantees.
 window.WPSC_AI_Chatbot.scheduleAutoPopup =
 
@@ -580,12 +631,6 @@ window.WPSC_AI_Chatbot.scheduleAutoPopup =
 			return;
 		}
 
-		// Once this tab has auto-shown the popup, it never shows again in this tab.
-		if ( self.hasTabShownPopup() ) {
-			self.debugLog( 'AUTO_POPUP', 'skip: this tab already auto-showed the popup once' );
-			return;
-		}
-
 		// Cheap up-front check so a timer isn't even armed when the global limit is
 		// already exhausted. The authoritative check happens again right before the
 		// popup is shown (below), since another tab can consume the remaining slots
@@ -609,11 +654,6 @@ window.WPSC_AI_Chatbot.scheduleAutoPopup =
 					return;
 				}
 
-				if ( self.hasTabShownPopup() ) {
-					self.debugLog( 'AUTO_POPUP', 'skip at fire time: this tab already auto-showed the popup once' );
-					return;
-				}
-
 				// Re-check and consume the shared slot atomically (where supported) right
 				// before displaying - another tab may have used up the remaining slots
 				// while this tab was waiting out its delay.
@@ -624,12 +664,8 @@ window.WPSC_AI_Chatbot.scheduleAutoPopup =
 							return;
 						}
 
-						self.markTabShownPopup();
-
-						chatbot.classList.add( 'wpsc-chatbot--active' );
-						launcher.classList.add( 'wpsc-chatbot-launcher--hidden' );
-						self.enableChatInput();
-						self.debugLog( 'AUTO_POPUP', 'popup shown' );
+						self.showGreetingTooltip();
+						self.debugLog( 'AUTO_POPUP', 'greeting tooltip shown' );
 					}
 				);
 			},
@@ -793,13 +829,20 @@ window.WPSC_AI_Chatbot.sendMessage =
 			{ action: 'wpsc_chatbot_send_message', message_length: message.length }
 		);
 
-		jQuery.post(
-			wpsc_ai_chatbot.ajax_url, {
+		jQuery.ajax( {
+			url: wpsc_ai_chatbot.ajax_url,
+			type: 'POST',
+			data: {
 				action: 'wpsc_chatbot_send_message',
 				_ajax_nonce: wpsc_ai_chatbot.nonce,
 				message: message
-			}
-		).done(
+			},
+			// Without a timeout, a stalled connection (dropped network, backgrounded
+			// tab, proxy/API hang) leaves isSending/input.disabled stuck true forever
+			// with no error ever surfacing - .fail() below is what resets them, but it
+			// only runs once the request actually settles.
+			timeout: 45000
+		} ).done(
 			function( response ) {
 				self.isSending = false;
 				self.debugLog( 'STEP 4: AJAX_RESPONSE_RECEIVED', 'raw response from wpsc_chatbot_send_message', response );
@@ -871,7 +914,11 @@ window.WPSC_AI_Chatbot.sendMessage =
 					self.isLimitReached = true;
 					self.debugLog( 'STEP 6: RENDER', 'appendMessage(assistant) [limit reached/ticket path, no chat_end_message]', ai_response );
 					self.appendMessage( 'assistant', ai_response );
-					// self.showTicketForm( disable_input_message );
+					// Explain the lock instead of leaving the input silently, permanently
+					// disabled with no indication why (there is no ticket-form UI to hand
+					// off to here, so this is a terminal state until the visitor starts a
+					// new chat).
+					self.disableChatInput( disable_input_message || 'This conversation has ended. Please start a new chat to continue.' );
 					self.hideTyping();
 
 					return;
@@ -1552,15 +1599,19 @@ window.WPSC_AI_Chatbot.handleTicketCreated =
 			if ( sessionId ) {
 				this.removeSessionCookie( sessionId );
 			}
-
-			// Give the visitor a moment to read the confirmation, then reload the widget for a fresh conversation.
-			setTimeout(
-				function() {
-					self.resetChatbotWidget();
-				},
-				5000
-			);
 		}
+
+		// Give the visitor a moment to read the confirmation, then reload the widget for a
+		// fresh conversation. This must run regardless of `source` - the input group was just
+		// hidden above unconditionally, and resetChatbotWidget() is the only code path that ever
+		// un-hides it, so without this an ordinary in-chat chat_end_message (not routed through
+		// the ticket-escalation modal) would leave the chat permanently unusable.
+		setTimeout(
+			function() {
+				self.resetChatbotWidget();
+			},
+			5000
+		);
 };
 
 // Reset the widget back to its fresh, pre-conversation state (used after a ticket

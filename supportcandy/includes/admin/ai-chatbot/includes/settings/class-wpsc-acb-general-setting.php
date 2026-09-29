@@ -36,7 +36,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 			$acb_settings = get_option( 'wpsc-ps-acb-chatbot-settings', array() );
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings', array() );
 			if ( empty( $acb_settings ) ) {
-				wp_send_json_error( __( 'Something went wrong.', 'wpsc-ps' ), 404 );
+				wp_send_json_error( __( 'Something went wrong.', 'supportcandy' ), 404 );
 			}
 
 			if ( ! isset( $acb_settings['status'] ) ) {
@@ -72,100 +72,100 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for="wpsc-acb-service-status"><?php esc_attr_e( 'AI Chatbot Status', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-service-status"><?php esc_attr_e( 'AI Chatbot Status', 'supportcandy' ); ?></label>
 					</div>
 					<select id="wpsc-acb-service-status" name="acb-service-status" style="max-width: 250px;">
-						<option value="1" <?php selected( $acb_settings['status'], '1' ); ?>><?php esc_html_e( 'Enable', 'wpsc-ps' ); ?></option>
-						<option value="0" <?php selected( $acb_settings['status'], '0' ); ?>><?php esc_html_e( 'Disable', 'wpsc-ps' ); ?></option>
+						<option value="1" <?php selected( $acb_settings['status'], '1' ); ?>><?php esc_html_e( 'Enable', 'supportcandy' ); ?></option>
+						<option value="0" <?php selected( $acb_settings['status'], '0' ); ?>><?php esc_html_e( 'Disable', 'supportcandy' ); ?></option>
 					</select>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Enable this to power the AI chatbot on your website.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Enable this to power the AI chatbot on your website.', 'supportcandy' ); ?>
 					</span>
 				</div>
 				
 
 				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
-						<label for="wpsc-acb-delete-session"><?php esc_attr_e( 'Auto delete AI chatbot sessions', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-delete-session"><?php esc_attr_e( 'Auto delete AI chatbot sessions', 'supportcandy' ); ?></label>
 					</div>
 					<div class="divide-bar">
 						<input type="number" class="wpsc-acb-delete-session" id="wpsc-acb-delete-session" name="delete-acb-session-time" value="<?php echo esc_attr( $acb_settings['delete-acb-session-time'] ); ?>" style="max-width: 100px;">
 						<select id="wpsc-acb-auto-delete-logs-unit" name="delete-acb-session-unit" class="wpsc-acb-auto-delete-logs-unit" style="max-width: 250px;">
-							<option <?php selected( $acb_settings['delete-acb-session-unit'], 'days' ); ?> value="days"><?php esc_attr_e( 'Day(s)', 'wpsc-ps' ); ?></option>
-							<option <?php selected( $acb_settings['delete-acb-session-unit'], 'month' ); ?> value="month"><?php esc_attr_e( 'Month(s)', 'wpsc-ps' ); ?></option>
-							<option <?php selected( $acb_settings['delete-acb-session-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'wpsc-ps' ); ?></option>
+							<option <?php selected( $acb_settings['delete-acb-session-unit'], 'days' ); ?> value="days"><?php esc_attr_e( 'Day(s)', 'supportcandy' ); ?></option>
+							<option <?php selected( $acb_settings['delete-acb-session-unit'], 'month' ); ?> value="month"><?php esc_attr_e( 'Month(s)', 'supportcandy' ); ?></option>
+							<option <?php selected( $acb_settings['delete-acb-session-unit'], 'year' ); ?> value="year"><?php esc_attr_e( 'Year(s)', 'supportcandy' ); ?></option>
 						</select>
 					</div>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Specify the duration after which AI chatbot logs should be automatically deleted.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Specify the duration after which AI chatbot logs should be automatically deleted.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
-						<label for="wpsc-acb-chat-show-footer-branding"><?php esc_attr_e( 'Show footer branding', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-chat-show-footer-branding"><?php esc_attr_e( 'Show footer branding', 'supportcandy' ); ?></label>
 					</div>
 					<div class="divide-bar">
 						<select id="wpsc-acb-chat-show-footer-branding" name="show-footer-branding" class="wpsc-acb-chat-show-footer-branding" style="max-width: 250px;">
-							<option <?php selected( $acb_settings['show-footer-branding'], '1' ); ?> value="1"><?php esc_attr_e( 'Yes', 'wpsc-ps' ); ?></option>
-							<option <?php selected( $acb_settings['show-footer-branding'], '0' ); ?> value="0"><?php esc_attr_e( 'No', 'wpsc-ps' ); ?></option>
+							<option <?php selected( $acb_settings['show-footer-branding'], '1' ); ?> value="1"><?php esc_attr_e( 'Yes', 'supportcandy' ); ?></option>
+							<option <?php selected( $acb_settings['show-footer-branding'], '0' ); ?> value="0"><?php esc_attr_e( 'No', 'supportcandy' ); ?></option>
 						</select>
 					</div>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Display the "Powered by SupportCandy" message in the chatbot footer.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Display the "Powered by SupportCandy" message in the chatbot footer.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
-						<label for="wpsc-acb-sessions-per-page"><?php esc_attr_e( 'Number of sessions per page', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-sessions-per-page"><?php esc_attr_e( 'Number of sessions per page', 'supportcandy' ); ?></label>
 					</div>
 					<input type="number" id="wpsc-acb-sessions-per-page" name="sessions-per-page" value="<?php echo esc_attr( $acb_settings['sessions-per-page'] ); ?>" min="1" style="max-width: 100px;" />
 					<span class="extra-info">
-						<?php esc_attr_e( 'Set the number of chat sessions to display per page.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Set the number of chat sessions to display per page.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group">
 					<div class="label-container">
-						<label for="wpsc-acb-sessions-popup-delay-status"><?php esc_attr_e( 'Popup Delay Status', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-sessions-popup-delay-status"><?php esc_attr_e( 'Greeting Bubble Status', 'supportcandy' ); ?></label>
 					</div>
 					<select id="wpsc-acb-sessions-popup-delay-status" name="popup-delay-status" style="max-width: 250px;">
-						<option value="1" <?php selected( $acb_settings['popup-delay-status'], '1' ); ?>><?php esc_html_e( 'Enable', 'wpsc-ps' ); ?></option>
-						<option value="0" <?php selected( $acb_settings['popup-delay-status'], '0' ); ?>><?php esc_html_e( 'Disable', 'wpsc-ps' ); ?></option>
+						<option value="1" <?php selected( $acb_settings['popup-delay-status'], '1' ); ?>><?php esc_html_e( 'Enable', 'supportcandy' ); ?></option>
+						<option value="0" <?php selected( $acb_settings['popup-delay-status'], '0' ); ?>><?php esc_html_e( 'Disable', 'supportcandy' ); ?></option>
 					</select>
 					<span class="extra-info">
-						<?php esc_attr_e( 'Enable to automatically show the chatbot popup after the Popup Delay below, up to the Popup Display Limit. Disable to turn off the automatic popup entirely - visitors can still open the chatbot manually.', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Enable to automatically show a small greeting bubble near the chatbot launcher after the Greeting Bubble Delay below, up to the Greeting Bubble Display Limit. The chatbot itself never opens automatically - the bubble only invites the visitor to open it. Disable to turn off the automatic bubble entirely - visitors can still open the chatbot manually.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group wpsc-acb-popup-delay-dependent" <?php echo '0' === (string) $acb_settings['popup-delay-status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
-						<label for="wpsc-acb-sessions-popup-delay"><?php esc_attr_e( 'Popup Delay', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-sessions-popup-delay"><?php esc_attr_e( 'Greeting Bubble Delay', 'supportcandy' ); ?></label>
 					</div>
 					<input type="number" id="wpsc-acb-sessions-popup-delay" name="popup-delay" value="<?php echo esc_attr( $acb_settings['popup-delay'] ); ?>" min="1" style="max-width: 100px;" />
 					<span class="extra-info">
-						<?php esc_attr_e( 'Time to wait before showing the chatbot popup after a visitor lands on the site. (e.g., after 10 seconds of site visit).', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Time to wait before showing the greeting bubble after a visitor lands on the site. (e.g., after 10 seconds of site visit).', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group wpsc-acb-popup-delay-dependent" <?php echo '0' === (string) $acb_settings['popup-delay-status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
-						<label for="wpsc-acb-sessions-popup-display-limit"><?php esc_attr_e( 'Popup Display Limit', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-sessions-popup-display-limit"><?php esc_attr_e( 'Greeting Bubble Display Limit', 'supportcandy' ); ?></label>
 					</div>
 					<input type="number" id="wpsc-acb-sessions-popup-display-limit" name="popup-display-limit" value="<?php echo esc_attr( $acb_settings['popup-display-limit'] ); ?>" min="1" style="max-width: 100px;" />
 					<span class="extra-info">
-						<?php esc_attr_e( 'Maximum number of times the chatbot popup is shown to the same visitor within 24 hours, shared across all of their open browser tabs. (e.g., show only 3 times, then stop until the 24 hours are up)', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Maximum number of times the greeting bubble is shown to the same visitor within 24 hours, shared across all of their open browser tabs. (e.g., show only 3 times, then stop until the 24 hours are up)', 'supportcandy' ); ?>
 					</span>
 				</div>
 
 				<div class="wpsc-input-group wpsc-acb-status-dependent" <?php echo '0' === (string) $acb_settings['status'] ? 'style="display:none;"' : ''; ?>>
 					<div class="label-container">
-						<label for="wpsc-acb-custom-prompt"><?php esc_attr_e( 'Chatbot Custom Prompt (Additional instructions)', 'wpsc-ps' ); ?></label>
+						<label for="wpsc-acb-custom-prompt"><?php esc_attr_e( 'Chatbot Custom Prompt (Additional instructions)', 'supportcandy' ); ?></label>
 					</div>
 					<textarea id="wpsc-acb-custom-prompt" name="custom-prompt" rows="4"><?php echo esc_textarea( $acb_settings['custom-prompt'] ); ?></textarea>
 					<span class="extra-info">
-					<?php esc_attr_e( 'Add extra instructions for the chatbot, such as tone of voice, business specific rules, or things it should always mention or avoid. These instructions are appended to the chatbot\'s system prompt and applied to every conversation.', 'wpsc-ps' ); ?>
+					<?php esc_attr_e( 'Add extra instructions for the chatbot, such as tone of voice, business specific rules, or things it should always mention or avoid. These instructions are appended to the chatbot\'s system prompt and applied to every conversation.', 'supportcandy' ); ?>
 					</span>
 				</div>
 
@@ -176,19 +176,19 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 					<button 
 						class="wpsc-button normal primary margin-right"
 						onclick="wpsc_set_acb_settings(this);">
-						<?php esc_attr_e( 'Submit', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Submit', 'supportcandy' ); ?>
 					</button>
 					<button 
 						class="wpsc-button normal secondary margin-right"
 						onclick="wpsc_reset_acb_settings(this, '<?php echo esc_attr( wp_create_nonce( 'wpsc_reset_acb_settings' ) ); ?>');">
-						<?php esc_attr_e( 'Reset', 'wpsc-ps' ); ?>
+						<?php esc_attr_e( 'Reset', 'supportcandy' ); ?>
 					</button>
 				</div>
 			</form>
 			<?php
 			if ( ! $ai_settings['is-active'] ) {
 				?>
-				<div style="margin-top: 15px; color: #ff0000;"><?php esc_html_e( 'Your AI provider is not connected. Please connect AI provider to use AI chatbot', 'wpsc-ps' ); ?></div>
+				<div style="margin-top: 15px; color: #ff0000;"><?php esc_html_e( 'Your AI provider is not connected. Please connect AI provider to use AI chatbot', 'supportcandy' ); ?></div>
 				<?php
 			}
 			?>
@@ -215,42 +215,42 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 
 			$status = isset( $_POST['acb-service-status'] ) ? sanitize_text_field( wp_unslash( $_POST['acb-service-status'] ) ) : '';
 			if ( '' === $status || ! in_array( $status, array( '1', '0' ), true ) ) {
-				wp_send_json_error( __( 'Invalid or missing AI chatbot status!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing AI chatbot status!', 'supportcandy' ), 400 );
 			}
 
 			$retention_policy_time = isset( $_POST['delete-acb-session-time'] ) ? intval( $_POST['delete-acb-session-time'] ) : 0;
 			if ( $retention_policy_time < 0 ) {
-				wp_send_json_error( __( 'Retention time must be zero or a positive integer.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Retention time must be zero or a positive integer.', 'supportcandy' ), 400 );
 			}
 
 			$retention_policy_unit = isset( $_POST['delete-acb-session-unit'] ) ? sanitize_text_field( wp_unslash( $_POST['delete-acb-session-unit'] ) ) : '';
 			if ( empty( $retention_policy_unit ) ) {
-				wp_send_json_error( __( 'Invalid or missing retention policy unit!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing retention policy unit!', 'supportcandy' ), 400 );
 			}
 
 			$show_footer_branding = isset( $_POST['show-footer-branding'] ) ? intval( $_POST['show-footer-branding'] ) : 1;
 			if ( $show_footer_branding !== 0 && $show_footer_branding !== 1 ) {
-				wp_send_json_error( __( 'Invalid or missing footer branding option!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing footer branding option!', 'supportcandy' ), 400 );
 			}
 
 			$sessions_per_page = isset( $_POST['sessions-per-page'] ) ? sanitize_text_field( wp_unslash( $_POST['sessions-per-page'] ) ) : '';
 			if ( empty( $sessions_per_page ) || ! is_numeric( $sessions_per_page ) || $sessions_per_page < 1 ) {
-				wp_send_json_error( __( 'Invalid or missing sessions per page!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing sessions per page!', 'supportcandy' ), 400 );
 			}
 
 			$popup_delay_status = isset( $_POST['popup-delay-status'] ) ? sanitize_text_field( wp_unslash( $_POST['popup-delay-status'] ) ) : '';
 			if ( '' === $popup_delay_status || ! in_array( $popup_delay_status, array( '1', '0' ), true ) ) {
-				wp_send_json_error( __( 'Invalid or missing popup delay status!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing popup delay status!', 'supportcandy' ), 400 );
 			}
 
 			$popup_delay = isset( $_POST['popup-delay'] ) ? intval( $_POST['popup-delay'] ) : '';
 			if ( empty( $popup_delay ) || ! is_numeric( $popup_delay ) || $popup_delay < 1 ) {
-				wp_send_json_error( __( 'Invalid or missing popup delay!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing popup delay!', 'supportcandy' ), 400 );
 			}
 
 			$popup_display_limit = isset( $_POST['popup-display-limit'] ) ? intval( $_POST['popup-display-limit'] ) : '';
 			if ( empty( $popup_display_limit ) || ! is_numeric( $popup_display_limit ) || $popup_display_limit < 1 ) {
-				wp_send_json_error( __( 'Invalid or missing popup display limit!', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Invalid or missing popup display limit!', 'supportcandy' ), 400 );
 			}
 
 			$custom_prompt = isset( $_POST['custom-prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['custom-prompt'] ) ) : '';
@@ -270,7 +270,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 
 			wp_send_json_success(
 				array(
-					'message' => __( 'Settings saved successfully.', 'wpsc-ps' ),
+					'message' => __( 'Settings saved successfully.', 'supportcandy' ),
 				)
 			);
 			wp_die();
@@ -308,7 +308,7 @@ if ( ! class_exists( 'WPSC_ACB_General_Setting' ) ) :
 
 			wp_send_json_success(
 				array(
-					'message' => __( 'Settings reset successfully.', 'wpsc-ps' ),
+					'message' => __( 'Settings reset successfully.', 'supportcandy' ),
 				)
 			);
 			wp_die();

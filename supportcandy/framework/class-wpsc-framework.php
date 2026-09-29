@@ -160,7 +160,6 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 			$ticket_list        = get_option( 'wpsc-ap-ticket-list' );
 			$individual_ticket  = get_option( 'wpsc-ap-individual-ticket' );
 			$modal              = get_option( 'wpsc-ap-modal' );
-			$agent_collision    = get_option( 'wpsc-ap-agent-collision' );
 
 			?>
 			<style type="text/css">
@@ -341,12 +340,6 @@ if ( ! class_exists( 'WPSC_Framework' ) ) :
 				.wpsc-ap-nav:hover,
 				.wpsc-popover-menu > .wpsc-reply-close:hover {
 					background-color: <?php echo esc_attr( $general['primary-color'] ); ?>;
-				}
-
-				/* Agent Collision */
-				.wpsc-ac-agent {
-					color: <?php echo esc_attr( $agent_collision['header-text-color'] ); ?>;
-					background-color: <?php echo esc_attr( $agent_collision['header-bg-color'] ); ?>;
 				}
 
 				/* Ticket tags */

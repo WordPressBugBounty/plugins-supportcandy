@@ -73,6 +73,21 @@ if ( ! class_exists( 'WPSC_Functions' ) ) :
 					}
 					break;
 
+				case 'wpsc_ticket':
+					if ( $value && isset( self::$ref_classes[ $ref_class ] ) ) {
+						$class  = self::$ref_classes[ $ref_class ]['class'];
+						$object = new $class( $value );
+						// A ticket referenced from another record (a todo, a thread, a timer log, ...)
+						// may have since been archived - archived tickets are moved out of the live
+						// tickets table entirely, so the lookup above resolves to an empty object. Fall
+						// back to the archived-ticket table rather than silently returning a blank
+						// ticket (blank id, blank subject, blank link) to every caller.
+						if ( ! $object->id ) {
+							$object = new WPSC_Archive_Ticket( $value );
+						}
+					}
+					break;
+
 				default:
 					$object = apply_filters( 'wpsc_fun_get_object', $value, $ref_class );
 					if ( ! is_object( $object ) && isset( self::$ref_classes[ $ref_class ] ) ) {

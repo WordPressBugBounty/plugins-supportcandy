@@ -323,7 +323,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 							foreach ( $value as $id ) {
 								$attachment = new WPSC_Attachment( $id );
 								// Check if attachment is already active and linked to a ticket.
-								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+								if ( WPSC_Attachment::can_claim( $attachment ) ) {
 										$attachment->is_active = 1;
 										$attachment->save();
 										$updated_values[] = $id;
@@ -353,7 +353,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 								foreach ( $value as $id ) {
 									$attachment = new WPSC_Attachment( $id );
 									// Check if attachment is already active and linked to a ticket.
-									if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+									if ( WPSC_Attachment::can_claim( $attachment ) ) {
 
 										$attachment->is_active   = 1;
 										$attachment->source      = 'cf';
@@ -432,7 +432,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 							foreach ( $attachments as $id ) {
 								$attachment = new WPSC_Attachment( $id );
 								// Check if attachment is already active and linked to a ticket.
-								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+								if ( WPSC_Attachment::can_claim( $attachment ) ) {
 										$attachment->is_active = 1;
 										$attachment->save();
 										$updated_values[] = $id;
@@ -456,7 +456,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 							foreach ( $attachments as $id ) {
 								$attachment = new WPSC_Attachment( $id );
 								// Check if attachment is already active and linked to a ticket.
-								if ( ! ( $attachment->is_active && $attachment->ticket_id ) ) {
+								if ( WPSC_Attachment::can_claim( $attachment ) ) {
 									$attachment->is_active   = 1;
 									$attachment->source      = 'cf';
 									$attachment->source_id   = $cf->id;
@@ -611,7 +611,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 							}
 
 							$attachment = new WPSC_Attachment( $id );
-							if ( ( ! ( $attachment->is_active && $attachment->ticket_id ) ) || ( $attachment->is_active && $attachment->ticket_id == $ticket->id ) ) {
+							if ( WPSC_Attachment::can_claim( $attachment ) || ( $attachment->ticket_id && $attachment->ticket_id == $ticket->id ) ) {
 								$attachment->is_active = 1;
 								$attachment->ticket_id = $ticket->id;
 								$attachment->source    = 'cf';
@@ -661,7 +661,7 @@ if ( ! class_exists( 'WPSC_CF_File_Attachment_Multiple' ) ) :
 				$updated_values = array();
 				foreach ( $new as $id ) {
 					$attachment = new WPSC_Attachment( $id );
-					if ( ( ! ( $attachment->is_active && $attachment->ticket_id ) ) || ( $attachment->is_active && $attachment->ticket_id == $ticket->id ) ) {
+					if ( WPSC_Attachment::can_claim( $attachment ) || ( $attachment->ticket_id && $attachment->ticket_id == $ticket->id ) ) {
 						$attachment->is_active = 1;
 						$attachment->ticket_id = $ticket->id;
 						$attachment->source    = 'cf';

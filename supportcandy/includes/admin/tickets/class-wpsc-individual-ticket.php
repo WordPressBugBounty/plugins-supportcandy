@@ -1679,8 +1679,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			foreach ( $attachments as $id ) {
 
 				$attachment = new WPSC_Attachment( $id );
-				if ( ! $attachment->id ||
-					( $attachment->ticket_id && $attachment->is_active ) ) {
+				// Only the uploader may bind their own, not-yet-bound attachment.
+				if ( ! WPSC_Attachment::can_claim( $attachment ) ) {
 					continue;
 				}
 
@@ -1714,12 +1714,14 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			endforeach;
 
 			// activate description editor img attachments.
-			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(&auth_code=[^&\s]*)?/', $description, $matches ) ) {
-				foreach ( $matches[1] as $id ) {
+			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(?:&auth_code=[^&\s"\']*)?(?:&(?:amp;)?wpsc_nonce=([a-f0-9]*))?/', $description, $matches ) ) {
+				foreach ( $matches[1] as $key => $id ) {
 					$attachment = new WPSC_Attachment( $id );
-					// Do not allow rebinding an attachment that is already owned
-					// by another active ticket, regardless of how it is referenced.
-					if ( ! $attachment->id || ( $attachment->ticket_id && $attachment->is_active ) ) {
+					// Only the uploader may bind their own, not-yet-bound
+					// attachment, proven by the recorded uploader identity or
+					// by the per-attachment nonce carried in the image url.
+					$nonce = isset( $matches[2][ $key ] ) ? $matches[2][ $key ] : '';
+					if ( ! WPSC_Attachment::can_claim( $attachment, $nonce ) ) {
 						continue;
 					}
 					$attachment->is_active = 1;
@@ -1801,8 +1803,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			foreach ( $attachments as $id ) {
 
 				$attachment = new WPSC_Attachment( $id );
-				if ( ! $attachment->id ||
-					( $attachment->ticket_id && $attachment->is_active ) ) {
+				// Only the uploader may bind their own, not-yet-bound attachment.
+				if ( ! WPSC_Attachment::can_claim( $attachment ) ) {
 					continue;
 				}
 
@@ -1836,9 +1838,16 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			endforeach;
 
 			// activate description editor img attachments.
-			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(&auth_code=[^&\s]*)?/', $description, $matches ) ) {
-				foreach ( $matches[1] as $id ) {
-					$attachment            = new WPSC_Attachment( $id );
+			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(?:&auth_code=[^&\s"\']*)?(?:&(?:amp;)?wpsc_nonce=([a-f0-9]*))?/', $description, $matches ) ) {
+				foreach ( $matches[1] as $key => $id ) {
+					$attachment = new WPSC_Attachment( $id );
+					// Only the uploader may bind their own, not-yet-bound
+					// attachment, proven by the recorded uploader identity or
+					// by the per-attachment nonce carried in the image url.
+					$nonce = isset( $matches[2][ $key ] ) ? $matches[2][ $key ] : '';
+					if ( ! WPSC_Attachment::can_claim( $attachment, $nonce ) ) {
+						continue;
+					}
 					$attachment->is_active = 1;
 					$attachment->source_id = $thread->id;
 					$attachment->ticket_id = self::$ticket->id;
@@ -1965,8 +1974,8 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			foreach ( $attachments as $id ) {
 
 				$attachment = new WPSC_Attachment( $id );
-				if ( ! $attachment->id ||
-					( $attachment->ticket_id && $attachment->is_active ) ) {
+				// Only the uploader may bind their own, not-yet-bound attachment.
+				if ( ! WPSC_Attachment::can_claim( $attachment ) ) {
 					continue;
 				}
 
@@ -2000,12 +2009,14 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 			endforeach;
 
 			// activate description editor img attachments.
-			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(&auth_code=[^&\s]*)?/', $description, $matches ) ) {
-				foreach ( $matches[1] as $id ) {
+			if ( preg_match_all( '/' . preg_quote( home_url( '/' ), '/' ) . '\?wpsc_attachment=(\d*)(?:&auth_code=[^&\s"\']*)?(?:&(?:amp;)?wpsc_nonce=([a-f0-9]*))?/', $description, $matches ) ) {
+				foreach ( $matches[1] as $key => $id ) {
 					$attachment = new WPSC_Attachment( $id );
-					// Do not allow rebinding an attachment that is already owned
-					// by another active ticket, regardless of how it is referenced.
-					if ( ! $attachment->id || ( $attachment->ticket_id && $attachment->is_active ) ) {
+					// Only the uploader may bind their own, not-yet-bound
+					// attachment, proven by the recorded uploader identity or
+					// by the per-attachment nonce carried in the image url.
+					$nonce = isset( $matches[2][ $key ] ) ? $matches[2][ $key ] : '';
+					if ( ! WPSC_Attachment::can_claim( $attachment, $nonce ) ) {
 						continue;
 					}
 					$attachment->is_active = 1;
@@ -3036,6 +3047,12 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					continue;
 				}
 
+				// Already part of this ticket, otherwise only the uploader may
+				// bind a not-yet-bound attachment to it.
+				if ( ! $attachment->ticket_id && ! WPSC_Attachment::can_claim( $attachment ) ) {
+					continue;
+				}
+
 				$validated_attachments[] = $id;
 			}
 			$thread_attachments = $validated_attachments;
@@ -3065,7 +3082,13 @@ if ( ! class_exists( 'WPSC_Individual_Ticket' ) ) :
 					foreach ( $matches[1] as $id ) {
 
 						$attachment = new WPSC_Attachment( $id );
-						if ( $attachment->is_active ) {
+						// is_active is not an ownership test: a deleted thread
+						// clears it while leaving ticket_id in place. Bind only
+						// what already belongs to this ticket, or what the
+						// requester uploaded and nothing owns yet.
+						if ( ! $attachment->id ||
+							( $attachment->ticket_id && $attachment->ticket_id != self::$ticket->id ) ||
+							( ! $attachment->ticket_id && ! WPSC_Attachment::can_claim( $attachment ) ) ) {
 							continue;
 						}
 

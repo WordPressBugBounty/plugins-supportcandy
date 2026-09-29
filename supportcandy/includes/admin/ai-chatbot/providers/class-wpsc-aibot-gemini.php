@@ -111,11 +111,29 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 				}
 
 				$requested_choice = $tool_context['tool_choice'] ?? 'auto';
-				$function_calling_mode = 'none' === $requested_choice ? 'NONE' : 'AUTO';
+				if ( 'none' === $requested_choice ) {
+					$function_calling_mode = 'NONE';
+				} elseif ( 'any' === $requested_choice ) {
+					$function_calling_mode = 'ANY';
+				} else {
+					$function_calling_mode = 'AUTO';
+				}
 			} else {
 
 				$contents = $this->wpsc_get_api_formatted_chat_messages( $conversation_history, $message );
-				$function_calling_mode = ! empty( $gemini_tools ) ? 'ANY' : 'AUTO';
+
+				if ( 'none' === ( $tool_context['tool_choice'] ?? null ) ) {
+					// A plain (non-continuation), tool-free synthesis call - used for
+					// the empty-completion retry (see WPSC_ACB_Chats::run_agentic_tool_loop()),
+					// which deliberately avoids replaying the native functionCall/
+					// functionResponse continuation format: that format was found to
+					// reliably trigger a completely empty completion from
+					// gemini-2.5-flash-lite for certain conversations, regardless of
+					// temperature or prompt content: this plain-text form does not.
+					$function_calling_mode = 'NONE';
+				} else {
+					$function_calling_mode = ! empty( $gemini_tools ) ? 'ANY' : 'AUTO';
+				}
 			}
 
 			$request_body = array(
@@ -128,16 +146,28 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 				),
 				'contents'           => $contents,
 				'generationConfig'   => array(
-					'temperature'     => 0.3,
+					'temperature'     => 0.1,
 					'maxOutputTokens' => $max_tokens,
 				),
-				'tools'              => $gemini_tools,
-				'toolConfig'         => array(
+			);
+
+			// 'NONE' means no further tool call is wanted at all (the forced final
+			// synthesis call, or the empty-text retry below it) - in that case,
+			// deliberately omit 'tools'/'toolConfig' entirely rather than send them
+			// with mode NONE. Observed in production: gemini-2.5-flash-lite reliably
+			// returns a completely empty completion (0 output tokens, finishReason
+			// STOP, no error) when continuing a functionCall/functionResponse turn
+			// with a 'tools' declaration present, regardless of mode (ANY/AUTO/NONE)
+			// or how small the declarations are - dropping 'tools' for this call
+			// reliably restores real output text.
+			if ( 'NONE' !== $function_calling_mode ) {
+				$request_body['tools'] = $gemini_tools;
+				$request_body['toolConfig'] = array(
 					'function_calling_config' => array(
 						'mode' => $function_calling_mode,
 					),
-				),
-			);
+				);
+			}
 
 			$max_retries = isset( $tool_context['max_retries'] ) ? max( 1, (int) $tool_context['max_retries'] ) : 3;
 
@@ -186,10 +216,66 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 					$result['contents'] = $contents;
 				}
 
+				// Observed with gemini-2.5-flash-lite: continuing a functionCall/
+				// functionResponse turn in AUTO mode returns a completely empty
+				// completion (no parts, finishReason STOP) regardless of whether
+				// its next step is a text reply or another tool call (e.g.
+				// search_woo_products -> manage_woo_cart for "add 3 caps to
+				// cart"). Disambiguate by re-sending the same continuation
+				// tool-free first: that returns the real text reply when one is
+				// due, and fails with finishReason UNEXPECTED_TOOL_CALL when the
+				// model actually wants a tool - only on that explicit signal
+				// re-send it in ANY mode, which reliably yields that tool call.
+				// A tool-free retry that is merely empty (plain STOP) is left
+				// empty for the caller's own plain-text retry: forcing ANY there
+				// makes the model pick *some* tool, e.g. adding a product to the
+				// cart when the customer only asked its price.
+				if ( $is_continuation && 'AUTO' === $function_calling_mode && self::is_empty_completion( $result ) ) {
+
+					$spent_tokens = (int) ( $result['total_tokens'] ?? 0 );
+
+					foreach ( array( 'none', 'any' ) as $fallback_choice ) {
+
+						$fallback_context = $tool_context;
+						$fallback_context['tool_choice'] = $fallback_choice;
+						$fallback_result = $this->wpsc_get_chat_response( $ai_settings, $message, $system_prompt, $conversation_history, $tools, $fallback_context );
+
+						if ( ! is_array( $fallback_result ) || empty( $fallback_result['success'] ) ) {
+							break;
+						}
+
+						$spent_tokens += (int) ( $fallback_result['total_tokens'] ?? 0 );
+						if ( ! self::is_empty_completion( $fallback_result ) ) {
+							$fallback_result['total_tokens'] = $spent_tokens;
+							return $fallback_result;
+						}
+
+						if ( 'UNEXPECTED_TOOL_CALL' !== ( $fallback_result['finish_reason'] ?? '' ) ) {
+							break;
+						}
+					}
+
+					$result['total_tokens'] = $spent_tokens;
+				}
+
 				return $result;
 			}
 
 			return $fallback;
+		}
+
+		/**
+		 * Whether a successful processed response carries neither a tool call
+		 * nor any reply text.
+		 *
+		 * @param array $result Result from process_chat_response().
+		 * @return bool
+		 */
+		private static function is_empty_completion( $result ) {
+
+			return ! empty( $result['success'] )
+				&& empty( $result['tool_call'] )
+				&& '' === trim( (string) ( $result['response'] ?? '' ) );
 		}
 
 		/**
@@ -245,6 +331,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			return array(
 				'success'           => true,
 				'response'          => self::extract_text_reply( $body ),
+				'finish_reason'     => (string) ( $body['candidates'][0]['finishReason'] ?? '' ),
 				'create_ticket'     => false,
 				'tool_call'         => '',
 				'prompt_tokens'     => $prompt_tokens,
@@ -296,6 +383,38 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 				);
 			}
 
+			// The current turn's message is cached before wpsc_get_chat_response()
+			// runs, so it is typically already the last history entry verbatim -
+			// in that common case this is a no-op. But a caller can also pass a
+			// $message that deliberately differs from what is cached (e.g. the
+			// empty-completion retry in WPSC_ACB_Chats::run_agentic_tool_loop(),
+			// which passes a richer message summarizing this turn's tool results
+			// as plain text): replace the last user turn's content with it rather
+			// than silently ignoring $message, so that richer content is what
+			// actually reaches the model instead of being dropped.
+			$message = is_string( $message ) ? trim( $message ) : '';
+			if ( '' !== $message ) {
+
+				// Guarded with >= 0 (not just "$contents non-empty") because several
+				// callers (e.g. WPSC_ACB_Create_Support_Ticket::was_ticket_confirmation_actually_asked(),
+				// the fabricated-ticket-claim judge, the safe-reply localizer) deliberately
+				// pass an empty $conversation_history for a single-turn judge/utility call -
+				// with the old "only if $contents is already non-empty" guard, $message was
+				// silently dropped in that case, leaving 'contents' => [] in the request body,
+				// which the Gemini API rejects outright with a 400 ("contents is not
+				// specified") - causing wpsc_get_chat_response() to return success=false for
+				// every one of those calls, unconditionally.
+				$last_index = count( $contents ) - 1;
+				if ( $last_index >= 0 && 'user' === $contents[ $last_index ]['role'] ) {
+					$contents[ $last_index ]['parts'] = array( array( 'text' => $message ) );
+				} else {
+					$contents[] = array(
+						'role'  => 'user',
+						'parts' => array( array( 'text' => $message ) ),
+					);
+				}
+			}
+
 			return $contents ?? array();
 		}
 
@@ -312,7 +431,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			if ( empty( $conversation_text ) ) {
 				return array(
 					'success'  => false,
-					'subject'  => __( 'Conversation history is empty.', 'wpsc-ps' ),
+					'subject'  => __( 'Conversation history is empty.', 'supportcandy' ),
 					'provider' => WPSC_PS_AIT_Provider::GOOGLE_GEMINI,
 				);
 			}
@@ -382,7 +501,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 
 			return array(
 				'success'  => false,
-				'subject'  => __( 'Failed to generate subject.', 'wpsc-ps' ),
+				'subject'  => __( 'Failed to generate subject.', 'supportcandy' ),
 				'provider' => WPSC_PS_AIT_Provider::GOOGLE_GEMINI,
 			);
 		}
@@ -406,7 +525,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( 200 !== $status_code ) {
 				$body = json_decode( wp_remote_retrieve_body( $response ), true );
-				$error_message = ! empty( $body['error']['message'] ) ? $body['error']['message'] : __( 'Google Gemini API request failed.', 'wpsc-ps' );
+				$error_message = ! empty( $body['error']['message'] ) ? $body['error']['message'] : __( 'Google Gemini API request failed.', 'supportcandy' );
 				return array(
 					'success'  => false,
 					'subject'  => $error_message,
@@ -418,7 +537,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			if ( empty( $body['candidates'][0]['content']['parts'][0]['text'] ) ) {
 				return array(
 					'success'  => false,
-					'subject'  => __( 'No subject generated by Gemini.', 'wpsc-ps' ),
+					'subject'  => __( 'No subject generated by Gemini.', 'supportcandy' ),
 					'provider' => WPSC_PS_AIT_Provider::GOOGLE_GEMINI,
 				);
 			}
@@ -446,7 +565,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 
 			if ( empty( trim( $conversation_text ) ) ) {
 				return array(
-					'subject' => __( 'Conversation history is empty.', 'wpsc-ps' ),
+					'subject' => __( 'Conversation history is empty.', 'supportcandy' ),
 					'status'  => 'inactive',
 				);
 			}
@@ -511,7 +630,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			}
 
 			return array(
-				'subject' => __( 'Failed to analyze conversation.', 'wpsc-ps' ),
+				'subject' => __( 'Failed to analyze conversation.', 'supportcandy' ),
 				'status'  => 'inactive',
 			);
 		}
@@ -534,7 +653,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( 200 !== $status_code ) {
 				$body = json_decode( wp_remote_retrieve_body( $response ), true );
-				$error_message = ! empty( $body['error']['message'] ) ? $body['error']['message'] : __( 'Google Gemini API request failed.', 'wpsc-ps' );
+				$error_message = ! empty( $body['error']['message'] ) ? $body['error']['message'] : __( 'Google Gemini API request failed.', 'supportcandy' );
 				return array(
 					'subject' => $error_message,
 					'status'  => 'inactive',
@@ -544,7 +663,7 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 			$body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( empty( $body['candidates'][0]['content']['parts'][0]['text'] ) ) {
 				return array(
-					'subject' => __( 'No analysis received from Gemini.', 'wpsc-ps' ),
+					'subject' => __( 'No analysis received from Gemini.', 'supportcandy' ),
 					'status'  => 'inactive',
 				);
 			}
@@ -553,12 +672,12 @@ if ( ! class_exists( 'WPSC_PS_AIBOT_Gemini' ) ) :
 
 			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $result ) ) {
 				return array(
-					'subject' => __( 'Invalid AI response format.', 'wpsc-ps' ),
+					'subject' => __( 'Invalid AI response format.', 'supportcandy' ),
 					'status'  => 'inactive',
 				);
 			}
 
-			$subject = ! empty( $result['subject'] ) ? sanitize_text_field( $result['subject'] ) : __( 'General Inquiry', 'wpsc-ps' );
+			$subject = ! empty( $result['subject'] ) ? sanitize_text_field( $result['subject'] ) : __( 'General Inquiry', 'supportcandy' );
 			$status = ! empty( $result['status'] ) ? sanitize_key( $result['status'] ) : 'inactive';
 			return array(
 				'subject' => $subject,

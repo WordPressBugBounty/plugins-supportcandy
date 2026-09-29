@@ -51,7 +51,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Gemini' ) ) :
 
 			// Validate response.
 			if ( empty( $response['name'] ) ) {
-				return new WP_Error( 'invalid_response', __( 'Invalid API response: missing store ID.', 'wpsc-ps' ) );
+				return new WP_Error( 'invalid_response', __( 'Invalid API response: missing store ID.', 'supportcandy' ) );
 			}
 
 			$file_search_store_id = sanitize_text_field( $response['name'] );
@@ -157,7 +157,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Gemini' ) ) :
 			if ( json_last_error() !== JSON_ERROR_NONE ) {
 				return new WP_Error(
 					'invalid_json',
-					__( 'Invalid JSON response from API.', 'wpsc-ps' )
+					__( 'Invalid JSON response from API.', 'supportcandy' )
 				);
 			}
 
@@ -166,13 +166,13 @@ if ( ! class_exists( 'WPSC_PS_AI_Gemini' ) ) :
 
 				$error_message = isset( $data['error']['message'] )
 					? $data['error']['message']
-					: __( 'Unknown API error.', 'wpsc-ps' );
+					: __( 'Unknown API error.', 'supportcandy' );
 
 				return new WP_Error(
 					'api_error',
 					sprintf(
 						/* translators: %1$d: HTTP status code, %2$s: Error message */
-						__( 'API request failed with status %1$d: %2$s', 'wpsc-ps' ),
+						__( 'API request failed with status %1$d: %2$s', 'supportcandy' ),
 						$status_code,
 						sanitize_text_field( $error_message )
 					)

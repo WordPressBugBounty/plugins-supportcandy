@@ -204,13 +204,13 @@ if ( ! class_exists( 'WPSC_RA_Logs' ) ) :
 				$log_str = '';
 				$time_ago = WPSC_Functions::date_interval_highest_unit_ago( $log->date_created->diff( $now ) );
 				if ( $log->type == 'report' ) {
-					$log_str = '<span class="wpsc-ra-log-desc">' . $log->customer->name . ' created a ticket <a href="' . admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . esc_attr( $log->ticket->id ) ) . '">#' . $log->ticket->id . ' ' . esc_attr( $log->ticket->subject ) . '</a></span>
+					$log_str = '<span class="wpsc-ra-log-desc">' . esc_html( $log->customer->name ) . ' created a ticket <a href="' . admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . esc_attr( $log->ticket->id ) ) . '">#' . $log->ticket->id . ' ' . esc_html( $log->ticket->subject ) . '</a></span>
 								<span class="wpsc-ra-log-time">' . $time_ago . '</span>';
 				} elseif ( $log->type == 'reply' ) {
-					$log_str = '<span class="wpsc-ra-log-desc">' . $log->customer->name . ' replied to ticket <a href="' . admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . esc_attr( $log->ticket->id ) ) . '">#' . $log->ticket->id . ' ' . esc_attr( $log->ticket->subject ) . '</a></span>
+					$log_str = '<span class="wpsc-ra-log-desc">' . esc_html( $log->customer->name ) . ' replied to ticket <a href="' . admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . esc_attr( $log->ticket->id ) ) . '">#' . $log->ticket->id . ' ' . esc_html( $log->ticket->subject ) . '</a></span>
 								<span class="wpsc-ra-log-time">' . $time_ago . '</span>';
 				} elseif ( $log->type == 'note' ) {
-					$log_str = '<span class="wpsc-ra-log-desc">' . $log->customer->name . ' added a note to ticket <a href="' . admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . esc_attr( $log->ticket->id ) ) . '">#' . $log->ticket->id . ' ' . esc_attr( $log->ticket->subject ) . '</a></span>
+					$log_str = '<span class="wpsc-ra-log-desc">' . esc_html( $log->customer->name ) . ' added a note to ticket <a href="' . admin_url( 'admin.php?page=wpsc-tickets&section=ticket-list&id=' . esc_attr( $log->ticket->id ) ) . '">#' . $log->ticket->id . ' ' . esc_html( $log->ticket->subject ) . '</a></span>
 								<span class="wpsc-ra-log-time">' . $time_ago . '</span>';
 				} elseif ( $log->type == 'log' ) {
 					if ( ! $log->customer->id ) {
@@ -407,12 +407,8 @@ if ( ! class_exists( 'WPSC_RA_Logs' ) ) :
 				array_map(
 					fn( $customer ) => array(
 						'id'   => $customer->id,
-						'text' => sprintf(
-							/* translators: %1$s: Name */
-							esc_attr__( '%1$s', 'supportcandy' ), //phpcs:ignore
-							$customer->name,
-						),
-						'name' => $customer->name,
+						'text' => esc_html( $customer->name ),
+						'name' => esc_html( $customer->name ),
 					),
 					WPSC_Customer::customer_search( $term )
 				)

@@ -265,11 +265,13 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			}
 
 			$color = isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '';
+			$color = ( 'transparent' === $color ) ? $color : sanitize_hex_color( $color );
 			if ( ! $color ) {
 				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}
 
 			$bgcolor = isset( $_POST['bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['bg-color'] ) ) : '';
+			$bgcolor = ( 'transparent' === $bgcolor ) ? $bgcolor : sanitize_hex_color( $bgcolor );
 			if ( ! $bgcolor ) {
 				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}
@@ -441,11 +443,13 @@ if ( ! class_exists( 'WPSC_Ticket_Priorities' ) ) :
 			}
 
 			$color = isset( $_POST['color'] ) ? sanitize_text_field( wp_unslash( $_POST['color'] ) ) : '';
+			$color = ( 'transparent' === $color ) ? $color : sanitize_hex_color( $color );
 			if ( ! $color ) {
 				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}
 
 			$bgcolor = isset( $_POST['bg-color'] ) ? sanitize_text_field( wp_unslash( $_POST['bg-color'] ) ) : '';
+			$bgcolor = ( 'transparent' === $bgcolor ) ? $bgcolor : sanitize_hex_color( $bgcolor );
 			if ( ! $bgcolor ) {
 				wp_send_json_error( __( 'Bad request!', 'supportcandy' ), 400 );
 			}

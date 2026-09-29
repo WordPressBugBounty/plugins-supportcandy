@@ -167,6 +167,113 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 		}
 
 		/**
+		 * Safety-net normalizer for when an AI provider ignores the "return HTML,
+		 * not markdown" system-prompt instructions and returns markdown instead
+		 * (a recurring LLM failure mode - the model reverting to "- item" bullets
+		 * and blank-line paragraphs despite being told not to). Without this,
+		 * that raw markdown gets passed straight into tinymce.activeEditor.setContent()
+		 * client-side and renders as one inline blob with no line breaks, since
+		 * TinyMCE has no markdown semantics.
+		 *
+		 * Only rewrites content that does not already contain block-level HTML -
+		 * a well-formed HTML response (the expected/normal case) passes through
+		 * untouched.
+		 *
+		 * @param string $content Raw AI response text, already run through wpsc_strip_ai_markdown_fences().
+		 * @return string HTML content safe to hand to wp_kses().
+		 */
+		public static function wpsc_normalize_ai_markdown_to_html( $content ) {
+
+			if ( empty( $content ) || ! is_string( $content ) ) {
+				return $content;
+			}
+
+			// Already looks like HTML - trust the model's own markup as-is.
+			if ( preg_match( '/<\s*(p|ul|ol|li|div|br)\b/i', $content ) ) {
+				return $content;
+			}
+
+			$lines           = preg_split( '/\r\n|\r|\n/', trim( $content ) );
+			$html            = '';
+			$list_items      = array();
+			$list_tag        = '';
+			$paragraph_lines = array();
+
+			$flush_list = function () use ( &$html, &$list_items, &$list_tag ) {
+				if ( ! empty( $list_items ) ) {
+					$html .= '<' . $list_tag . '>';
+					foreach ( $list_items as $item ) {
+						$html .= '<li>' . $item . '</li>';
+					}
+					$html .= '</' . $list_tag . '>';
+				}
+				$list_items = array();
+				$list_tag   = '';
+			};
+
+			$flush_paragraph = function () use ( &$html, &$paragraph_lines ) {
+				if ( ! empty( $paragraph_lines ) ) {
+					$html .= '<p>' . implode( ' ', $paragraph_lines ) . '</p>';
+				}
+				$paragraph_lines = array();
+			};
+
+			foreach ( $lines as $line ) {
+				$trimmed = trim( $line );
+
+				if ( '' === $trimmed ) {
+					$flush_paragraph();
+					$flush_list();
+					continue;
+				}
+
+				// Bulleted line: "- foo" or "* foo".
+				if ( preg_match( '/^[-*]\s+(.*)$/', $trimmed, $m ) ) {
+					$flush_paragraph();
+					if ( 'ul' !== $list_tag ) {
+						$flush_list();
+						$list_tag = 'ul';
+					}
+					$list_items[] = self::wpsc_convert_inline_markdown( $m[1] );
+					continue;
+				}
+
+				// Numbered line: "1. foo" or "1) foo".
+				if ( preg_match( '/^\d+[.)]\s+(.*)$/', $trimmed, $m ) ) {
+					$flush_paragraph();
+					if ( 'ol' !== $list_tag ) {
+						$flush_list();
+						$list_tag = 'ol';
+					}
+					$list_items[] = self::wpsc_convert_inline_markdown( $m[1] );
+					continue;
+				}
+
+				// Plain text line - part of the current paragraph.
+				$flush_list();
+				$paragraph_lines[] = self::wpsc_convert_inline_markdown( $trimmed );
+			}
+
+			$flush_paragraph();
+			$flush_list();
+
+			return $html;
+		}
+
+		/**
+		 * Convert simple inline markdown emphasis to HTML within a single line,
+		 * used by wpsc_normalize_ai_markdown_to_html().
+		 *
+		 * @param string $text Line of text that may contain markdown emphasis.
+		 * @return string Text with bold/italic markdown converted to strong/em tags.
+		 */
+		private static function wpsc_convert_inline_markdown( $text ) {
+			$text = preg_replace( '/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text );
+			$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/', '<em>$1</em>', $text );
+			return $text;
+		}
+
+		/**
 		 * Parse an AI provider's raw text response for the RAG content-quality check
 		 * (see WPSC_PS_AIT_Controller::wpsc_prompt_to_assess_content_quality_for_rag())
 		 * into a validated quality_score/useful_for_rag pair. Centralized here since
@@ -430,9 +537,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 
 			if ( empty( $files ) || ! isset( $files['name'] ) ) {
 				if ( ! $throw_json ) {
-					return new WP_Error( 'wpsc_ai_no_files', __( 'No files uploaded.', 'wpsc-ps' ) );
+					return new WP_Error( 'wpsc_ai_no_files', __( 'No files uploaded.', 'supportcandy' ) );
 				}
-				wp_send_json_error( __( 'No files uploaded.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'No files uploaded.', 'supportcandy' ), 400 );
 			}
 
 			// Normalize single file to array format.
@@ -469,9 +576,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 
 			if ( ! empty( $upload_dir['error'] ) ) {
 				if ( ! $throw_json ) {
-					return new WP_Error( 'wpsc_ai_upload_dir_error', __( 'Upload directory error: ', 'wpsc-ps' ) . $upload_dir['error'] );
+					return new WP_Error( 'wpsc_ai_upload_dir_error', __( 'Upload directory error: ', 'supportcandy' ) . $upload_dir['error'] );
 				}
-				wp_send_json_error( __( 'Upload directory error: ', 'wpsc-ps' ) . $upload_dir['error'], 400 );
+				wp_send_json_error( __( 'Upload directory error: ', 'supportcandy' ) . $upload_dir['error'], 400 );
 			}
 
 			// Target directory.
@@ -486,9 +593,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 			// Check writable (IMPORTANT).
 			if ( ! is_writable( $base_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
 				if ( ! $throw_json ) {
-					return new WP_Error( 'wpsc_ai_upload_dir_not_writable', __( 'Upload directory is not writable.', 'wpsc-ps' ) );
+					return new WP_Error( 'wpsc_ai_upload_dir_not_writable', __( 'Upload directory is not writable.', 'supportcandy' ) );
 				}
-				wp_send_json_error( __( 'Upload directory is not writable.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Upload directory is not writable.', 'supportcandy' ), 400 );
 			}
 
 			// Reasons individual files were skipped below, keyed by file name - kept so a
@@ -586,7 +693,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 							'wpsc_ai_file_size_limit_exceeded',
 							sprintf(
 								/* translators: 1: file name, 2: actual file size in bytes, 3: maximum allowed size in bytes */
-								__( 'AI Training: File size limit exceeded. File: %1$s. Size: %2$s bytes. Maximum allowed size: %3$s bytes.', 'wpsc-ps' ),
+								__( 'AI Training: File size limit exceeded. File: %1$s. Size: %2$s bytes. Maximum allowed size: %3$s bytes.', 'supportcandy' ),
 								$reason['name'],
 								$reason['size'],
 								$reason['limit']
@@ -594,10 +701,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 						);
 					}
 
-					return new WP_Error( 'wpsc_ai_no_valid_files', __( 'No valid files processed.', 'wpsc-ps' ) );
+					return new WP_Error( 'wpsc_ai_no_valid_files', __( 'No valid files processed.', 'supportcandy' ) );
 				}
 
-				wp_send_json_error( __( 'No valid files processed.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'No valid files processed.', 'supportcandy' ), 400 );
 			}
 
 			return $results;
@@ -615,7 +722,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 
 			$urls_string = trim( $urls_string );
 			if ( empty( $urls_string ) ) {
-				wp_send_json_error( __( 'No URLs provided.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'No URLs provided.', 'supportcandy' ), 400 );
 			}
 
 			$urls = preg_split( '/\r\n|\r|\n/', trim( $urls_string ) );
@@ -627,7 +734,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 			$upload_dir = wp_upload_dir();
 
 			if ( ! empty( $upload_dir['error'] ) ) {
-				wp_send_json_error( __( 'Upload directory error: ', 'wpsc-ps' ) . $upload_dir['error'], 400 );
+				wp_send_json_error( __( 'Upload directory error: ', 'supportcandy' ) . $upload_dir['error'], 400 );
 			}
 
 			// Target directory.
@@ -641,7 +748,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 
 			// Ensure writable.
 			if ( ! is_writable( $base_dir ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable
-				wp_send_json_error( __( 'Upload directory is not writable.', 'wpsc-ps' ), 400 );
+				wp_send_json_error( __( 'Upload directory is not writable.', 'supportcandy' ), 400 );
 			}
 
 			foreach ( $urls as $url ) {
@@ -754,6 +861,46 @@ if ( ! class_exists( 'WPSC_PS_AI_Functions' ) ) :
 			}
 
 			return true;
+		}
+
+		/**
+		 * GET a WordPress REST API URL.
+		 *
+		 * URLs on this same site are dispatched internally with rest_do_request() instead
+		 * of over HTTP, which avoids loopback failures (e.g. Docker port mappings) and works
+		 * with plain permalinks. They run as a logged-out visitor so only public data is returned.
+		 *
+		 * @param string $url  The URL to fetch.
+		 * @param array  $args Arguments passed to wp_remote_get() for other sites.
+		 * @return array|WP_Error Response in the same shape as wp_remote_get().
+		 */
+		public static function rest_remote_get( $url, $args = array() ) {
+
+			$parts = wp_parse_url( $url );
+			wp_parse_str( $parts['query'] ?? '', $query );
+			$prefix = wp_parse_url( home_url( '/' . rest_get_url_prefix() ), PHP_URL_PATH );
+			$path   = $parts['path'] ?? '';
+
+			if ( 0 !== strpos( $url, home_url( '/' ) ) || ( ! isset( $query['rest_route'] ) && 0 !== strpos( $path, $prefix ) ) ) {
+				return wp_remote_get( $url, $args );
+			}
+
+			$route = $query['rest_route'] ?? substr( $path, strlen( $prefix ) );
+			unset( $query['rest_route'] );
+			$request = new WP_REST_Request( 'GET', '/' . ltrim( $route, '/' ) );
+			$request->set_query_params( $query );
+
+			$user_id = get_current_user_id();
+			wp_set_current_user( 0 );
+			$response = apply_filters( 'rest_post_dispatch', rest_ensure_response( rest_do_request( $request ) ), rest_get_server(), $request );
+			$data     = rest_get_server()->response_to_data( $response, false );
+			wp_set_current_user( $user_id );
+
+			return array(
+				'headers'  => $response->get_headers(),
+				'body'     => wp_json_encode( $data ),
+				'response' => array( 'code' => $response->get_status() ),
+			);
 		}
 
 		/**

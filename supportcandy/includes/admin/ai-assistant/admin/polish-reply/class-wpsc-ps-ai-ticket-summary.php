@@ -69,7 +69,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Ticket_Summary' ) ) :
 			?>
 			<div class="wpsc-it-widget wpsc-itw-ticket-summary wpsc-ticket-summary-section">
 				<div class="wpsc-widget-header">
-					<h2><?php esc_attr_e( 'AI Overview', 'wpsc-ps' ); ?></h2>
+					<h2><?php esc_attr_e( 'AI Overview', 'supportcandy' ); ?></h2>
 					<span class="wpsc-itw-toggle" data-widget="wpsc-itw-ticket-summary"><?php WPSC_Icons::get( 'chevron-up' ); ?></span>
 				</div>
 				<div class="wpsc-widget-body wpsc-ticket-summary-container">
@@ -77,7 +77,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Ticket_Summary' ) ) :
 					if ( ! $summary ) {
 						?>
 						<div class="wpsc-ticket-summary-btn-container">
-							<button class="wpsc-button small secondary" onclick="wpsc_generate_ticket_summary(this,'<?php echo esc_attr( $ticket->id ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_generate_ticket_summary' ) ); ?>');"><?php esc_attr_e( 'Generate', 'wpsc-ps' ); ?></button>
+							<button class="wpsc-button small secondary" onclick="wpsc_generate_ticket_summary(this,'<?php echo esc_attr( $ticket->id ); ?>', '<?php echo esc_attr( wp_create_nonce( 'wpsc_generate_ticket_summary' ) ); ?>');"><?php esc_attr_e( 'Generate', 'supportcandy' ); ?></button>
 						</div>
 						<?php
 					} else {
@@ -129,7 +129,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Ticket_Summary' ) ) :
 				WPSC_Ticket_Restrictions_Manager::is_restricted( $ticket ) ||
 				empty( $ai_settings['is-active'] )
 			) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			$history = WPSC_PS_AI_Functions::wpsc_get_clean_ticket_history( $ticket_id, 0 );

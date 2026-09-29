@@ -42,7 +42,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 			// 'source' value on each record. That's a WPSC_PS_AIT_Source constant (ticket/file/url)
 			// for tickets and manual uploads, but a WP post type slug (post/page/product/etc.) for
 			// anything synced in from a configured website training source - see
-			// WPSC_PS_AI_Setting_AI_Training_Actions::insert_training_post(). So pull the distinct
+			// WPSC_PS_AI_Setting_AI_Training_Actions::process_training_posts(). So pull the distinct
 			// values actually present instead of assuming the fixed ticket/file/url set.
 			$ai_settings = get_option( 'wpsc-ps-ai-assistant-settings' );
 			$current_provider = $ai_settings['provider'] ?? '';
@@ -80,9 +80,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 			<div class="wpsc-aia-toolbar">
 
 				<div class="wpsc-aia-toolbar-item">
-					<label><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Status', 'supportcandy' ); ?></label>
 					<select id="wpsc-training-data-status-filter">
-						<option value="all"><?php esc_attr_e( 'All statuses', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All statuses', 'supportcandy' ); ?></option>
 						<?php
 						foreach ( WPSC_PS_AIT_Status::get_labels() as $status_value => $status_label ) {
 							if ( $status_value == WPSC_PS_AIT_Status::DELETE ) {
@@ -97,10 +97,10 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 				</div>
 
 				<div class="wpsc-aia-toolbar-item">
-					<label><?php esc_attr_e( 'Source', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Source', 'supportcandy' ); ?></label>
 					<select id="wpsc-training-data-source-filter">
-						<option value="all"><?php esc_attr_e( 'All sources', 'wpsc-ps' ); ?></option>
-						<option value="_uploads"><?php esc_attr_e( 'File/URL Uploads', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All sources', 'supportcandy' ); ?></option>
+						<option value="_uploads"><?php esc_attr_e( 'File/URL Uploads', 'supportcandy' ); ?></option>
 						<?php
 						foreach ( $training_sources as $source ) {
 							$slug = sanitize_text_field( $source['slug'] ?? '' );
@@ -117,9 +117,9 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 				</div>
 
 				<div class="wpsc-aia-toolbar-item">
-					<label><?php esc_attr_e( 'Type', 'wpsc-ps' ); ?></label>
+					<label><?php esc_attr_e( 'Type', 'supportcandy' ); ?></label>
 					<select id="wpsc-training-data-type-filter">
-						<option value="all"><?php esc_attr_e( 'All types', 'wpsc-ps' ); ?></option>
+						<option value="all"><?php esc_attr_e( 'All types', 'supportcandy' ); ?></option>
 						<?php foreach ( $type_values as $type_value ) : ?>
 							<option value="<?php echo esc_attr( $type_value ); ?>"><?php echo esc_html( WPSC_PS_AIT_Source::get_label( $type_value ) ); ?></option>
 						<?php endforeach; ?>
@@ -152,7 +152,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 					<div id="wpsc-training-data-bulk-actions" class="gpopover wpsc-popover-menu wpsc-ticket-bulk-actions" style="width: 200px !important;">
 						<div class="wpsc-popover-menu-item" onclick="wpsc_bulk_delete_training( '<?php echo esc_attr( wp_create_nonce( 'wpsc_bulk_delete_training' ) ); ?>' );">
 							<?php WPSC_Icons::get( 'trash-alt' ); ?>
-							<span><?php esc_html_e( 'Delete', 'wpsc-ps' ); ?></span>
+							<span><?php esc_html_e( 'Delete', 'supportcandy' ); ?></span>
 						</div>
 					</div>
 				</div>
@@ -168,12 +168,12 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 									<label for="<?php echo esc_attr( $unique_id ); ?>"></label>
 								</div>
 							</th>
-							<th><?php esc_attr_e( 'Status', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Provider', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Type', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Source', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Name', 'wpsc-ps' ); ?></th>
-							<th><?php esc_attr_e( 'Action', 'wpsc-ps' ); ?></th>
+							<th><?php esc_attr_e( 'Status', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Provider', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Type', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Source', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Name', 'supportcandy' ); ?></th>
+							<th><?php esc_attr_e( 'Action', 'supportcandy' ); ?></th>
 						</tr>
 					</thead>
 				</table>
@@ -262,7 +262,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 		public static function get_aia_training_data_list() {
 
 			if ( ! check_ajax_referer( 'wpsc_get_aia_training_data_list', '_ajax_nonce', false ) ) {
-				wp_send_json_error( __( 'Unauthorized request!', 'wpsc-ps' ), 401 );
+				wp_send_json_error( __( 'Unauthorized request!', 'supportcandy' ), 401 );
 			}
 
 			if ( ! WPSC_PS_AI_Functions::is_allowed_ai_training() ) {
@@ -309,7 +309,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 			// Type filter - the record's raw 'source' value, shown as the "Type" column. This is a
 			// WPSC_PS_AIT_Source constant (ticket/file/url) for tickets and manual uploads, but a WP
 			// post type slug (post/page/product/etc.) for records synced from a configured website
-			// training source - see insert_training_post() - so whitelist against what is actually
+			// training source - see process_training_posts() - so whitelist against what is actually
 			// present for this provider rather than the fixed ticket/file/url set.
 			$valid_type_values = WPSC_RAG_Training_File::pluck(
 				'source',
@@ -433,7 +433,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 						'<a class="wpsc-link" onclick="wpsc_view_reason_for_failed_ai_training_item(this, %d, \'%s\')">%s</a>',
 						$training_id,
 						esc_attr( wp_create_nonce( 'wpsc_view_reason_for_failed_ai_training_item' ) ),
-						esc_html__( 'View Reason', 'wpsc-ps' )
+						esc_html__( 'View Reason', 'supportcandy' )
 					);
 				}
 
@@ -442,7 +442,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 						'<a class="wpsc-link" onclick="wpsc_get_delete_ai_training_item(this, %d, \'%s\')">%s</a>',
 						$training_id,
 						esc_attr( wp_create_nonce( 'wpsc_get_delete_ai_training_item' ) ),
-						esc_html__( 'Delete', 'wpsc-ps' )
+						esc_html__( 'Delete', 'supportcandy' )
 					);
 				}
 
@@ -475,7 +475,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 
 		/**
 		 * Resolve a training record's doc_source (the slug of the configured training
-		 * source it was synced from - see WPSC_PS_AI_Setting_AI_Training_Actions::insert_training_post())
+		 * source it was synced from - see WPSC_PS_AI_Setting_AI_Training_Actions::process_training_posts())
 		 * to a human-readable label for the "Source" column/filter.
 		 *
 		 * File and URL uploads are never tied to a training source and always carry an
@@ -488,7 +488,7 @@ if ( ! class_exists( 'WPSC_PS_AI_Setting_AI_Training_Data' ) ) :
 		private static function get_doc_source_label( $doc_source ) {
 
 			if ( '' === $doc_source ) {
-				return esc_html__( 'File/URL Upload', 'wpsc-ps' );
+				return esc_html__( 'File/URL Upload', 'supportcandy' );
 			}
 
 			$source = WPSC_PS_AIT_Source::get_training_source( $doc_source );

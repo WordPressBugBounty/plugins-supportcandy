@@ -27,9 +27,9 @@ if ( ! class_exists( 'WPSC_PS_AIT_Source' ) ) :
 
 			if ( self::$labels === null ) {
 				self::$labels = array(
-					self::TICKET => esc_attr__( 'Ticket', 'wpsc-ps' ),
-					self::FILE   => esc_attr__( 'File', 'wpsc-ps' ),
-					self::URL    => esc_attr__( 'URL', 'wpsc-ps' ),
+					self::TICKET => esc_attr__( 'Ticket', 'supportcandy' ),
+					self::FILE   => esc_attr__( 'File', 'supportcandy' ),
+					self::URL    => esc_attr__( 'URL', 'supportcandy' ),
 				);
 
 				self::$labels = apply_filters( 'wpsc_ps_ait_source_labels', self::$labels );
